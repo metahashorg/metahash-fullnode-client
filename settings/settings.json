@@ -1,0 +1,16 @@
+{
+ "service":
+ {
+  "threads": 4,
+  "port": 9999
+ },
+ "server":
+ {
+  "tor": "tor.net-dev.metahash.org:5795",
+  "proxy": "proxy.net-dev.metahash.org:9999"
+ },
+ "system":
+ {
+  "wallets-storage": "/home/aaa/projects/metahash_proxy/wallets"
+ }
+}
