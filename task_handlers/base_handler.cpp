@@ -27,10 +27,3 @@ bool base_handler<T>::prepare(const std::string& params)
 
     return success;
 }
-
-template <class T>
-handler_result base_handler<T>::result()
-{
-    this->m_result.message = this->m_writer.stringify();
-    return this->m_result;
-}

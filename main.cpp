@@ -19,7 +19,8 @@ int main(int argc, char* argv[])
             ("port",		po::value<unsigned short>(),"service port, default is 9999")
             ("tor",			po::value<std::string>(),	"torrent address")
             ("proxy",		po::value<std::string>(),	"proxy address")
-            ("storage",		po::value<std::string>(),	"storage of wallets");
+            ("storage",		po::value<std::string>(),	"storage of wallets")
+            ("any",                                     "accept any connections");
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);

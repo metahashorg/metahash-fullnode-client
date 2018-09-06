@@ -50,6 +50,9 @@ void http_server::accept(tcp::acceptor& acceptor)
 
 bool http_server::check_access(tcp::endpoint& ep)
 {
+    if (settings::service::any_conns)
+        return true;
+
     if (ep.address().is_loopback())
         return true;
 

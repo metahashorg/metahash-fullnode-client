@@ -9,6 +9,7 @@ namespace settings
 {
     struct service
     {
+        static bool any_conns;
         static unsigned short port;
         static int threads;
         static std::vector<std::string> access;

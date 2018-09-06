@@ -14,9 +14,10 @@ using		tcp     = boost::asio::ip::tcp;
 namespace settings
 {
     // service
-    std::vector<std::string> service::access;
+    bool service::any_conns = {false};
     unsigned short service::port = {9999};
     int service::threads = {4};
+    std::vector<std::string> service::access;
 
     // server
     std::string server::tor     = {"tor.net-dev.metahash.org:5795"};
@@ -67,6 +68,9 @@ namespace settings
 
     void read(boost::program_options::variables_map& vm)
     {
+        if (vm.count("any"))
+            settings::service::any_conns = true;
+
         if (vm.count("threads"))
             settings::service::threads = std::max(vm["threads"].as<int>(), 1);
 

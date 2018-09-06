@@ -40,7 +40,11 @@ protected:
     virtual bool prepare_params() = 0;
     virtual void execute() = 0;
 
-    handler_result result();
+    handler_result result()
+    {
+        this->m_result.message = this->m_writer.stringify();
+        return this->m_result;
+    }
 
 protected:
     json_rpc_id         m_id = { 0 };
