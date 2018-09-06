@@ -1,6 +1,7 @@
 #include "http_json_rpc_request.h"
 #include "settings/settings.h"
 #include "task_handlers/utils.h"
+#include "log/log.h"
 
 http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_context& execute_context):
     m_io_ctx(execute_context),
@@ -55,6 +56,7 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e)
     {
         m_result.set_error(32000, e.message().c_str());
         perform_callback();
+        logg::push_err(e.message().c_str());
     }
     return true;
 }

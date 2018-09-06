@@ -12,6 +12,7 @@ add_executable(${PROJECT_NAME} /
     "http_json_rpc_request.cpp" /
     "json_rpc.cpp" /
     "http_session.cpp" /
+    "log/log.cpp" /
     "task_handlers/utils.cpp" /
     "task_handlers/task_handlers.h" /
     "task_handlers/base_handler.cpp" /

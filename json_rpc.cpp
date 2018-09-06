@@ -1,4 +1,5 @@
 #include "json_rpc.h"
+#include "log/log.h"
 
 // json_rpc_reader
 
@@ -17,8 +18,9 @@ bool json_rpc_reader::parse(const std::string& json)
         m_error = m_doc.Parse(json.c_str());
         return !m_error.IsError();
     }
-    catch (const std::exception&)
+    catch (const std::exception& e)
     {
+        logg::push_err(e.what());
         m_error.Set(rapidjson::ParseErrorCode::kParseErrorTermination);
         return false;
     }
@@ -80,8 +82,9 @@ bool json_rpc_writer::parse(const std::string& json)
         m_doc.Parse(json.c_str());
         return !m_doc.HasParseError();
     }
-    catch (const std::exception&)
+    catch (const std::exception& e)
     {
+        logg::push_err(e.what());
         return false;
     }
 }

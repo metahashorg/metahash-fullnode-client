@@ -5,6 +5,7 @@
 #include "network_handler.h"
 #include "create_tx_handler.h"
 #include "send_tx_handler.h"
+#include "../log/log.h"
 
 DECL_BASE_HANDLER(generate_handler)
 DECL_NETWORK_HANDLER(get_count_blocks_handler)
@@ -42,4 +43,5 @@ static const std::map<std::string, handler_func> map_handlers = {
     if (!condition) {\
         this->m_writer.reset();\
         this->m_writer.set_error(-32602, message);\
+        logg::push_wrn(message);\
         return false;}

@@ -62,7 +62,7 @@ namespace settings
 
         } catch (std::exception& e)
         {
-            std::cout << "Warning! Failed on read settings: " << e.what() << std::endl;
+            std::cout << "Failed on read settings: " << e.what() << std::endl;
         }
     }
 

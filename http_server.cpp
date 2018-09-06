@@ -1,8 +1,7 @@
 #include "http_server.h"
 #include "http_session.h"
 #include "settings/settings.h"
-
-#include <iostream>
+#include "log/log.h"
 
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
     : m_io_ctx(thread_count)
@@ -20,7 +19,10 @@ void http_server::run()
     tcp::acceptor acceptor(m_io_ctx, m_ep, true);
     accept(acceptor);
 
-    std::cout << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port() << std::endl;
+    std::ostringstream stream;
+    stream << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port() << std::endl;
+    stream.flush();
+    logg::push_inf(stream.str());
 
     m_io_ctx.run();
 }
@@ -42,6 +44,7 @@ void http_server::accept(tcp::acceptor& acceptor)
             {
                 m_sock.shutdown(tcp::socket::shutdown_both);
                 m_sock.close();
+                logg::push_inf("Droping connection " + m_peer.address().to_string());
             }
         }
         accept(acceptor);
