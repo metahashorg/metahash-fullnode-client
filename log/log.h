@@ -2,6 +2,8 @@
 #include <map>
 #include <mutex>
 
+#define USE_DEBUG_LOG_MESSAGE 1
+
 namespace logg
 {
     class logger
@@ -25,4 +27,22 @@ namespace logg
     void push_err(const std::string& mess);
     void push_wrn(const std::string& mess);
     void push_inf(const std::string& mess);
+    void push_dbg(const std::string& mess);
 }
+
+#define STREAM_LOG_BASE(v)\
+    std::ostringstream stream;\
+    stream << v <<std::endl;\
+    stream.flush();
+
+#define STREAM_LOG_INF(v)\
+    STREAM_LOG_BASE(v)\
+    logg::push_inf(stream.str());
+
+#define STREAM_LOG_ERR(v)\
+    STREAM_LOG_BASE(v)\
+    logg::push_err(stream.str());
+
+#define STREAM_LOG_WRN(v)\
+    STREAM_LOG_BASE(v)\
+    logg::push_wrn(stream.str());

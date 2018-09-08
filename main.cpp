@@ -11,10 +11,6 @@ int main(int argc, char* argv[])
 {
     try
     {
-        logg::push_err("error");
-        logg::push_wrn("warning");
-        logg::push_inf("information");
-
         settings::read();
 
         po::options_description desc("Allowed options");

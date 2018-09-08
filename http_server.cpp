@@ -19,10 +19,7 @@ void http_server::run()
     tcp::acceptor acceptor(m_io_ctx, m_ep, true);
     accept(acceptor);
 
-    std::ostringstream stream;
-    stream << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port() << std::endl;
-    stream.flush();
-    logg::push_inf(stream.str());
+    STREAM_LOG_INF("Service runing at " << m_ep.address().to_string() << ":" << m_ep.port())
 
     m_io_ctx.run();
 }
@@ -36,15 +33,21 @@ void http_server::accept(tcp::acceptor& acceptor)
 {
     acceptor.async_accept(m_sock, m_peer, [&](beast::error_code ec)
     {
-        if (!ec)
+        if (ec)
+        {
+            STREAM_LOG_ERR("Failed on accept: " << ec.message())
+        }
+        else
         {
             if (check_access(m_peer))
+            {
                 std::make_shared<http_session>(std::move(m_sock))->run();
+            }
             else
             {
                 m_sock.shutdown(tcp::socket::shutdown_both);
                 m_sock.close();
-                logg::push_inf("Droping connection " + m_peer.address().to_string());
+                STREAM_LOG_INF("Droping connection " << m_peer.address().to_string() << ":" << m_peer.port())
             }
         }
         accept(acceptor);

@@ -5,6 +5,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
+#include "../log/log.h"
 
 namespace   pt      = boost::property_tree;
 namespace	asio    = boost::asio;
@@ -48,7 +49,7 @@ namespace settings
                 auto eps = resolver.resolve({v.second.data(), ""}, er);
                 if (er)
                 {
-                    std::cout << "Warning! Couldn't resolve " << v.second.data() << " : " << er.message() << std::endl;
+                    STREAM_LOG_WRN("Couldn't resolve " << v.second.data() << " : " << er.message());
                     continue;
                 }
                 for (auto &e : eps)
@@ -62,7 +63,7 @@ namespace settings
 
         } catch (std::exception& e)
         {
-            std::cout << "Failed on read settings: " << e.what() << std::endl;
+            STREAM_LOG_ERR("Failed on read settings: " << e.what());
         }
     }
 
