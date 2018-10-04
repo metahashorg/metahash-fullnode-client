@@ -9,6 +9,12 @@ public:
     create_tx_handler(http_session_ptr session): base(session) {}
     virtual ~create_tx_handler() override {}
 
+    virtual void execute() override
+    {
+        // do nothing, just prepare
+        return;
+    }
+
 protected:
     virtual bool get_nonce(mh_count_t& result) override;
 };
