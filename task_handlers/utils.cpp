@@ -69,7 +69,27 @@ namespace utils
         }
         catch (std::exception& e)
         {
+            result = "generate sign failed: ";
+            result.append(e.what());
             return false;
         }
+    }
+
+    void Timer::start(const Interval& interval, const Handler& handler)
+    {
+        m_handler = handler;
+        m_thr = std::thread([&, interval]()
+        {
+            auto fut = m_promise.get_future();
+            if (fut.wait_for(interval) == std::future_status::timeout)
+                if (m_handler)
+                    m_handler();
+        });
+        m_thr.detach();
+    }
+
+    void Timer::stop()
+    {
+        m_promise.set_value();
     }
 }

@@ -2,7 +2,9 @@
 
 #include "boost/format.hpp"
 #include <string.h>
-//#include <string>
+#include <thread>
+#include <future>
+#include <chrono>
 
 namespace utils
 {
@@ -44,4 +46,19 @@ namespace utils
 
     void parse_address(const std::string& address, std::string& host, std::string& port);
     bool gen_sign(std::string& result, const std::string& prv_key, const char* fmt, ...);
+
+    class Timer
+    {
+    public:
+        typedef std::chrono::milliseconds Interval;
+        typedef std::function<void(void)> Handler;
+
+        void start(const Interval& interval, const Handler& handler);
+        void stop();
+
+    private:
+        std::promise<void>  m_promise;
+        std::thread         m_thr;
+        Handler             m_handler;
+    };
 }

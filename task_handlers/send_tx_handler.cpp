@@ -7,13 +7,14 @@ bool send_tx_handler::get_nonce(mh_count_t& result)
     writer.set_id(1);
     writer.add_param("address", m_address);
 
-    http_json_rpc_request req(settings::server::tor, m_session->get_io_context());
-    req.set_path("fetch-balance");
-    req.set_body(writer.stringify());
-    req.execute();
+    asio::io_context ctx;
+    auto req = std::make_shared<http_json_rpc_request>(settings::server::tor, ctx);
+    req->set_path("fetch-balance");
+    req->set_body(writer.stringify());
+    req->execute();
 
     json_rpc_reader reader;
-    if (!reader.parse(req.get_result()))
+    if (!reader.parse(req->get_result()))
         return false;
 
     auto res = reader.get_result();

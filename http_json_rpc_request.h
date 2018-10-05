@@ -9,6 +9,7 @@
 #include <boost/bind.hpp>
 
 #include "json_rpc.h"
+#include "task_handlers/utils.h"
 
 namespace	asio    = boost::asio;
 namespace	ip      = boost::asio::ip;
@@ -37,7 +38,7 @@ protected:
     void on_connect(const boost::system::error_code& e, tcp::resolver::iterator it);
     void on_write(const boost::system::error_code& e);
     void on_read(const boost::system::error_code& e);
-    void on_timer(const boost::system::error_code& e);
+    void on_timer();
 
     bool error_handler(const boost::system::error_code& e);
 
@@ -47,7 +48,7 @@ private:
     asio::io_context&                   m_io_ctx;
     tcp::socket                         m_socket;
     tcp::resolver                       m_resolver;
-    asio::deadline_timer                m_timer;
+    utils::Timer                        m_timer;
     http::request<http::dynamic_body>   m_req { http::verb::post, "/", 11 };
     http::response<http::string_body>   m_response;
     boost::beast::flat_buffer           m_buf { 8192 };
