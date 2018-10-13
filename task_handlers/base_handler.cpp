@@ -25,5 +25,7 @@ bool base_handler<T>::prepare(const std::string& params)
 
     this->m_writer.set_id(this->m_id);
 
+    STREAM_LOG_DBG("Prepared json (" << success << "):" << std::endl << this->m_writer.stringify())
+
     return success;
 }
