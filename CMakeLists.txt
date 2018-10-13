@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(metahash_proxy_service)
+project(metahash_service)
 
 set (MH_CRYPT_PATH "cpplib_open_ssl_decor")
 set (MH_CRYPT_OBJS "${MH_CRYPT_PATH}/crypto.o")

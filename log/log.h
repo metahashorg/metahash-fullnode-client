@@ -46,3 +46,7 @@ namespace logg
 #define STREAM_LOG_WRN(v)\
     STREAM_LOG_BASE(v)\
     logg::push_wrn(stream.str());
+
+#define STREAM_LOG_DBG(v)\
+    STREAM_LOG_BASE(v)\
+    logg::push_dbg(stream.str());

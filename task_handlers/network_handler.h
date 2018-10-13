@@ -17,7 +17,7 @@ public:
     virtual void execute() override;
 
 protected:
-    bool m_async_execute = {false};
+    bool m_async_execute = {true};
     std::shared_ptr<http_json_rpc_request> m_request;
 };
 

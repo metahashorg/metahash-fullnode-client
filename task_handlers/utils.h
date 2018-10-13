@@ -44,7 +44,8 @@ namespace utils
         memcpy(&buf[pos], &value, sz);
     }
 
-    void parse_address(const std::string& address, std::string& host, std::string& port);
+    void parse_address(const std::string& address, std::string& host, std::string& port, std::string& path, bool& use_ssl);
+
     bool gen_sign(std::string& result, const std::string& prv_key, const char* fmt, ...);
 
     class Timer

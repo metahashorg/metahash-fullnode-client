@@ -1,7 +1,8 @@
+#include "task_handlers.h"
 #include "create_tx_handler.h"
 
 // create_tx_handler
-bool create_tx_handler::get_nonce(mh_count_t& result)
+bool create_tx_handler::get_nonce(mh_count_t&)
 {
-    return m_reader.get_value(*m_reader.get_params(), "nonce", result);
+    CHK_PRM(false, "nonce should be must set")
 }

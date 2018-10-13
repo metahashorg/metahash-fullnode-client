@@ -17,6 +17,7 @@ void base_network_handler<T>::execute()
     }
     else
     {
+        this->m_result.pending = true;
         auto request = this->m_request;
         auto session = this->m_session;
         json_rpc_id id = this->m_id;
@@ -41,6 +42,16 @@ void base_network_handler<T>::execute()
                         writer.set_result(*res);
                     else
                         writer.set_error(-32603, "No occur result or error");
+
+                    rapidjson::Document& doc = reader.get_doc();
+                    for (auto& m : doc.GetObject())
+                    {
+                        std::string name = m.name.GetString();
+                        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+                        if (std::find(json_rpc_service.begin(), json_rpc_service.end(), name) != json_rpc_service.end())
+                            continue;
+                        writer.add_value(m.name.GetString(), m.value);
+                    }
                 }
             }
             boost::asio::post(boost::bind(&http_session::send_json, session, writer.stringify()));
@@ -52,42 +63,80 @@ void base_network_handler<T>::execute()
 template <class T>
 bool base_send_tx_handler<T>::prepare_params()
 {
-    CHK_PRM(this->m_id, "id field not found")
+    try
+    {
+        CHK_PRM(this->m_id, "id field not found")
 
-    auto params = this->m_reader.get_params();
-    CHK_PRM(params, "params field not found")
+        auto params = this->m_reader.get_params();
+        CHK_PRM(params, "params field not found")
 
-    CHK_PRM(this->m_reader.get_value(*params, "address", this->m_address) && !this->m_address.empty(), "address field not found")
+        CHK_PRM(this->m_reader.get_value(*params, "address", this->m_address) && !this->m_address.empty(), "address field not found")
+        CHK_PRM(this->m_address.compare(0, 2, "0x") == 0, "address field must be in hex format")
 
-    std::string to;
-    CHK_PRM(this->m_reader.get_value(*params, "to", to) && !to.empty(), "to field not found")
+        std::string to;
+        CHK_PRM(this->m_reader.get_value(*params, "to", to) && !to.empty(), "to field not found")
+        CHK_PRM(to.compare(0, 2, "0x") == 0, "to field must be in hex format")
 
-    mh_count_t value(0);
-    CHK_PRM(this->m_reader.get_value(*params, "value", value), "value field not found")
+        auto jValue = this->m_reader.get("value", *params);
+        CHK_PRM(jValue, "value field not found")
 
-    mh_count_t fee(0);
-    this->m_reader.get_value(*params, "fee", fee);
+        std::string tmp;
+        CHK_PRM(json_utils::val2str(jValue, tmp), "value field incorrect format")
 
-    mh_count_t nonce(0);
-    CHK_PRM(this->get_nonce(nonce), "nonce not defined or its can't get")
+        mh_count_t value = std::stoull(tmp);
 
-    std::string data;
-    this->m_reader.get_value(*params, "data", data);
+        mh_count_t fee(0);
+        jValue = this->m_reader.get("fee", *params);
+        if (jValue && json_utils::val2str(jValue, tmp))
+        {
+            fee = std::stoull(tmp);
+        }
 
-    storage::crypt_keys keys;
-    CHK_PRM(storage::keys::peek(this->m_address, keys), "failed on get keys")
+        mh_count_t nonce(0);
+        jValue = this->m_reader.get("nonce", *params);
+        if (jValue)
+        {
+            CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field incorrect format")
+            nonce = std::stoull(tmp);
+        }
+        else
+        {
+            if (!this->get_nonce(nonce))
+                return false;
+        }
 
-    std::string sign;
-    CHK_PRM(utils::gen_sign(sign, keys.prv_key, "xDDDd", to.c_str(), value, fee, nonce, data.size()), "failed on gen sign")
+        std::string data;
+        this->m_reader.get_value(*params, "data", data);
 
-    this->m_writer.set_method("mhc_send");
-    this->m_writer.add_param("to", to.c_str());
-    this->m_writer.add_param("value", boost::lexical_cast<std::string>(value));
-    this->m_writer.add_param("fee", !fee ? "" : boost::lexical_cast<std::string>(fee));
-    this->m_writer.add_param("nonce", boost::lexical_cast<std::string>(nonce));
-    this->m_writer.add_param("data", data.c_str());
-    this->m_writer.add_param("pubkey", keys.pub_key);
-    this->m_writer.add_param("sign", sign);
+        storage::crypt_keys keys;
+        CHK_PRM(storage::keys::peek(this->m_address, keys), "failed on get keys")
 
-    return true;
+        std::string sign;
+        CHK_PRM(utils::gen_sign(sign, keys.prv_key, "xDDDd", to.c_str(), value, fee, nonce, data.size()), "failed on gen sign")
+
+        this->m_writer.set_method("mhc_send");
+        this->m_writer.add_param("to", to.c_str());
+        this->m_writer.add_param("value", boost::lexical_cast<std::string>(value));
+        this->m_writer.add_param("fee", !fee ? "" : boost::lexical_cast<std::string>(fee));
+        this->m_writer.add_param("nonce", boost::lexical_cast<std::string>(nonce));
+        this->m_writer.add_param("data", data.c_str());
+        this->m_writer.add_param("pubkey", keys.pub_key);
+        this->m_writer.add_param("sign", sign);
+
+        return true;
+    }
+    catch (std::exception& ex)
+    {
+        STREAM_LOG_ERR("prepare params exception: " << ex.what())
+        std::string out("prepare params exception: ");
+        out.append(ex.what());
+        this->m_writer.set_error(-32603, out);
+        return false;
+    }
+    catch(...)
+    {
+        STREAM_LOG_ERR("prepare params unknown exception")
+        this->m_writer.set_error(-32603, "prepare params unknown exception");
+        return false;
+    }
 }

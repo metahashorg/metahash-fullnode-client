@@ -5,16 +5,44 @@
 
 namespace utils
 {
-    void parse_address(const std::string& address, std::string& host, std::string& port)
+    void parse_address(const std::string& address, std::string& host, std::string& port, std::string& path, bool& use_ssl)
     {
-        auto pos = std::find(address.begin(), address.end(), ':');
-        if (pos != address.end())
+        std::string tmp = address;
+
+        auto pos = tmp.find("http://");
+        if (pos != std::string::npos)
         {
             port.clear();
-            port.append(pos + 1, address.end());
+            port = "80";
+            tmp = tmp.substr(pos + 7);
         }
-        host.clear();
-        host.append(address.begin(), pos);
+
+        pos = tmp.find("https://");
+        if (pos != std::string::npos)
+        {
+            port.clear();
+            port = "443";
+            tmp = tmp.substr(pos + 8);
+            use_ssl = true;
+        }
+
+        pos = tmp.find(":");
+        if (pos != std::string::npos)
+        {
+            port.clear();
+            port = tmp.substr(pos + 1);
+            tmp = tmp.substr(0, pos);
+        }
+
+        pos = tmp.find("/");
+        if (pos != std::string::npos)
+        {
+            path.clear();
+            path = tmp.substr(pos);
+            tmp = tmp.substr(0, pos);
+        }
+
+        host = tmp;
     }
 
     bool gen_sign(std::string& result, const std::string& prv_key, const char* fmt, ...)

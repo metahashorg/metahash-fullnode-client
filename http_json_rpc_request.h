@@ -7,11 +7,13 @@
 #include <boost/beast/http.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/asio/ssl.hpp>
 
 #include "json_rpc.h"
 #include "task_handlers/utils.h"
 
 namespace	asio    = boost::asio;
+namespace	ssl     = boost::asio::ssl;
 namespace	ip      = boost::asio::ip;
 using		tcp     = boost::asio::ip::tcp;
 namespace   beast   = boost::beast;
@@ -34,8 +36,9 @@ public:
     std::string get_result();
 
 protected:
-    void on_resolve(const boost::system::error_code& e, tcp::resolver::iterator it);
-    void on_connect(const boost::system::error_code& e, tcp::resolver::iterator it);
+    void on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps);
+    void on_connect(const boost::system::error_code& ec, const tcp::endpoint& ep);
+    void on_handshake(const boost::system::error_code& e);
     void on_write(const boost::system::error_code& e);
     void on_read(const boost::system::error_code& e);
     void on_timer();
@@ -43,6 +46,10 @@ protected:
     bool error_handler(const boost::system::error_code& e);
 
     void perform_callback();
+
+    bool verify_certificate(bool preverified, ssl::verify_context& ctx);
+
+    inline bool is_ssl() const { return m_use_ssl; }
 
 private:
     asio::io_context&                   m_io_ctx;
@@ -55,4 +62,10 @@ private:
     json_rpc_writer                     m_result;
     http_json_rpc_execute_callback      m_callback;
     std::string                         m_host;
+    ssl::context                        m_ssl_ctx;
+    ssl::stream<tcp::socket>            m_ssl_socket;
+    bool                                m_async;
+    bool                                m_use_ssl;
 };
+
+using http_json_rpc_request_ptr = std::shared_ptr<http_json_rpc_request>;
