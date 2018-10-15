@@ -19,11 +19,10 @@ public:
 protected:
     void accept(tcp::acceptor& acceptor);
 
-    bool check_access(tcp::endpoint& ep);
+    bool check_access(const tcp::endpoint& ep);
 
 protected:
+    int                 m_thread_count;
     asio::io_context    m_io_ctx;
     tcp::endpoint       m_ep;
-    tcp::endpoint       m_peer;
-    tcp::socket         m_sock {m_io_ctx};
 };

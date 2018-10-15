@@ -32,21 +32,21 @@ namespace logg
 
 #define STREAM_LOG_BASE(v)\
     std::ostringstream stream;\
-    stream << v <<std::endl;\
+    stream << std::this_thread::get_id() << " " << v <<std::endl;\
     stream.flush();
 
 #define STREAM_LOG_INF(v)\
-    STREAM_LOG_BASE(v)\
-    logg::push_inf(stream.str());
+    {STREAM_LOG_BASE(v)\
+    logg::push_inf(stream.str());}
 
 #define STREAM_LOG_ERR(v)\
-    STREAM_LOG_BASE(v)\
-    logg::push_err(stream.str());
+    {STREAM_LOG_BASE(v)\
+    logg::push_err(stream.str());}
 
 #define STREAM_LOG_WRN(v)\
-    STREAM_LOG_BASE(v)\
-    logg::push_wrn(stream.str());
+    {STREAM_LOG_BASE(v)\
+    logg::push_wrn(stream.str());}
 
 #define STREAM_LOG_DBG(v)\
-    STREAM_LOG_BASE(v)\
-    logg::push_dbg(stream.str());
+    {STREAM_LOG_BASE(v)\
+    logg::push_dbg(stream.str());}
