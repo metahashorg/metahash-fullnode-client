@@ -5,6 +5,7 @@
 #include "../json_rpc.h"
 #include "../cpplib_open_ssl_decor/crypto.h"
 #include "../settings/settings.h"
+#include "../log/log.h"
 #include "utils.h"
 
 using mh_count_t = uint64_t;
@@ -28,10 +29,24 @@ public:
 
     static handler_result perform(http_session_ptr session, const std::string& params)
     {
-        T obj(session);
-        if (obj.prepare(params))
-            obj.execute();
-        return obj.result();
+        try
+        {
+            utils::time_duration dur(true, "execute handler");
+            T obj(session);
+            if (obj.prepare(params))
+                obj.execute();
+            return obj.result();
+        }
+        catch (std::exception& ex)
+        {
+            STREAM_LOG_ERR("Perform handler exception: " << ex.what())
+            return handler_result();
+        }
+        catch (...)
+        {
+            STREAM_LOG_ERR("Perform handler unknown exception")
+            return handler_result();
+        }
     }
 
 protected:

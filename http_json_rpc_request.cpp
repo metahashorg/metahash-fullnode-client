@@ -7,6 +7,7 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
     m_io_ctx(execute_context),
     m_socket(m_io_ctx),
     m_resolver(m_io_ctx),
+    m_duration(false, "json rpc"),
     m_host(host),
     m_ssl_ctx(ssl::context::sslv23),
     m_ssl_socket(m_io_ctx, m_ssl_ctx),
@@ -76,6 +77,9 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e)
 
     if (!m_async && !m_io_ctx.stopped())
         m_io_ctx.stop();
+
+    m_duration.stop();
+
     return true;
 }
 
@@ -88,6 +92,8 @@ void http_json_rpc_request::execute()
 
 void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callback)
 {
+    m_duration.start();
+
     if (callback)
         m_callback = boost::bind(callback);
 
@@ -108,6 +114,7 @@ void http_json_rpc_request::on_timer()
     boost::system::error_code ec;
     m_socket.close(ec);
     m_ssl_socket.shutdown(ec);
+    m_duration.stop();
 }
 
 void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps)
@@ -196,6 +203,8 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e)
 
     if (!m_async && !m_io_ctx.stopped())
         m_io_ctx.stop();
+
+    m_duration.stop();
 }
 
 void http_json_rpc_request::perform_callback()

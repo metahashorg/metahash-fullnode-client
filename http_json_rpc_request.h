@@ -56,6 +56,7 @@ private:
     tcp::socket                         m_socket;
     tcp::resolver                       m_resolver;
     utils::Timer                        m_timer;
+    utils::time_duration                m_duration;
     http::request<http::dynamic_body>   m_req { http::verb::post, "/", 11 };
     http::response<http::string_body>   m_response;
     boost::beast::flat_buffer           m_buf { 8192 };

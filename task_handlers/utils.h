@@ -1,6 +1,7 @@
 #pragma once
 
 #include "boost/format.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
 #include <string.h>
 #include <thread>
 #include <future>
@@ -61,5 +62,21 @@ namespace utils
         std::promise<void>  m_promise;
         std::thread         m_thr;
         Handler             m_handler;
+    };
+
+    class time_duration
+    {
+    public:
+        time_duration(bool _start);
+        time_duration(bool _start, std::string message);
+        ~time_duration();
+
+        void start();
+        void stop();
+
+    protected:
+        bool                        m_run;
+        std::string                 m_msg;
+        boost::posix_time::ptime    m_start;
     };
 }
