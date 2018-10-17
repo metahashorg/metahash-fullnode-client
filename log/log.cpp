@@ -50,9 +50,7 @@ void push_inf(const std::string& mess)
 
 void push_dbg(const std::string& mess)
 {
-#ifdef USE_DEBUG_LOG_MESSAGE
     _logger.push(LOG_DEBUG, mess);
-#endif
 }
 
 }

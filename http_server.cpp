@@ -4,6 +4,14 @@
 #include "settings/settings.h"
 #include "log/log.h"
 
+void signal_handler(const boost::system::error_code& e, int signal_number)
+{
+    if (!e)
+    {
+        STREAM_LOG_ERR("Signal occurred (" << signal_number << "): " << e.message())
+    }
+}
+
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
     : m_thread_count(thread_count)
     , m_io_ctx(m_thread_count)
@@ -18,6 +26,9 @@ http_server::~http_server()
 
 void http_server::run()
 {
+    asio::signal_set signals(m_io_ctx, SIGINT, SIGTERM, SIGABRT);
+    signals.async_wait(signal_handler);
+
     tcp::acceptor acceptor(m_io_ctx, m_ep, true);
     accept(acceptor);
 

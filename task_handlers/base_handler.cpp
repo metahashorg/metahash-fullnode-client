@@ -5,7 +5,8 @@ bool base_handler<T>::prepare(const std::string& params)
 {
     if (!this->m_reader.parse(params))
     {
-        this->m_writer.set_error(-32700, "Parse error");
+        STREAM_LOG_DBG("Incorrect json " << params)
+        this->m_writer.set_error(-32701, "Parse error");
         return false;
     }
 

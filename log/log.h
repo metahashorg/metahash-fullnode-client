@@ -2,7 +2,7 @@
 #include <map>
 #include <mutex>
 
-#define USE_DEBUG_LOG_MESSAGE 1
+#define USE_DEBUG_LOG_MESSAGE
 
 namespace logg
 {
@@ -47,6 +47,10 @@ namespace logg
     {STREAM_LOG_BASE(v)\
     logg::push_wrn(stream.str());}
 
-#define STREAM_LOG_DBG(v)\
-    {STREAM_LOG_BASE(v)\
-    logg::push_dbg(stream.str());}
+#ifdef USE_DEBUG_LOG_MESSAGE
+    #define STREAM_LOG_DBG(v)\
+        {STREAM_LOG_BASE(v)\
+        logg::push_dbg(stream.str());}
+#else
+    #define STREAM_LOG_DBG(v)
+#endif

@@ -72,7 +72,7 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e)
         perform_callback();
     }
 
-    STREAM_LOG_DBG("Request Error:" << std::endl << m_result.stringify())
+    STREAM_LOG_ERR("Request error:" << std::endl << m_result.stringify())
 
     if (!m_async && !m_io_ctx.stopped())
         m_io_ctx.stop();
@@ -101,7 +101,8 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
 
 void http_json_rpc_request::on_timer()
 {
-    logg::push_err("Request timeout");
+    STREAM_LOG_ERR("Request timeout")
+
     m_result.set_error(32001, "Request timeout");
     perform_callback();
     boost::system::error_code ec;
@@ -130,6 +131,8 @@ void http_json_rpc_request::on_connect(const boost::system::error_code& e, const
     }
     else
     {
+        STREAM_LOG_DBG("Send request " << m_host << " << " << beast::buffers_to_string(m_req.body().data()))
+
         http::async_write(m_socket, m_req,
             boost::bind(&http_json_rpc_request::on_write, shared_from_this(), asio::placeholders::error));
     }
@@ -139,6 +142,9 @@ void http_json_rpc_request::on_handshake(const boost::system::error_code& e)
 {
     if (error_handler(e))
         return;
+
+    STREAM_LOG_DBG("Send request: " << m_host << " << " << beast::buffers_to_string(m_req.body().data()))
+
     http::async_write(m_ssl_socket, m_req,
         boost::bind(&http_json_rpc_request::on_write, shared_from_this(), asio::placeholders::error));
 }
@@ -184,7 +190,7 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e)
         }
     }
 
-    STREAM_LOG_DBG("Response:" << std::endl << m_result.stringify())
+    STREAM_LOG_DBG("Recieve response: " << m_host << " >> " << std::endl << m_result.stringify())
 
     perform_callback();
 

@@ -40,7 +40,22 @@ std::string json_rpc_reader::stringify(rapidjson::Value* value /*= nullptr*/)
 json_rpc_id json_rpc_reader::get_id()
 {
     json_rpc_id res(0);
-    get_value(m_doc, "id", res);
+    rapidjson::Value* id = get("id", m_doc);
+    if (id)
+    {
+        if (id->IsString())
+        {
+            res = static_cast<json_rpc_id>(std::stoi(id->GetString()));
+        }
+        else if (id->IsInt())
+        {
+            res = static_cast<json_rpc_id>(id->GetInt());
+        }
+        else if (id->IsUint())
+        {
+            res = id->GetUint();
+        }
+    }
     return res;
 }
 
