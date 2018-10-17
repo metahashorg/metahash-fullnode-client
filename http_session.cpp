@@ -13,6 +13,10 @@ http_session::~http_session()
 
 void http_session::run()
 {
+    m_req.clear();
+    m_req.body().clear();
+    m_buf.consume(m_buf.size());
+
     auto self = shared_from_this();
     http::async_read(m_socket, m_buf, m_req, [self](beast::error_code ec, std::size_t bytes_transferred)
     {
@@ -31,6 +35,8 @@ asio::io_context& http_session::get_io_context()
 
 void http_session::process_request()
 {
+    STREAM_LOG_DBG(m_socket.remote_endpoint().address().to_string() << " >> " << m_req.body().data());
+
     if (m_req.target().to_string() != "/")
     {
         send_bad_request("Incorrect path");
@@ -50,6 +56,8 @@ void http_session::process_request()
         auto it = map_handlers.find(reader.get_method());
         if (it == map_handlers.end())
         {
+            STREAM_LOG_DBG("Incorrect service method " << reader.get_method())
+
             json_rpc_writer writer;
             writer.set_error(-32601, "Method not found");
             json = writer.stringify();
@@ -65,6 +73,8 @@ void http_session::process_request()
     }
     else
     {
+        STREAM_LOG_DBG("Incorrect json " << m_req.body())
+
         json_rpc_writer writer;
         writer.set_error(-32700, "Parse error");
         json = writer.stringify();
@@ -93,6 +103,8 @@ void http_session::send_json(const std::string& data)
 
 void http_session::send_response(http::response<http::dynamic_body>& response)
 {
+    STREAM_LOG_DBG(m_socket.remote_endpoint().address().to_string() << " << " << beast::buffers_to_string(response.body().data()));
+
     response.version(11);
     response.set(http::field::server, "metahash::service");
     response.set(http::field::content_length, response.body().size());
