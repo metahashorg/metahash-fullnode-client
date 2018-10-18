@@ -19,6 +19,7 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
     m_req.set(http::field::host, addr);
     m_req.set(http::field::user_agent, "metahash.service");
     m_req.set(http::field::content_type, "application/json");
+    m_req.set(http::field::keep_alive, false);
     m_req.keep_alive(false);
 
     set_path(path);

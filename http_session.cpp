@@ -9,6 +9,8 @@ http_session::http_session(tcp::socket&& socket) :
 
 http_session::~http_session()
 {
+    m_socket.shutdown(m_socket.shutdown_both);
+    m_socket.close();
 }
 
 void http_session::run()
@@ -105,9 +107,10 @@ void http_session::send_response(http::response<http::dynamic_body>& response)
 {
     STREAM_LOG_DBG(m_socket.remote_endpoint().address().to_string() << " << " << beast::buffers_to_string(response.body().data()));
 
-    response.version(11);
-    response.set(http::field::server, "eth::service");
+    response.version(10);
+    response.set(http::field::server, "metahash.service");
     response.set(http::field::content_length, response.body().size());
+    response.set(http::field::keep_alive, true);
     response.keep_alive(true);
     http::write(m_socket, response);
 }
