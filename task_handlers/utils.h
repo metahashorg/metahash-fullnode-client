@@ -55,13 +55,21 @@ namespace utils
         typedef std::chrono::milliseconds Interval;
         typedef std::function<void(void)> Handler;
 
+        Timer() {};
+        ~Timer();
+
         void start(const Interval& interval, const Handler& handler);
         void stop();
+
+    protected:
+        void run();
 
     private:
         std::promise<void>  m_promise;
         std::thread         m_thr;
         Handler             m_handler;
+        std::mutex          m_locker;
+        Interval            m_interval;
     };
 
     class time_duration

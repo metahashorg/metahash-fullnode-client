@@ -4,13 +4,17 @@
 // generate_handler
 bool generate_handler::prepare_params()
 {
-    CHK_PRM(m_id, "id field not found")
-    return true;
+    BGN_TRY
+    {
+        CHK_PRM(m_id, "id field not found")
+        return true;
+    }
+    END_TRY_RET(false)
 }
 
 void generate_handler::execute()
 {
-    try
+    BGN_TRY
     {
         CRYPTO_wallet wallet;
 
@@ -24,7 +28,7 @@ void generate_handler::execute()
         std::string address = "0x" + bin2hex(wallet.mh_address_buf);
         if (!storage::keys::store(address, keys))
         {
-            m_writer.set_error(-32603, "Failed on store");
+            m_writer.set_error(-32604, "Failed on store");
             return;
         }
 
@@ -34,8 +38,5 @@ void generate_handler::execute()
         m_writer.add_result("pub_key", bin2hex(wallet.public_key_buf));
         m_writer.add_result("prv_key", bin2hex(wallet.private_key_buf));
     }
-    catch (std::exception& e)
-    {
-        m_writer.set_error(-32603, e.what());
-    }
+    END_TRY
 }

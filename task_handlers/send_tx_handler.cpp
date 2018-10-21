@@ -1,28 +1,89 @@
 #include "send_tx_handler.h"
-#include "task_handlers.h"
-#include "../http_json_rpc_request.h"
 
-bool send_tx_handler::get_nonce(mh_count_t& result)
+// send_tx_handler
+bool send_tx_handler::prepare_params()
 {
-    json_rpc_writer writer;
-    writer.set_id(1);
-    writer.add_param("address", m_address);
+    BGN_TRY
+    {
+        if (!this->check_params())
+            return false;
 
-    asio::io_context ctx;
-    auto req = std::make_shared<http_json_rpc_request>(settings::server::tor, ctx);
-    req->set_path("fetch-balance");
-    req->set_body(writer.stringify());
-    req->execute();
+        auto params = this->m_reader.get_params();
+        auto jValue = this->m_reader.get("nonce", *params);
+        if (jValue)
+        {
+            std::string tmp;
+            CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field incorrect format")
+            this->m_nonce = std::stoull(tmp);
+        }
+        else
+        {
+            this->m_result.pending = true;
 
+            json_rpc_id id = 1;
+            json_rpc_writer writer;
+            writer.set_id(id);
+            writer.add_param("address", this->m_address);
+
+            auto request = std::make_shared<http_json_rpc_request>(settings::server::tor, this->m_session->get_io_context());
+            request->set_path("fetch-balance");
+            request->set_body(writer.stringify());
+            request->execute_async(boost::bind(&send_tx_handler::on_get_balance, shared_from_this(), request, id));
+
+            return false;
+        }
+
+        if (!this->build_request())
+            return false;
+
+        return true;
+    }
+    END_TRY_RET(false)
+}
+
+void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id)
+{
     json_rpc_reader reader;
-    CHK_PRM(reader.parse(req->get_result()), "failed on retrieve nonce: json parse error")
+    json_rpc_writer writer;
+    writer.set_id(id);
 
-    auto res = reader.get_result();
-    CHK_PRM(res, "failed on retrieve nonce: result not found")
+    if (!reader.parse(request->get_result()))
+    {
+        writer.set_error(-32605, "Invalid response json");
+    }
+    else
+    {
+        json_rpc_id _id = reader.get_id();
+        if (_id != 0 && _id != id)
+        {
+            writer.set_error(-32605, "Returned id doesn't match");
+        }
+        else
+        {
+            if (auto err = reader.get_error())
+            {
+                writer.set_error(*err);
+            }
+            else if (auto res = reader.get_result())
+            {
+                mh_count_t count_spent(0);
+                if (reader.get_value(*res, "count_spent", count_spent))
+                {
+                    this->m_nonce = count_spent + 1;
+                }
+                else
+                {
+                    writer.set_error(-32605, "field spent count not found");
+                }
+            }
+            else
+            {
+                writer.set_error(-32605, "No occur result or error");
+            }
+        }
+    }
 
-    mh_count_t count_spent(0);
-    CHK_PRM(reader.get_value(*res, "count_spent", count_spent), "failed on retrieve nonce: can't get spent count")
+    this->build_request();
 
-    result = count_spent + 1;
-    return true;
+    boost::asio::post(boost::bind(&send_tx_handler::execute, shared_from_this()));
 }

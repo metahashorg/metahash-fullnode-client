@@ -38,10 +38,12 @@ public:
 protected:
     void on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps);
     void on_connect(const boost::system::error_code& ec, const tcp::endpoint& ep);
+    void on_connect2(const boost::system::error_code& e, std::vector<tcp::endpoint>::iterator i);
     void on_handshake(const boost::system::error_code& e);
     void on_write(const boost::system::error_code& e);
     void on_read(const boost::system::error_code& e);
-    void on_timer();
+    void on_request_timeout();
+    void on_connect_timeout();
 
     bool error_handler(const boost::system::error_code& e);
 
@@ -56,6 +58,7 @@ private:
     tcp::socket                         m_socket;
     tcp::resolver                       m_resolver;
     utils::Timer                        m_timer;
+    utils::Timer                        m_connect_timer;
     utils::time_duration                m_duration;
     http::request<http::dynamic_body>   m_req { http::verb::post, "/", 11 };
     http::response<http::string_body>   m_response;

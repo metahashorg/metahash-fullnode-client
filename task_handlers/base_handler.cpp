@@ -12,8 +12,9 @@ bool base_handler<T>::prepare(const std::string& params)
 
     this->m_id = this->m_reader.get_id();
 
-    bool success = this->prepare_params();
-    if (!success)
+    const bool complete = this->prepare_params();
+    const bool pending = this->m_result.pending;
+    if (!complete && !pending)
     {
         // prepare_params must set an error
 
@@ -26,7 +27,7 @@ bool base_handler<T>::prepare(const std::string& params)
 
     this->m_writer.set_id(this->m_id);
 
-    STREAM_LOG_DBG("Prepared json (" << success << "):" << std::endl << this->m_writer.stringify())
+    STREAM_LOG_DBG("Prepared json (" << complete << pending << "):" << std::endl << this->m_writer.stringify())
 
-    return success;
+    return complete;
 }

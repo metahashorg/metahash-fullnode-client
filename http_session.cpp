@@ -9,8 +9,9 @@ http_session::http_session(tcp::socket&& socket) :
 
 http_session::~http_session()
 {
-    m_socket.shutdown(m_socket.shutdown_both);
-    m_socket.close();
+    boost::system::error_code ec;
+    m_socket.shutdown(m_socket.shutdown_both, ec);
+    m_socket.close(ec);
 }
 
 void http_session::run()

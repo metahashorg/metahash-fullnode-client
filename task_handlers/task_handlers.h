@@ -38,10 +38,3 @@ static const std::map<std::string, handler_func> map_handlers = {
     { "fetch-balance",				fetch_balance_handler::perform },
     { "fetch-history",				fetch_history_handler::perform }
 };
-
-#define CHK_PRM(condition, message) \
-    if (!(condition)) {\
-        this->m_writer.reset();\
-        this->m_writer.set_error(-32602, message);\
-        logg::push_dbg(message);\
-        return false;}

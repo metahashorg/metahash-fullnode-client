@@ -6,6 +6,7 @@
 #include "../cpplib_open_ssl_decor/crypto.h"
 #include "../settings/settings.h"
 #include "../log/log.h"
+#include "../exception/except.h"
 #include "utils.h"
 
 using mh_count_t = uint64_t;
@@ -32,19 +33,19 @@ public:
         try
         {
             utils::time_duration dur(true, "execute handler");
-            T obj(session);
-            if (obj.prepare(params))
-                obj.execute();
-            return obj.result();
+            std::shared_ptr<T> obj = std::make_shared<T>(session);
+            if (obj->prepare(params))
+                obj->execute();
+            return obj->result();
         }
         catch (std::exception& ex)
         {
-            STREAM_LOG_ERR("Perform handler exception: " << ex.what())
+            STREAM_LOG_ERR(__PRETTY_FUNCTION__ << " exception: " << ex.what())
             return handler_result();
         }
         catch (...)
         {
-            STREAM_LOG_ERR("Perform handler unknown exception")
+            STREAM_LOG_ERR(__PRETTY_FUNCTION__ << " unhandled exception")
             return handler_result();
         }
     }

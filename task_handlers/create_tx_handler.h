@@ -1,10 +1,11 @@
 #pragma once
-#include "network_handler.h"
 
-class create_tx_handler : public base_send_tx_handler<create_tx_handler>
+#include "create_tx_base_handler.h"
+
+class create_tx_handler : public create_tx_base_handler<create_tx_handler>
 {
 public:
-    typedef base_send_tx_handler<create_tx_handler> base;
+    typedef create_tx_base_handler<create_tx_handler> base;
 
     create_tx_handler(http_session_ptr session): base(session) {}
     virtual ~create_tx_handler() override {}
@@ -15,6 +16,5 @@ public:
         return;
     }
 
-protected:
-    virtual bool get_nonce(mh_count_t& result) override;
+    virtual bool prepare_params() override;
 };

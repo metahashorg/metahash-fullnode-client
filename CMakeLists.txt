@@ -7,6 +7,7 @@ set (MH_CRYPT_OBJS "${MH_CRYPT_PATH}/crypto.o")
 
 add_executable(${PROJECT_NAME}
     main.cpp
+    exception/except.cpp
     settings/settings.cpp
     http_server.cpp
     http_json_rpc_request.cpp
@@ -17,6 +18,7 @@ add_executable(${PROJECT_NAME}
     task_handlers/task_handlers.h
     task_handlers/base_handler.cpp
     task_handlers/network_handler.cpp
+    task_handlers/create_tx_base_handler.cpp
     task_handlers/create_tx_handler.cpp
     task_handlers/send_tx_handler.cpp
     task_handlers/generate_handler.cpp

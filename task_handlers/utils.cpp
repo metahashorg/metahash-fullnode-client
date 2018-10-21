@@ -105,22 +105,42 @@ namespace utils
         }
     }
 
+    // Timer
+    Timer::~Timer()
+    {
+        stop();
+    }
+
     void Timer::start(const Interval& interval, const Handler& handler)
     {
         m_handler = handler;
-        m_thr = std::thread([&, interval]()
-        {
-            auto fut = m_promise.get_future();
-            if (fut.wait_for(interval) == std::future_status::timeout)
-                if (m_handler)
-                    m_handler();
-        });
-        m_thr.detach();
+        m_interval = interval;
+        run();
     }
 
     void Timer::stop()
     {
-        m_promise.set_value();
+        std::lock_guard<std::mutex> guard(m_locker);
+        m_handler = nullptr;
+    }
+
+    void Timer::run()
+    {
+        m_promise = std::promise<void>();
+        m_thr = std::thread([&]()
+        {
+            auto fut = m_promise.get_future();
+            if (fut.wait_for(m_interval) == std::future_status::timeout)
+            {
+                std::lock_guard<std::mutex> guard(m_locker);
+                if (m_handler)
+                {
+                    m_handler();
+                    this->run();
+                }
+            }
+        });
+        m_thr.detach();
     }
 
     // time_duration

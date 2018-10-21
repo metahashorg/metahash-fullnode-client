@@ -5,7 +5,7 @@
 #include "../http_json_rpc_request.h"
 
 template <class T>
-class base_network_handler : public base_handler<T>
+class base_network_handler : public base_handler<T>, public std::enable_shared_from_this<T>
 {
 public:
     base_network_handler(const std::string& host, http_session_ptr session): base_handler<T>(session)
@@ -17,8 +17,13 @@ public:
     virtual void execute() override;
 
 protected:
-    bool m_async_execute = {true};
-    std::shared_ptr<http_json_rpc_request> m_request;
+
+    // async callback
+    void on_complete(json_rpc_id id, http_json_rpc_request_ptr req, http_session_ptr session);
+
+protected:
+    bool                        m_async_execute = {true};
+    http_json_rpc_request_ptr   m_request;
 };
 
 #define DECL_NETWORK_HANDLER(cl)\
@@ -32,20 +37,20 @@ protected:
     };
 
 
-template <class T>
-class base_send_tx_handler : public base_network_handler<T>
-{
-public:
-    base_send_tx_handler(http_session_ptr session):
-        base_network_handler<T>(settings::server::proxy, session) {}
+//template <class T>
+//class base_send_tx_handler : public base_network_handler<T>
+//{
+//public:
+//    base_send_tx_handler(http_session_ptr session):
+//        base_network_handler<T>(settings::server::proxy, session) {}
 
-    virtual ~base_send_tx_handler() override { }
+//    virtual ~base_send_tx_handler() override { }
 
-    virtual bool prepare_params() override;
+//    virtual bool prepare_params() override;
 
-protected:
-    virtual bool get_nonce(mh_count_t& result) = 0;
+//protected:
+//    virtual bool get_nonce(mh_count_t& result) = 0;
 
-protected:
-    std::string m_address;
-};
+//protected:
+//    std::string m_address;
+//};

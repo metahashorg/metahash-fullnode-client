@@ -7,6 +7,22 @@
 namespace po = boost::program_options;
 namespace bs = boost::system;
 
+static std::unique_ptr<http_server> server;
+
+void input_handler()
+{
+    while (true)
+    {
+        std::string in;
+        std::cin >> in;
+        if (in.compare("stop") == 0)
+        {
+            server->stop();
+            break;
+        }
+    }
+}
+
 int main(int argc, char* argv[])
 {
     try
@@ -35,14 +51,18 @@ int main(int argc, char* argv[])
 
         settings::read(vm);
 
-        http_server srv(settings::service::port, settings::service::threads);
-        srv.run();
+        std::thread input_thr(input_handler);
+
+        server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
+        server->run();
+
+        input_thr.join();
 
         return EXIT_SUCCESS;
     }
     catch (const std::exception& e)
     {
-        logg::push_err(e.what());
+        STREAM_LOG_ERR(e.what());
         return EXIT_FAILURE;
     }
 }
