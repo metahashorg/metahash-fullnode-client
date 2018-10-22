@@ -33,12 +33,12 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
 
 http_json_rpc_request::~http_json_rpc_request()
 {
+    boost::system::error_code ec;
     if (m_socket.is_open())
     {
-        m_socket.shutdown(tcp::socket::shutdown_both);
-        m_socket.close();
+        m_socket.shutdown(tcp::socket::shutdown_both, ec);
+        m_socket.close(ec);
     }
-    boost::system::error_code ec;
     m_ssl_socket.shutdown(ec);
 }
 
@@ -55,6 +55,12 @@ void http_json_rpc_request::set_body(const std::string& body)
     beast::ostream(m_req.body())
         << body.c_str();
     m_req.set(http::field::content_length, m_req.body().size());
+
+    json_rpc_reader reader;
+    if (reader.parse(body))
+    {
+        m_result.set_id(reader.get_id());
+    }
 }
 
 bool http_json_rpc_request::error_handler(const boost::system::error_code& e)
@@ -113,6 +119,8 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
 
 void http_json_rpc_request::on_request_timeout()
 {
+    STREAM_LOG_ERR("Request timeout")
+
     m_connect_timer.stop();
 
     m_result.set_error(32001, "Request timeout");
@@ -141,6 +149,8 @@ void http_json_rpc_request::on_connect_timeout()
 
     boost::system::error_code ec;
     m_socket.cancel(ec);
+
+    m_connect_timer.run_once();
 }
 
 void http_json_rpc_request::on_connect(const boost::system::error_code& e, const tcp::endpoint& ep)

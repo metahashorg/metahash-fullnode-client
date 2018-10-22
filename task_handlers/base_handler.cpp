@@ -3,31 +3,31 @@
 template <class T>
 bool base_handler<T>::prepare(const std::string& params)
 {
-    if (!this->m_reader.parse(params))
+    BGN_TRY
     {
-        STREAM_LOG_DBG("Incorrect json " << params)
-        this->m_writer.set_error(-32701, "Parse error");
-        return false;
-    }
+        m_duration.start();
 
-    this->m_id = this->m_reader.get_id();
+        CHK_PRM(this->m_reader.parse(params), "Parse error");
 
-    const bool complete = this->prepare_params();
-    const bool pending = this->m_result.pending;
-    if (!complete && !pending)
-    {
-        // prepare_params must set an error
+        this->m_id = this->m_reader.get_id();
+        this->m_writer.set_id(this->m_id);
 
-        if (!this->m_writer.is_error())
+        const bool complete = this->prepare_params();
+        const bool pending = this->m_result.pending;
+        if (!complete && !pending)
         {
-            this->m_writer.reset();
-            this->m_writer.set_error(-32602, "Invalid params");
+            // prepare_params must set an error
+
+            if (!this->m_writer.is_error())
+            {
+                this->m_writer.reset();
+                this->m_writer.set_error(-32602, "Invalid params");
+            }
         }
+
+        STREAM_LOG_DBG("Prepared json (" << complete << pending << "):" << std::endl << this->m_writer.stringify())
+
+        return complete;
     }
-
-    this->m_writer.set_id(this->m_id);
-
-    STREAM_LOG_DBG("Prepared json (" << complete << pending << "):" << std::endl << this->m_writer.stringify())
-
-    return complete;
+    END_TRY_RET(false)
 }

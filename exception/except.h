@@ -26,32 +26,44 @@ protected:
 
 #define CHK_PRM(condition, message) \
     if (!(condition)) {\
-        throw invalid_param(message); }
+        std::ostringstream stream;\
+        stream << message;\
+        stream.flush();\
+        throw invalid_param(stream.str()); }
 
 #define BGN_TRY try
 
-#define END_TRY_RET(ret) \
+#define END_TRY_RET_PARAM(ret, param) \
     catch (invalid_param& ex)\
     {\
-        STREAM_LOG_ERR(ex.what())\
+        STREAM_LOG_ERR("Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__)\
         this->m_writer.reset();\
-        this->m_writer.set_error(-32603, ex.what());\
+        this->m_writer.set_error(-32666, ex.what());\
+        param;\
         return ret;\
     }\
     catch (std::exception& ex)\
     {\
         STREAM_LOG_ERR("Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__)\
         this->m_writer.reset();\
-        this->m_writer.set_error(-32603, ex.what());\
+        this->m_writer.set_error(-32666, ex.what());\
+        param;\
         return ret;\
     }\
     catch(...)\
     {\
         STREAM_LOG_ERR("Unhandled exception in func " << __PRETTY_FUNCTION__)\
         this->m_writer.reset();\
-        this->m_writer.set_error(-32603, "Unhandled exception");\
+        this->m_writer.set_error(-32666, "Unhandled exception");\
+        param;\
         return ret;\
     }
+
+#define END_TRY_RET(ret)\
+    END_TRY_RET_PARAM(ret, )
+
+#define END_TRY_PARAM(param)\
+    END_TRY_RET_PARAM(,param)
 
 #define END_TRY\
     END_TRY_RET()

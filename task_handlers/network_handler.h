@@ -31,26 +31,12 @@ protected:
     {\
     public:\
         typedef base_network_handler<cl> base;\
-        cl(http_session_ptr session): base(settings::server::tor, session) {}\
+        cl(http_session_ptr session): base(settings::server::tor, session)\
+        {\
+            std::stringstream ss;\
+            ss << __FUNCTION__;\
+            m_duration.set_message(ss.str());\
+        }\
         virtual ~cl() override {}\
         virtual bool prepare_params() override;\
     };
-
-
-//template <class T>
-//class base_send_tx_handler : public base_network_handler<T>
-//{
-//public:
-//    base_send_tx_handler(http_session_ptr session):
-//        base_network_handler<T>(settings::server::proxy, session) {}
-
-//    virtual ~base_send_tx_handler() override { }
-
-//    virtual bool prepare_params() override;
-
-//protected:
-//    virtual bool get_nonce(mh_count_t& result) = 0;
-
-//protected:
-//    std::string m_address;
-//};

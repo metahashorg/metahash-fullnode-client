@@ -25,14 +25,20 @@ class base_handler
     friend struct handler_result;
 
 public:
-    base_handler(http_session_ptr session): m_session(session) {}
-    virtual ~base_handler()	{}
+    base_handler(http_session_ptr session):
+        m_session(session),
+        m_duration(false)
+    {
+    }
+    virtual ~base_handler()
+    {
+        m_duration.stop();
+    }
 
     static handler_result perform(http_session_ptr session, const std::string& params)
     {
         try
         {
-            utils::time_duration dur(true, "execute handler");
             std::shared_ptr<T> obj = std::make_shared<T>(session);
             if (obj->prepare(params))
                 obj->execute();
@@ -63,11 +69,12 @@ protected:
     }
 
 protected:
-    json_rpc_id         m_id = { 0 };
-    handler_result      m_result;
-    json_rpc_reader     m_reader;
-    json_rpc_writer     m_writer;
-    http_session_ptr    m_session;
+    json_rpc_id             m_id = { 0 };
+    handler_result          m_result;
+    json_rpc_reader         m_reader;
+    json_rpc_writer         m_writer;
+    http_session_ptr        m_session;
+    utils::time_duration    m_duration;
 };
 
 #define DECL_BASE_HANDLER(cl)\
@@ -75,7 +82,12 @@ protected:
     {\
     public:\
         typedef base_handler<cl> base;\
-        cl(http_session_ptr session): base(session) {}\
+        cl(http_session_ptr session): base(session)\
+        {\
+            std::stringstream ss;\
+            ss << __FUNCTION__;\
+            m_duration.set_message(ss.str());\
+        }\
         virtual ~cl() override {}\
         virtual bool prepare_params() override;\
         virtual void execute() override;\

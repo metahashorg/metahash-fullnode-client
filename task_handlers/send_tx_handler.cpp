@@ -43,47 +43,57 @@ bool send_tx_handler::prepare_params()
 
 void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id)
 {
-    json_rpc_reader reader;
     json_rpc_writer writer;
-    writer.set_id(id);
+    BGN_TRY
+    {
+        json_rpc_reader reader;
+        writer.set_id(id);
 
-    if (!reader.parse(request->get_result()))
-    {
-        writer.set_error(-32605, "Invalid response json");
-    }
-    else
-    {
+        CHK_PRM(reader.parse(request->get_result()), "Invalid response json")
+
+        std::cout << reader.stringify();
+
         json_rpc_id _id = reader.get_id();
-        if (_id != 0 && _id != id)
+
+        CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
+
+        auto err = reader.get_error();
+        auto res = reader.get_result();
+
+        CHK_PRM(err || res, "No occur result or error")
+
+        bool success = false;
+        if (err)
         {
-            writer.set_error(-32605, "Returned id doesn't match");
+            writer.set_error(*err);
         }
-        else
+        else if (res)
         {
-            if (auto err = reader.get_error())
+            mh_count_t count_spent(0);
+            if (reader.get_value(*res, "count_spent", count_spent))
             {
-                writer.set_error(*err);
-            }
-            else if (auto res = reader.get_result())
-            {
-                mh_count_t count_spent(0);
-                if (reader.get_value(*res, "count_spent", count_spent))
-                {
-                    this->m_nonce = count_spent + 1;
-                }
-                else
-                {
-                    writer.set_error(-32605, "field spent count not found");
-                }
+                success = true;
+                this->m_nonce = count_spent + 1;
             }
             else
             {
-                writer.set_error(-32605, "No occur result or error");
+                writer.set_error(-32605, "field spent count not found");
             }
         }
+
+        if (success)
+        {
+            success = this->build_request();
+        }
+
+        if (success)
+        {
+            boost::asio::post(boost::bind(&send_tx_handler::execute, shared_from_this()));
+        }
+        else
+        {
+            boost::asio::post(boost::bind(&http_session::send_json, this->m_session, writer.stringify()));
+        }
     }
-
-    this->build_request();
-
-    boost::asio::post(boost::bind(&send_tx_handler::execute, shared_from_this()));
+    END_TRY_PARAM(boost::asio::post(boost::bind(&http_session::send_json, this->m_session, writer.stringify())))
 }

@@ -111,11 +111,12 @@ namespace utils
         stop();
     }
 
-    void Timer::start(const Interval& interval, const Handler& handler)
+    void Timer::start(const Interval& interval, const Handler& handler, bool immediately /*= true*/)
     {
         m_handler = handler;
         m_interval = interval;
-        run();
+        if (immediately)
+            run_once();
     }
 
     void Timer::stop()
@@ -124,7 +125,7 @@ namespace utils
         m_handler = nullptr;
     }
 
-    void Timer::run()
+    void Timer::run_once()
     {
         m_promise = std::promise<void>();
         m_thr = std::thread([&]()
@@ -134,10 +135,7 @@ namespace utils
             {
                 std::lock_guard<std::mutex> guard(m_locker);
                 if (m_handler)
-                {
                     m_handler();
-                    this->run();
-                }
             }
         });
         m_thr.detach();

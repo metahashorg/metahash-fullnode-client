@@ -10,22 +10,43 @@ bool get_block_by_number_handler::prepare_params()
         auto params = m_reader.get_params();
         CHK_PRM(params, "params field not found")
 
-        mh_count_t number(0);
-        CHK_PRM(m_reader.get_value(*params, "number", number), "number field not found")
+        auto jValue = this->m_reader.get("number", *params);
+        CHK_PRM(jValue, "number field not found")
 
+        std::string tmp;
+        CHK_PRM(json_utils::val2str(jValue, tmp), "number field incorrect format")
+        mh_count_t number = std::stoull(tmp);
         m_writer.add_param("number", number);
 
         uint32_t type(0);
-        if (m_reader.get_value(*params, "type", type))
+        jValue = this->m_reader.get("type", *params);
+        if (jValue)
+        {
+            std::string tmp;
+            CHK_PRM(json_utils::val2str(jValue, tmp), "type field incorrect format")
+            type = static_cast<uint32_t>(std::stoi(tmp));
             m_writer.add_param("type", type);
+        }
 
         mh_count_t countTxs(0);
-        if (m_reader.get_value(*params, "countTxs", countTxs))
+        jValue = this->m_reader.get("countTxs", *params);
+        if (jValue)
+        {
+            std::string tmp;
+            CHK_PRM(json_utils::val2str(jValue, tmp), "countTxs field incorrect format")
+            countTxs = std::stoull(tmp);
             m_writer.add_param("countTxs", countTxs);
+        }
 
         mh_count_t beginTx(0);
-        if (m_reader.get_value(*params, "beginTx", beginTx))
+        jValue = this->m_reader.get("beginTx", *params);
+        if (jValue)
+        {
+            std::string tmp;
+            CHK_PRM(json_utils::val2str(jValue, tmp), "beginTx field incorrect format")
+            beginTx = std::stoull(tmp);
             m_writer.add_param("beginTx", beginTx);
+        }
 
         return true;
     }

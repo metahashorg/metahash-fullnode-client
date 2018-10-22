@@ -176,9 +176,17 @@ rapidjson::Value& json_rpc_writer::get_value(rapidjson::Value& root, const std::
 
 void json_rpc_writer::reset()
 {
+    // save id, change must call set_id
+    rapidjson::Value id(rapidjson::kNullType);
+    if (m_doc.IsObject())
+    {
+        auto p = m_doc.FindMember("id");
+        if (p != m_doc.MemberEnd())
+            id = p->value;
+    }
     m_doc.SetObject();
     get_value(m_doc, "jsonrpc", rapidjson::kStringType) = json_rpc_ver;
-    get_value(m_doc, "id", rapidjson::kNullType).SetNull();
+    get_value(m_doc, "id", rapidjson::kNullType) = id;
 }
 
 bool json_rpc_writer::is_error() const

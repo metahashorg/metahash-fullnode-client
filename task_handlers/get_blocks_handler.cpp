@@ -11,12 +11,24 @@ bool get_blocks_handler::prepare_params()
         CHK_PRM(params, "params field not found")
 
         mh_count_t countBlocks(0);
-        if (m_reader.get_value(*params, "countBlocks", countBlocks))
+        auto jValue = this->m_reader.get("countBlocks", *params);
+        if (jValue)
+        {
+            std::string tmp;
+            CHK_PRM(json_utils::val2str(jValue, tmp), "countBlocks field incorrect format")
+            countBlocks = std::stoull(tmp);
             m_writer.add_param("countBlocks", countBlocks);
+        }
 
         mh_count_t beginBlock(0);
-        if (m_reader.get_value(*params, "beginBlock", beginBlock))
+        jValue = this->m_reader.get("beginBlock", *params);
+        if (jValue)
+        {
+            std::string tmp;
+            CHK_PRM(json_utils::val2str(jValue, tmp), "beginBlock field incorrect format")
+            beginBlock = std::stoull(tmp);
             m_writer.add_param("beginBlock", beginBlock);
+        }
 
         return true;
     }

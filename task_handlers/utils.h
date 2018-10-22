@@ -58,11 +58,10 @@ namespace utils
         Timer() {};
         ~Timer();
 
-        void start(const Interval& interval, const Handler& handler);
+        void start(const Interval& interval, const Handler& handler, bool immediately = true);
         void stop();
 
-    protected:
-        void run();
+        void run_once();
 
     private:
         std::promise<void>  m_promise;
@@ -81,6 +80,8 @@ namespace utils
 
         void start();
         void stop();
+
+        void set_message(const std::string& msg) { m_msg = msg; }
 
     protected:
         bool                        m_run;

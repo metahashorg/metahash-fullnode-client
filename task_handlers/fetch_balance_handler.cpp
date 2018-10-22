@@ -11,7 +11,9 @@ bool fetch_balance_handler::prepare_params()
         CHK_PRM(params, "params field not found")
 
         std::string addr;
-        CHK_PRM(m_reader.get_value(*params, "address", addr) && !addr.empty(), "address field not found")
+        CHK_PRM(m_reader.get_value(*params, "address", addr), "address field not found")
+        CHK_PRM(!addr.empty(), "address is empty")
+        CHK_PRM(addr.compare(0, 2, "0x") == 0, "address field incorrect format")
 
         m_writer.add_param("address", addr.c_str());
 
