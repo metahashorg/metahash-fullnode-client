@@ -54,6 +54,7 @@ void http_session::process_request()
 
     std::string json;
     json_rpc_reader reader;
+    json_rpc_writer writer;
     if (reader.parse(m_req.body()))
     {
         auto it = map_handlers.find(reader.get_method());
@@ -61,7 +62,7 @@ void http_session::process_request()
         {
             STREAM_LOG_DBG("Incorrect service method " << reader.get_method())
 
-            json_rpc_writer writer;
+            writer.set_id(reader.get_id());
             writer.set_error(-32601, "Method not found");
             json = writer.stringify();
         }
@@ -78,7 +79,6 @@ void http_session::process_request()
     {
         STREAM_LOG_DBG("Incorrect json " << m_req.body())
 
-        json_rpc_writer writer;
         writer.set_error(-32700, "Parse error");
         json = writer.stringify();
     }
