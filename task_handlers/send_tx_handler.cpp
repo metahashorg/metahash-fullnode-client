@@ -97,3 +97,26 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc
     }
     END_TRY_PARAM(boost::asio::post(boost::bind(&http_session::send_json, this->m_session, writer.stringify())))
 }
+
+void send_tx_handler::processResponse(json_rpc_id id, http_json_rpc_request_ptr req) {
+    json_rpc_reader reader;
+    
+    CHK_PRM(reader.parse(req->get_result()), "Invalid response json")
+    
+    json_rpc_id _id = reader.get_id();
+    
+    //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
+    
+    auto err = reader.get_error();
+    auto res = reader.get_result();
+    auto params = reader.get_params();
+    
+    CHK_PRM(err || res, "No occur result or error")
+    
+    if (err) {
+        this->m_writer.set_error(*err);
+    } else {
+        CHK_PRM(params->IsString(), "params field not found");
+        this->m_writer.set_result(*params);
+    }
+}

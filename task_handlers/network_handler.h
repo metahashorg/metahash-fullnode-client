@@ -22,6 +22,10 @@ protected:
     void on_complete(json_rpc_id id, http_json_rpc_request_ptr req, http_session_ptr session);
 
 protected:
+    
+    virtual void processResponse(json_rpc_id id, http_json_rpc_request_ptr req);
+    
+protected:
     bool                        m_async_execute = {true};
     http_json_rpc_request_ptr   m_request;
 };

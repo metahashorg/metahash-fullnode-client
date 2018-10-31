@@ -13,4 +13,8 @@ public:
 
 protected:
     void on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id);
+    
+protected:
+    
+    void processResponse(json_rpc_id id, http_json_rpc_request_ptr req) override;
 };
