@@ -99,7 +99,7 @@ public:
 
     void add_value(const std::string& name, rapidjson::Value& value)
     {
-        get_value(m_doc, name, rapidjson::kNullType) = value;
+        get_value(m_doc, name, rapidjson::kNullType).CopyFrom(value, m_doc.GetAllocator());
     }
     
     rapidjson::Value* get_params();

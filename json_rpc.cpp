@@ -126,7 +126,7 @@ void json_rpc_writer::set_method(const std::string& value)
 
 void json_rpc_writer::set_result(rapidjson::Value& value)
 {
-    get_value(m_doc, "result", value.GetType()) = value;
+    get_value(m_doc, "result", value.GetType()).CopyFrom(value, m_doc.GetAllocator());
 }
 
 void json_rpc_writer::set_error(int code, std::string message)
@@ -143,7 +143,7 @@ void json_rpc_writer::set_error(int code, std::string message)
 
 void json_rpc_writer::set_error(rapidjson::Value& value)
 {
-    get_value(m_doc, "error", value.GetType()) = value;
+    get_value(m_doc, "error", value.GetType()).CopyFrom(value, m_doc.GetAllocator());
 }
 
 void json_rpc_writer::set_id(json_rpc_id value)
