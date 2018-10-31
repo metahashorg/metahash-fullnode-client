@@ -46,7 +46,7 @@ namespace utils
         host = tmp;
     }
 
-    bool gen_sign(std::string& result, const std::string& prv_key, const char* fmt, ...)
+    bool gen_sign(std::string &transaction, std::string& result, const std::string& prv_key, const char* fmt, ...)
     {
         try
         {
@@ -94,6 +94,7 @@ namespace utils
             CRYPTO_sign_data(sign, prv_key, data);
 
             result = bin2hex(sign);
+            transaction = bin2hex(data);
             return true;
         }
         catch (std::exception& e)

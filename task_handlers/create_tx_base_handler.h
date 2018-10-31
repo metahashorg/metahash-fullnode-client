@@ -49,7 +49,7 @@ protected:
             }
 
             this->m_reader.get_value(*params, "data", this->m_data);
-
+            
             CHK_PRM(storage::keys::peek(this->m_address, this->m_keys), "failed on get keys")
 
             return true;
@@ -62,10 +62,12 @@ protected:
         BGN_TRY
         {
             std::string sign;
-            CHK_PRM(utils::gen_sign(sign, this->m_keys.prv_key, "xDDDd", this->m_to.c_str(), this->m_value, this->m_fee, this->m_nonce, this->m_data.size()), "failed on gen sign")
+            std::string transaction;
+            CHK_PRM(utils::gen_sign(transaction, sign, this->m_keys.prv_key, "xDDDdx", this->m_to.c_str(), this->m_value, this->m_fee, this->m_nonce, this->m_data.size() / 2, this->m_data.c_str()), "failed on gen sign")
 
             this->m_writer.reset();
             this->m_writer.set_method("mhc_send");
+            this->m_writer.add_param("transaction", transaction.c_str());
             this->m_writer.add_param("to", this->m_to.c_str());
             this->m_writer.add_param("value", boost::lexical_cast<std::string>(this->m_value));
             this->m_writer.add_param("fee", !this->m_fee ? "" : boost::lexical_cast<std::string>(this->m_fee));

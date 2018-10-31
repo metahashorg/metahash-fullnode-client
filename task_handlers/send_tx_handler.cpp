@@ -55,7 +55,7 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc
 
         json_rpc_id _id = reader.get_id();
 
-        CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
+        //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
 
         auto err = reader.get_error();
         auto res = reader.get_result();
