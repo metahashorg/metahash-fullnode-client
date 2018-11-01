@@ -1,5 +1,7 @@
 # metahash_crypt_example_c
 
+For more information about Docker please read Wiki of this repository
+
 ### Dependices:
 ```
 boost 1.67
