@@ -1,0 +1,9 @@
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+build/
+.kdev4/
+*.kdev4
+test*.txt
+wallets/
