@@ -26,8 +26,8 @@ http_server::~http_server()
 
 void http_server::run()
 {
-    asio::signal_set signals(m_io_ctx, SIGINT, SIGTERM, SIGABRT);
-    signals.async_wait(signal_handler);
+    //asio::signal_set signals(m_io_ctx, SIGINT, SIGTERM, SIGABRT);
+    //signals.async_wait(signal_handler);
 
     tcp::acceptor acceptor(m_io_ctx, m_ep, true);
     accept(acceptor);
