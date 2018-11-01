@@ -4,17 +4,14 @@
 #include "settings/settings.h"
 #include "log/log.h"
 
-void signal_handler(const boost::system::error_code& e, int signal_number)
-{
-    if (!e)
-    {
-        STREAM_LOG_ERR("Signal occurred (" << signal_number << "): " << e.message())
-    }
-}
+#include <iostream>
+
+#include "common/stopProgram.h"
 
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
     : m_thread_count(thread_count)
     , m_io_ctx(m_thread_count)
+    , checkTimeoutTimer(m_io_ctx)
 {
     m_ep.port(port);
 }
@@ -24,14 +21,23 @@ http_server::~http_server()
 
 }
 
+void http_server::checkTimeout() {
+    try {
+        checkStopSignal();
+        checkTimeoutTimer.expires_after(seconds(1));
+        checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
+    } catch (const StopException &e) {
+        stop();
+    }
+}
+
 void http_server::run()
 {
-    //asio::signal_set signals(m_io_ctx, SIGINT, SIGTERM, SIGABRT);
-    //signals.async_wait(signal_handler);
-
     tcp::acceptor acceptor(m_io_ctx, m_ep, true);
     accept(acceptor);
 
+    checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
+    
     std::vector<std::unique_ptr<std::thread> > threads;
     for (int i = 0; i < m_thread_count; ++i)
     {

@@ -4,27 +4,16 @@
 #include "settings/settings.h"
 #include "log/log.h"
 
+#include "common/stopProgram.h"
+
 namespace po = boost::program_options;
 namespace bs = boost::system;
 
 static std::unique_ptr<http_server> server;
 
-void input_handler()
-{
-    while (true)
-    {
-        std::string in;
-        std::cin >> in;
-        if (in.compare("stop") == 0)
-        {
-            server->stop();
-            break;
-        }
-    }
-}
-
 int main(int argc, char* argv[])
 {
+    initializeStopProgram();
     try
     {
         settings::read();
@@ -51,13 +40,8 @@ int main(int argc, char* argv[])
 
         settings::read(vm);
 
-        std::thread input_thr(input_handler);
-
         server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
         server->run();
-
-        input_thr.join();
-
         return EXIT_SUCCESS;
     }
     catch (const std::exception& e)

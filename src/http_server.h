@@ -21,8 +21,16 @@ protected:
 
     bool check_access(const tcp::endpoint& ep);
 
+private:
+    
+    void checkTimeout();
+    
 protected:
     int                 m_thread_count;
     asio::io_context    m_io_ctx;
     tcp::endpoint       m_ep;
+    
+private:
+    
+    boost::asio::system_timer checkTimeoutTimer;
 };
