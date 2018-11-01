@@ -11,13 +11,4 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include(CTest)
-enable_testing()
-
-find_package(GTest REQUIRED)
-include_directories(SYSTEM ${GTEST_INCLUDE_DIR})
-
-find_package(GMock REQUIRED)
-include_directories(SYSTEM ${GMOCK_INCLUDE_DIRS})
-
 add_subdirectory(src)
