@@ -1,7 +1,3 @@
-set (MH_CRYPT_PATH "cpplib_open_ssl_decor")
-#set (MH_CRYPT_OBJS "${MH_CRYPT_PATH}/crypto.o")
-set (MH_CRYPT_OBJS "${MH_CRYPT_PATH}/crypto.cpp")
-
 set (BOOST_LIBS "/home/user/boost_1_68_0/local")
 
 add_executable(${PROJECT_NAME}
@@ -32,14 +28,14 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_last_txs_handler.cpp
     task_handlers/get_count_blocks_handler.cpp
     wallet_storage/wallet_storage.cpp
-    ${MH_CRYPT_OBJS})
+    cpplib_open_ssl_decor/crypto.cpp
+    )
 
 set(CMAKE_CXX_FLAGS "-std=c++14")
 
 include_directories(
     #${Boost_LIBRARY_DIRS} /
     ${OPENSSL_INCLUDE_DIRS} 
-    ${MH_CRYPT_PATH}
     ${BOOST_LIBS}/include/
     )
 
