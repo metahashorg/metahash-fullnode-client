@@ -49,7 +49,8 @@ link_directories(${PROJECT_NAME} ${Boost_LIBRARY_DIRS})
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 
 find_library(COMMON_LIB common HINTS common/)
-target_link_libraries(${PROJECT_NAME} ${COMMON_LIB} log4cpp.a)
+find_library(LOG4CPP log4cpp HINTS common/)
+target_link_libraries(${PROJECT_NAME} ${COMMON_LIB} ${LOG4CPP})
 
 find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
