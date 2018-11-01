@@ -29,7 +29,6 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_count_blocks_handler.cpp
     wallet_storage/wallet_storage.cpp
     cpplib_open_ssl_decor/crypto.cpp
-    common/stopProgram.cpp
     )
 
 set(CMAKE_CXX_FLAGS "-std=c++14")
@@ -48,6 +47,9 @@ target_link_libraries(${PROJECT_NAME} "${BOOST_LIBS}/lib/libboost_filesystem.a" 
 
 link_directories(${PROJECT_NAME} ${Boost_LIBRARY_DIRS})
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
+
+find_library(COMMON_LIB common HINTS common/)
+target_link_libraries(${PROJECT_NAME} ${COMMON_LIB} log4cpp.a)
 
 find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
