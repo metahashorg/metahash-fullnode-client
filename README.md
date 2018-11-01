@@ -6,7 +6,6 @@ For more information about Docker please read Wiki of this repository.
 ```
 boost 1.67
 rapidjson
-cpp_lib_open_ssl_decor
 ```
 
 ### Requests:
