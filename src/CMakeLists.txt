@@ -32,6 +32,8 @@ add_executable(${PROJECT_NAME}
     
     SyncSingleton.cpp
     
+    task_handlers/task_handlers.cpp
+    
     task_handlers/sync_handler.cpp
     task_handlers/fetch_balance_handler_sync.cpp
     task_handlers/fetch_history_handler_sync.cpp

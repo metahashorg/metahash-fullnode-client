@@ -4,6 +4,19 @@
 #include "../wallet_storage/wallet_storage.h"
 #include "../log/log.h"
 
+#include "generate_handler.h"
+#include "fetch_balance_handler.h"
+#include "fetch_history_handler.h"
+#include "get_block_by_hash_handler.h"
+#include "get_block_by_number_handler.h"
+#include "get_blocks_handler.h"
+#include "get_count_blocks_handler.h"
+#include "get_dump_block_by_hash.h"
+#include "get_dump_block_by_number.h"
+#include "get_tx_handler.h"
+#include "get_last_txs_handler.h"
+#include "send_tx_handler_sync.h"
+
 template <class T>
 void base_network_handler<T>::execute()
 {
@@ -72,3 +85,17 @@ void base_network_handler<T>::on_complete(json_rpc_id id, http_json_rpc_request_
     }
     END_TRY_PARAM(boost::asio::post(boost::bind(&http_session::send_json, session, this->m_writer.stringify())))
 }
+
+template class base_network_handler<create_tx_handler>;
+template class base_network_handler<send_tx_handler>;
+template class base_network_handler<send_tx_handler_sync>;
+template class base_network_handler<fetch_balance_handler>;
+template class base_network_handler<fetch_history_handler>;
+template class base_network_handler<get_dump_block_by_hash>;
+template class base_network_handler<get_dump_block_by_number>;
+template class base_network_handler<get_block_by_hash_handler>;
+template class base_network_handler<get_block_by_number_handler>;
+template class base_network_handler<get_tx_handler>;
+template class base_network_handler<get_blocks_handler>;
+template class base_network_handler<get_count_blocks_handler>;
+template class base_network_handler<get_last_txs_handler>;
