@@ -29,6 +29,10 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_count_blocks_handler.cpp
     wallet_storage/wallet_storage.cpp
     cpplib_open_ssl_decor/crypto.cpp
+    
+    SyncSingleton.cpp
+    
+    task_handlers/sync_handler.cpp
     )
 
 include_directories(

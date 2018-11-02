@@ -7,14 +7,21 @@
 
 #include "common/stopProgram.h"
 #include "common/log.h"
-#include "sync/synchronize_blockchain.h"
 #include "sync/Modules.h"
 #include "sync/P2P_Ips.h"
+
+#include "SyncSingleton.h"
 
 namespace po = boost::program_options;
 namespace bs = boost::system;
 
 static std::unique_ptr<http_server> server;
+
+void runServer() {
+    sleep(1s);
+    server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
+    server->run();
+};
 
 int main(int argc, char* argv[])
 {
@@ -56,17 +63,19 @@ int main(int argc, char* argv[])
         const std::vector<std::string> serverIps = {settings::service::torrentServer};
         std::unique_ptr<P2P> p2p = std::make_unique<P2P_Ips>(serverIps, 2);
         
-        Sync sync(
+        syncSingleton() = std::make_unique<Sync>(
             settings::service::blocksFolder, 
             Sync::LevelDbOptions(8, true, true, settings::service::leveldbFolder, 100),
             Sync::CachesOptions(0, 1, 100),
             p2p.get(), false, settings::service::validateBlocks
         );
         
-        sync.synchronize(2, true);
+        Thread runServerThread(runServer);
         
-        server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
-        server->run();
+        syncSingleton()->synchronize(2, true);
+        
+        runServerThread.join();
+        
         return EXIT_SUCCESS;
     }
     catch (const std::exception& e)
