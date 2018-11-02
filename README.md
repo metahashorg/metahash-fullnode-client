@@ -4,7 +4,7 @@ Developers and community enthusiast are advised to read the [Wiki page](https://
 
 Besides, for your convenience you are free to download an already built docker container, see [releases](https://github.com/metahashorg/crypt_example_c/releases) of this repository for more details.
 
-### Dependices:
+### Dependencies:
 ```
 boost 1.67
 rapidjson
