@@ -8,21 +8,21 @@
 #include "sync_handler.h"
 #include "../log/log.h"
 
+#include "generate_handler.h"
+#include "fetch_balance_handler.h"
+#include "fetch_history_handler.h"
+#include "get_block_by_hash_handler.h"
+#include "get_block_by_number_handler.h"
+#include "get_blocks_handler.h"
+#include "get_count_blocks_handler.h"
+#include "get_dump_block_by_hash.h"
+#include "get_dump_block_by_number.h"
+#include "get_tx_handler.h"
+#include "get_last_txs_handler.h"
+
 #include "fetch_balance_handler_sync.h"
 #include "fetch_history_handler_sync.h"
 #include "send_tx_handler_sync.h"
-
-DECL_BASE_HANDLER(generate_handler)
-DECL_NETWORK_HANDLER(get_count_blocks_handler)
-DECL_NETWORK_HANDLER(get_last_txs_handler)
-DECL_NETWORK_HANDLER(get_block_by_hash_handler)
-DECL_NETWORK_HANDLER(get_block_by_number_handler)
-DECL_NETWORK_HANDLER(get_blocks_handler)
-DECL_NETWORK_HANDLER(get_dump_block_by_number)
-DECL_NETWORK_HANDLER(get_dump_block_by_hash)
-DECL_NETWORK_HANDLER(get_tx_handler)
-DECL_NETWORK_HANDLER(fetch_balance_handler)
-DECL_NETWORK_HANDLER(fetch_history_handler)
 
 // MAP OF HANDLERS
 

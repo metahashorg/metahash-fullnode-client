@@ -29,18 +29,3 @@ protected:
     bool                        m_async_execute = {true};
     http_json_rpc_request_ptr   m_request;
 };
-
-#define DECL_NETWORK_HANDLER(cl)\
-    class cl : public base_network_handler<cl>\
-    {\
-    public:\
-        typedef base_network_handler<cl> base;\
-        cl(http_session_ptr session): base(settings::server::tor, session)\
-        {\
-            std::stringstream ss;\
-            ss << __FUNCTION__;\
-            m_duration.set_message(ss.str());\
-        }\
-        virtual ~cl() override {}\
-        virtual bool prepare_params() override;\
-    };

@@ -1,6 +1,5 @@
-#include "task_handlers.h"
+#include "get_dump_block_by_number.h"
 
-// get_dump_block_by_number
 bool get_dump_block_by_number::prepare_params()
 {
     BGN_TRY

@@ -1,6 +1,5 @@
-#include "task_handlers.h"
+#include "get_tx_handler.h"
 
-// get_tx_handler
 bool get_tx_handler::prepare_params()
 {
     BGN_TRY

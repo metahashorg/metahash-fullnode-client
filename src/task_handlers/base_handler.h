@@ -76,19 +76,3 @@ protected:
     http_session_ptr        m_session;
     utils::time_duration    m_duration;
 };
-
-#define DECL_BASE_HANDLER(cl)\
-    class cl : public base_handler<cl>\
-    {\
-    public:\
-        typedef base_handler<cl> base;\
-        cl(http_session_ptr session): base(session)\
-        {\
-            std::stringstream ss;\
-            ss << __FUNCTION__;\
-            m_duration.set_message(ss.str());\
-        }\
-        virtual ~cl() override {}\
-        virtual bool prepare_params() override;\
-        virtual void execute() override;\
-    };

@@ -1,6 +1,5 @@
-#include "task_handlers.h"
+#include "fetch_history_handler.h"
 
-// fetch_history_handler
 bool fetch_history_handler::prepare_params()
 {
     BGN_TRY

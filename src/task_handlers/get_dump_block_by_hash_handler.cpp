@@ -1,6 +1,5 @@
-#include "task_handlers.h"
+#include "get_dump_block_by_hash.h"
 
-// get_dump_block_by_hash
 bool get_dump_block_by_hash::prepare_params()
 {
     BGN_TRY

@@ -1,6 +1,5 @@
-#include "task_handlers.h"
+#include "fetch_balance_handler.h"
 
-// fetch_balance_handler
 bool fetch_balance_handler::prepare_params()
 {
     BGN_TRY
