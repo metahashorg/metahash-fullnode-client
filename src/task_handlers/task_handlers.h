@@ -9,6 +9,8 @@
 #include "../log/log.h"
 
 #include "fetch_balance_handler_sync.h"
+#include "fetch_history_handler_sync.h"
+#include "send_tx_handler_sync.h"
 
 DECL_BASE_HANDLER(generate_handler)
 DECL_NETWORK_HANDLER(get_count_blocks_handler)
@@ -42,5 +44,9 @@ static const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> ma
     { std::pair<std::string, UseLocalDatabase>("fetch-balance", false),				fetch_balance_handler::perform },
     { std::pair<std::string, UseLocalDatabase>("fetch-history", false),				fetch_history_handler::perform },
     
-    { std::pair<std::string, UseLocalDatabase>("fetch-balance", true),				fetch_balance_handler_sync::perform }
+    { std::pair<std::string, UseLocalDatabase>("generate", true),					generate_handler::perform },
+    { std::pair<std::string, UseLocalDatabase>("create-tx", true),					create_tx_handler::perform },
+    { std::pair<std::string, UseLocalDatabase>("fetch-balance", true),				fetch_balance_handler_sync::perform },
+    { std::pair<std::string, UseLocalDatabase>("fetch-history", true),				fetch_history_handler_sync::perform },
+    { std::pair<std::string, UseLocalDatabase>("send-tx", true),					send_tx_handler_sync::perform }
 };

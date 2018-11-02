@@ -10,8 +10,9 @@ public:
     virtual ~send_tx_handler() override {}
 
     virtual bool prepare_params() override;
-
+    
 protected:
+    
     void on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id);
     
 protected:

@@ -34,6 +34,8 @@ add_executable(${PROJECT_NAME}
     
     task_handlers/sync_handler.cpp
     task_handlers/fetch_balance_handler_sync.cpp
+    task_handlers/fetch_history_handler_sync.cpp
+    task_handlers/send_tx_handler_sync.cpp
     
     generate_json.cpp
     )
@@ -43,6 +45,8 @@ include_directories(
     ${OPENSSL_INCLUDE_DIRS} 
     ${BOOST_LIBS}/include/
     common/
+    sync/
+    ./
     )
 
 find_package(Threads)
@@ -66,5 +70,5 @@ target_link_libraries(${PROJECT_NAME} stdc++fs.a curl)
 find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
 include_directories(${OPENSSL_INCLUDE_DIR})
-set (CMAKE_CXX_FLAGS "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -g -fsanitize=address -fsanitize=undefined -fsanitize=leak -fstack-protector -fuse-ld=gold -Ofast")
+set (CMAKE_CXX_FLAGS "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -fsanitize=address -fsanitize=undefined -fsanitize=leak -fstack-protector -fuse-ld=gold -Ofast")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/usr/local/lib/libcrypto.so /usr/local/lib/libssl.so")
