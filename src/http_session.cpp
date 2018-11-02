@@ -1,6 +1,7 @@
 #include "http_session.h"
 #include "task_handlers/task_handlers.h"
 #include "json_rpc.h"
+#include "settings/settings.h"
 
 http_session::http_session(tcp::socket&& socket) :
     m_socket(std::move(socket))
@@ -57,7 +58,7 @@ void http_session::process_request()
     json_rpc_writer writer;
     if (reader.parse(m_req.body()))
     {
-        auto it = map_handlers.find(reader.get_method());
+        auto it = map_handlers.find(std::make_pair(reader.get_method(), settings::service::useLocalDatabase));
         if (it == map_handlers.end())
         {
             STREAM_LOG_DBG("Incorrect service method " << reader.get_method())

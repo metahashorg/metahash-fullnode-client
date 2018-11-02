@@ -33,6 +33,9 @@ add_executable(${PROJECT_NAME}
     SyncSingleton.cpp
     
     task_handlers/sync_handler.cpp
+    task_handlers/fetch_balance_handler_sync.cpp
+    
+    generate_json.cpp
     )
 
 include_directories(

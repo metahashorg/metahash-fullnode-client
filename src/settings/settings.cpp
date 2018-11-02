@@ -23,6 +23,7 @@ namespace settings
     std::string service::leveldbFolder = "leveldb/";
     std::string service::blocksFolder = "blocks/";
     bool service::validateBlocks = false;
+    bool service::useLocalDatabase = true;
     
     // server
     std::string server::tor     = {"tor.net-dev.metahash.org:5795"};
