@@ -64,16 +64,20 @@ int main(int argc, char* argv[])
         const std::vector<std::string> serverIps = {settings::service::torrentServer};
         std::unique_ptr<P2P> p2p = std::make_unique<P2P_Ips>(serverIps, 2);
         
-        syncSingleton() = std::make_unique<Sync>(
-            settings::service::blocksFolder, 
-            Sync::LevelDbOptions(8, true, true, settings::service::leveldbFolder, 100),
-            Sync::CachesOptions(0, 1, 100),
-            p2p.get(), false, settings::service::validateBlocks
-        );
+        if (settings::service::useLocalDatabase) {
+            syncSingleton() = std::make_unique<Sync>(
+                settings::service::blocksFolder, 
+                Sync::LevelDbOptions(8, true, true, settings::service::leveldbFolder, 100),
+                Sync::CachesOptions(0, 1, 100),
+                p2p.get(), false, settings::service::validateBlocks
+            );
+        }
         
         Thread runServerThread(runServer);
         
-        syncSingleton()->synchronize(2, true);
+        if (settings::service::useLocalDatabase) {
+            syncSingleton()->synchronize(2, true);
+        }
         
         runServerThread.join();
         
