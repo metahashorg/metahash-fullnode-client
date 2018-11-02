@@ -19,7 +19,11 @@ namespace settings
     unsigned short service::port = {9999};
     int service::threads = {4};
     std::vector<std::string> service::access;
-
+    std::string service::torrentServer = "167.99.242.0:5795";
+    std::string service::leveldbFolder = "leveldb/";
+    std::string service::blocksFolder = "blocks/";
+    bool service::validateBlocks = false;
+    
     // server
     std::string server::tor     = {"tor.net-dev.metahash.org:5795"};
     std::string server::proxy   = {"proxy.net-dev.metahash.org:9999"};
@@ -86,5 +90,17 @@ namespace settings
 
         if (vm.count("storage"))
             settings::system::wallet_stotage = vm["storage"].as<std::string>();
+        
+        if (vm.count("torrent_server"))
+            settings::service::torrentServer = vm["torrent_server"].as<std::string>();
+        
+        if (vm.count("leveldb_folder"))
+            settings::service::leveldbFolder = vm["leveldb_folder"].as<std::string>();
+        
+        if (vm.count("blocks_folder"))
+            settings::service::blocksFolder = vm["blocks_folder"].as<std::string>();
+        
+        if (vm.count("validate_blocks"))
+            settings::service::validateBlocks = vm["validate_blocks"].as<bool>();
     }
 }

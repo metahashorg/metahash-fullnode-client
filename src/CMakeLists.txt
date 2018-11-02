@@ -35,6 +35,7 @@ include_directories(
     #${Boost_LIBRARY_DIRS} /
     ${OPENSSL_INCLUDE_DIRS} 
     ${BOOST_LIBS}/include/
+    common/
     )
 
 find_package(Threads)
@@ -52,8 +53,8 @@ find_library(SYNC torrent_node_lib HINTS sync/)
 find_library(LEVELDB NAMES libleveldb.a HINTS sync/)
 find_library(LEVELDB_SNAPPY NAMES libsnappy.a HINTS sync/)
 find_library(LEVELDB_MEMENV NAMES libmemenv.a HINTS sync/)
-target_link_libraries(${PROJECT_NAME} ${COMMON_LIB} ${LOG4CPP} ${SYNC} ${LEVELDB} ${LEVELDB_SNAPPY} ${LEVELDB_MEMENV})
-target_link_libraries(${PROJECT_NAME} stdc++fs.a)
+target_link_libraries(${PROJECT_NAME} ${SYNC} ${COMMON_LIB} ${LEVELDB} ${LEVELDB_SNAPPY} ${LEVELDB_MEMENV} ${LOG4CPP})
+target_link_libraries(${PROJECT_NAME} stdc++fs.a curl)
 
 find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
