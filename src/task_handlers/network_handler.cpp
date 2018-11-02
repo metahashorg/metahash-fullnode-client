@@ -34,11 +34,7 @@ void base_network_handler::execute()
     END_TRY
 }
 
-void base_network_handler::processResponse(json_rpc_id id, http_json_rpc_request_ptr req) {
-    json_rpc_reader reader;
-   
-    CHK_PRM(reader.parse(req->get_result()), "Invalid response json")
-    
+void base_network_handler::processResponse(json_rpc_id id, json_rpc_reader &reader) {
     json_rpc_id _id = reader.get_id();
     
     //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
@@ -71,7 +67,11 @@ void base_network_handler::on_complete(json_rpc_id id, http_json_rpc_request_ptr
     {
         this->m_writer.reset();
         
-        processResponse(id, req);
+        json_rpc_reader reader;
+        
+        CHK_PRM(reader.parse(req->get_result()), "Invalid response json")
+                
+        processResponse(id, reader);
 
         boost::asio::post(boost::bind(&http_session::send_json, session, this->m_writer.stringify()));
     }

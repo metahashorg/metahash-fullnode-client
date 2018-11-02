@@ -21,7 +21,7 @@ protected:
 
 protected:
     
-    virtual void processResponse(json_rpc_id id, http_json_rpc_request_ptr req);
+    virtual void processResponse(json_rpc_id id, json_rpc_reader &reader);
     
 protected:
     bool                        m_async_execute = {true};

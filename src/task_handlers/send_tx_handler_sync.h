@@ -15,5 +15,5 @@ protected:
     
 protected:
     
-    void processResponse(json_rpc_id id, http_json_rpc_request_ptr req) override;
+    void processResponse(json_rpc_id id, json_rpc_reader &reader) override;
 };

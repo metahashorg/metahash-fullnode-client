@@ -2,7 +2,6 @@
 
 #include "../SyncSingleton.h"
 #include "../sync/BlockInfo.h"
-#include "http_json_rpc_request.h"
 
 bool send_tx_handler_sync::prepare_params()
 {
@@ -34,11 +33,7 @@ bool send_tx_handler_sync::prepare_params()
     END_TRY_RET(false)
 }
 
-void send_tx_handler_sync::processResponse(json_rpc_id id, http_json_rpc_request_ptr req) {
-    json_rpc_reader reader;
-    
-    CHK_PRM(reader.parse(req->get_result()), "Invalid response json")
-    
+void send_tx_handler_sync::processResponse(json_rpc_id id, json_rpc_reader &reader) {    
     json_rpc_id _id = reader.get_id();
     
     //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
