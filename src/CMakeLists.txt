@@ -31,8 +31,6 @@ add_executable(${PROJECT_NAME}
     cpplib_open_ssl_decor/crypto.cpp
     )
 
-set(CMAKE_CXX_FLAGS "-std=c++14")
-
 include_directories(
     #${Boost_LIBRARY_DIRS} /
     ${OPENSSL_INCLUDE_DIRS} 
@@ -50,9 +48,14 @@ target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 
 find_library(COMMON_LIB common HINTS common/)
 find_library(LOG4CPP log4cpp HINTS common/)
-target_link_libraries(${PROJECT_NAME} ${COMMON_LIB} ${LOG4CPP})
+find_library(SYNC torrent_node_lib HINTS sync/)
+find_library(LEVELDB NAMES libleveldb.a HINTS sync/)
+find_library(LEVELDB_SNAPPY NAMES libsnappy.a HINTS sync/)
+find_library(LEVELDB_MEMENV NAMES libmemenv.a HINTS sync/)
+target_link_libraries(${PROJECT_NAME} ${COMMON_LIB} ${LOG4CPP} ${SYNC} ${LEVELDB} ${LEVELDB_SNAPPY} ${LEVELDB_MEMENV})
+target_link_libraries(${PROJECT_NAME} stdc++fs.a)
 
 find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
 include_directories(${OPENSSL_INCLUDE_DIR})
-set (CMAKE_CXX_FLAGS "/usr/local/lib/libcrypto.so /usr/local/lib/libssl.so")
+set (CMAKE_CXX_FLAGS "/usr/local/lib/libcrypto.so /usr/local/lib/libssl.so -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -g -fsanitize=address -fsanitize=undefined -fsanitize=leak -fstack-protector -fuse-ld=gold")
