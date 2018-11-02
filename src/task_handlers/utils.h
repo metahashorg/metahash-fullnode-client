@@ -1,11 +1,10 @@
 #pragma once
 
-#include "boost/format.hpp"
-#include "boost/date_time/posix_time/posix_time.hpp"
 #include <string.h>
 #include <thread>
 #include <future>
 #include <chrono>
+#include <vector>
 
 namespace utils
 {
@@ -69,23 +68,5 @@ namespace utils
         Handler             m_handler;
         std::mutex          m_locker;
         Interval            m_interval;
-    };
-
-    class time_duration
-    {
-    public:
-        time_duration(bool _start);
-        time_duration(bool _start, std::string message);
-        ~time_duration();
-
-        void start();
-        void stop();
-
-        void set_message(const std::string& msg) { m_msg = msg; }
-
-    protected:
-        bool                        m_run;
-        std::string                 m_msg;
-        boost::posix_time::ptime    m_start;
     };
 }

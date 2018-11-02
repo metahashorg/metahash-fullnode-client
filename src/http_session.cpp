@@ -2,6 +2,8 @@
 #include "task_handlers/task_handlers.h"
 #include "json_rpc.h"
 #include "settings/settings.h"
+#include "log/log.h"
+#include "task_handlers/base_handler.h"
 
 http_session::http_session(tcp::socket&& socket) :
     m_socket(std::move(socket))

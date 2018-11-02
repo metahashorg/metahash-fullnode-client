@@ -1,9 +1,13 @@
 #pragma once
 
-#define BOOST_ERROR_CODE_HEADER_ONLY
-#include <boost/program_options.hpp>
-
 #include <string>
+#include <vector>
+
+namespace boost {
+namespace program_options {
+class variables_map;
+}
+}
 
 namespace settings
 {

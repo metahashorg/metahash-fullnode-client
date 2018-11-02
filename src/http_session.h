@@ -37,5 +37,3 @@ private:
         beast::flat_buffer               m_buf{ 8192 };
         http::request<http::string_body> m_req;
 };
-
-using http_session_ptr = std::shared_ptr<http_session>;

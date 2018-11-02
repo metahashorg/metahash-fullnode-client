@@ -5,7 +5,6 @@
 #include <vector>
 #include <string.h>
 #include "rapidjson/document.h"
-#include "rapidjson/writer.h"
 
 static const char json_rpc_ver[] = "2.0";
 

@@ -12,6 +12,9 @@
 
 #include "SyncSingleton.h"
 
+#define BOOST_ERROR_CODE_HEADER_ONLY
+#include <boost/program_options.hpp>
+
 namespace po = boost::program_options;
 namespace bs = boost::system;
 

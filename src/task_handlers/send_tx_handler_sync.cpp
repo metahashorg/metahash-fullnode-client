@@ -2,6 +2,7 @@
 
 #include "../SyncSingleton.h"
 #include "../sync/BlockInfo.h"
+#include "http_json_rpc_request.h"
 
 bool send_tx_handler_sync::prepare_params()
 {

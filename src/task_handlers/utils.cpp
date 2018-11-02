@@ -3,6 +3,7 @@
 #include "../cpplib_open_ssl_decor/crypto.h"
 #include "../log/log.h"
 #include <iostream>
+#include "time_duration.h"
 
 namespace utils
 {

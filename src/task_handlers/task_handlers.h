@@ -3,10 +3,9 @@
 #include <memory>
 #include <map>
 
-#include "network_handler.h"
-#include "create_tx_handler.h"
-#include "send_tx_handler.h"
-#include "sync_handler.h"
+#include "http_session_ptr.h"
+
+struct handler_result;
 
 using handler_func = handler_result(*)(http_session_ptr session, const std::string& params);
 

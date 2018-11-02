@@ -1,11 +1,7 @@
 #include "task_handlers.h"
 
-#include "network_handler.h"
 #include "create_tx_handler.h"
 #include "send_tx_handler.h"
-#include "sync_handler.h"
-#include "../log/log.h"
-
 #include "generate_handler.h"
 #include "fetch_balance_handler.h"
 #include "fetch_history_handler.h"

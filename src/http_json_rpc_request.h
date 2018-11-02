@@ -10,6 +10,7 @@
 #include <boost/asio/ssl.hpp>
 
 #include "json_rpc.h"
+#include "task_handlers/time_duration.h"
 #include "task_handlers/utils.h"
 
 namespace	asio    = boost::asio;
@@ -71,5 +72,3 @@ private:
     bool                                m_async;
     bool                                m_use_ssl;
 };
-
-using http_json_rpc_request_ptr = std::shared_ptr<http_json_rpc_request>;

@@ -7,6 +7,9 @@
 #include <boost/asio.hpp>
 #include "../log/log.h"
 
+#define BOOST_ERROR_CODE_HEADER_ONLY
+#include <boost/program_options.hpp>
+
 namespace   pt      = boost::property_tree;
 namespace	asio    = boost::asio;
 namespace	ip      = boost::asio::ip;

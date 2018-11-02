@@ -1,5 +1,8 @@
 #include "send_tx_handler.h"
 
+#include "http_session.h"
+#include "http_json_rpc_request.h"
+
 bool send_tx_handler::prepare_params()
 {
     BGN_TRY

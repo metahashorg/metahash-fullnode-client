@@ -1,12 +1,12 @@
 #include "sync_handler.h"
-#include <memory>
-#include "task_handlers.h"
-#include "../http_json_rpc_request.h"
-#include "../wallet_storage/wallet_storage.h"
-#include "../log/log.h"
 
-void base_sync_handler::execute()
-{
+#include <memory>
+
+base_sync_handler::base_sync_handler(const std::string &host, http_session_ptr session) 
+    : base_handler(session)
+{}
+
+void base_sync_handler::execute() {
     BGN_TRY
     {
         executeImpl();

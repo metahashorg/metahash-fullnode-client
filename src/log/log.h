@@ -1,6 +1,8 @@
 #pragma once
 #include <map>
 #include <mutex>
+#include <sstream>
+#include <thread>
 
 #define USE_DEBUG_LOG_MESSAGE
 

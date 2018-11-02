@@ -1,8 +1,16 @@
+#include "network_handler.h"
+
 #include <memory>
-#include "task_handlers.h"
-#include "../http_json_rpc_request.h"
-#include "../wallet_storage/wallet_storage.h"
-#include "../log/log.h"
+
+#include "http_json_rpc_request.h"
+#include "log/log.h"
+#include "http_session.h"
+
+base_network_handler::base_network_handler(const std::string &host, http_session_ptr session) 
+    : base_handler(session)
+{
+    m_request = std::make_shared<http_json_rpc_request>(host, session->get_io_context());
+}
 
 void base_network_handler::execute()
 {

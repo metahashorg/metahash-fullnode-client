@@ -2,6 +2,8 @@
 #include "log/log.h"
 #include <sstream>
 
+#include "rapidjson/writer.h"
+
 // json_rpc_reader
 
 json_rpc_reader::json_rpc_reader()

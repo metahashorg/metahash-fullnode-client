@@ -1,6 +1,8 @@
 #include "wallet_storage.h"
 #include <boost/filesystem.hpp>
 
+#include "settings/settings.h"
+
 namespace storage
 {
     std::mutex keys::_locker;
