@@ -19,21 +19,44 @@ struct handler_result
     std::string message;
 };
 
-template <class T>
-class base_handler
-{
-    friend struct handler_result;
-
+class base_handler_impl {
 public:
-    base_handler(http_session_ptr session):
-        m_session(session),
-        m_duration(false)
-    {
-    }
-    virtual ~base_handler()
-    {
+    base_handler_impl(http_session_ptr session)
+        : m_session(session)
+        , m_duration(false)
+    {}
+    
+    virtual ~base_handler_impl() {
         m_duration.stop();
     }
+    
+protected:
+    bool prepare(const std::string& params);
+    
+    virtual bool prepare_params() = 0;
+    virtual void execute() = 0;
+    
+    handler_result result()
+    {
+        this->m_result.message = this->m_writer.stringify();
+        return this->m_result;
+    }
+    
+protected:
+    json_rpc_id             m_id = { 0 };
+    handler_result          m_result;
+    json_rpc_reader         m_reader;
+    json_rpc_writer         m_writer;
+    http_session_ptr        m_session;
+    utils::time_duration    m_duration;
+};
+
+template <class T>
+class base_handler: public base_handler_impl {
+public:
+    base_handler(http_session_ptr session)
+        : base_handler_impl(session)
+    {}
 
     static handler_result perform(http_session_ptr session, const std::string& params)
     {
@@ -56,23 +79,4 @@ public:
         }
     }
 
-protected:
-    bool prepare(const std::string& params);
-
-    virtual bool prepare_params() = 0;
-    virtual void execute() = 0;
-
-    handler_result result()
-    {
-        this->m_result.message = this->m_writer.stringify();
-        return this->m_result;
-    }
-
-protected:
-    json_rpc_id             m_id = { 0 };
-    handler_result          m_result;
-    json_rpc_reader         m_reader;
-    json_rpc_writer         m_writer;
-    http_session_ptr        m_session;
-    utils::time_duration    m_duration;
 };
