@@ -19,7 +19,7 @@ namespace settings
     unsigned short service::port = {9999};
     int service::threads = {4};
     std::vector<std::string> service::access;
-    std::string service::torrentServer = "167.99.242.0:5795";
+    std::string service::torrentServer = "172.104.224.65:5795";
     std::string service::leveldbFolder = "leveldb/";
     std::string service::blocksFolder = "blocks/";
     bool service::validateBlocks = false;

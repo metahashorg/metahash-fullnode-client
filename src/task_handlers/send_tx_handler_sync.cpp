@@ -22,7 +22,7 @@ bool send_tx_handler_sync::prepare_params()
             const Sync &sync = *syncSingleton();
             
             const BalanceInfo balance = sync.getBalance(Address(this->m_address));
-            this->m_nonce = balance.countSpent;
+            this->m_nonce = balance.countSpent + 1;
         }
 
         if (!this->build_request())
