@@ -3,11 +3,9 @@
 
 #include "base_handler.h"
 
-class generate_handler : public base_handler<generate_handler> {
+class generate_handler : public base_handler, public Perform<generate_handler> {
 public:
-    typedef base_handler<generate_handler> base;
-    
-    generate_handler(http_session_ptr session): base(session) {
+    generate_handler(http_session_ptr session): base_handler(session) {
         std::stringstream ss;
         ss << __FUNCTION__;
         m_duration.set_message(ss.str());

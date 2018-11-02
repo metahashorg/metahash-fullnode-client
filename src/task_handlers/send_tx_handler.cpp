@@ -1,6 +1,5 @@
 #include "send_tx_handler.h"
 
-// send_tx_handler
 bool send_tx_handler::prepare_params()
 {
     BGN_TRY
@@ -28,7 +27,7 @@ bool send_tx_handler::prepare_params()
             auto request = std::make_shared<http_json_rpc_request>(settings::server::tor, this->m_session->get_io_context());
             request->set_path("fetch-balance");
             request->set_body(writer.stringify());
-            request->execute_async(boost::bind(&send_tx_handler::on_get_balance, shared_from_this(), request, id));
+            request->execute_async(boost::bind(&send_tx_handler::on_get_balance, this, request, id, shared_from_this()));
 
             return false;
         }
@@ -41,7 +40,7 @@ bool send_tx_handler::prepare_params()
     END_TRY_RET(false)
 }
 
-void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id)
+void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id, std::shared_ptr<base_network_handler> tmp)
 {
     json_rpc_writer writer;
     BGN_TRY

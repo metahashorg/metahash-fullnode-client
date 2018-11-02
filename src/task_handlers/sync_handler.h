@@ -5,11 +5,9 @@
 #include "base_handler.h"
 #include "../http_json_rpc_request.h"
 
-template <class T>
-class base_sync_handler : public base_handler<T>, public std::enable_shared_from_this<T>
-{
+class base_sync_handler : public base_handler {
 public:
-    base_sync_handler(const std::string& host, http_session_ptr session): base_handler<T>(session)
+    base_sync_handler(const std::string& host, http_session_ptr session): base_handler(session)
     {
         m_request = std::make_shared<http_json_rpc_request>(host, session->get_io_context());
     }

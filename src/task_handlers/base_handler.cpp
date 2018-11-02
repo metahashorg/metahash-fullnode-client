@@ -1,6 +1,6 @@
 #include "task_handlers.h"
 
-bool base_handler_impl::prepare(const std::string& params)
+bool base_handler::prepare(const std::string& params)
 {
     BGN_TRY
     {

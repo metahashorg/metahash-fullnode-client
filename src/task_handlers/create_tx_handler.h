@@ -2,12 +2,12 @@
 
 #include "create_tx_base_handler.h"
 
-class create_tx_handler : public create_tx_base_handler<create_tx_handler>
+#include "base_handler.h"
+
+class create_tx_handler : public create_tx_base_handler, public Perform<create_tx_handler>
 {
 public:
-    typedef create_tx_base_handler<create_tx_handler> base;
-
-    create_tx_handler(http_session_ptr session): base(session) {}
+    create_tx_handler(http_session_ptr session): create_tx_base_handler(session) {}
     virtual ~create_tx_handler() override {}
 
     virtual void execute() override

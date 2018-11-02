@@ -19,18 +19,18 @@ struct handler_result
     std::string message;
 };
 
-class base_handler_impl {
+class base_handler {
 public:
-    base_handler_impl(http_session_ptr session)
+    base_handler(http_session_ptr session)
         : m_session(session)
         , m_duration(false)
     {}
     
-    virtual ~base_handler_impl() {
+    virtual ~base_handler() {
         m_duration.stop();
     }
     
-protected:
+public:
     bool prepare(const std::string& params);
     
     virtual bool prepare_params() = 0;
@@ -52,28 +52,19 @@ protected:
 };
 
 template <class T>
-class base_handler: public base_handler_impl {
+class Perform {
 public:
-    base_handler(http_session_ptr session)
-        : base_handler_impl(session)
-    {}
 
-    static handler_result perform(http_session_ptr session, const std::string& params)
-    {
-        try
-        {
+    static handler_result perform(http_session_ptr session, const std::string& params) {
+        try {
             std::shared_ptr<T> obj = std::make_shared<T>(session);
             if (obj->prepare(params))
                 obj->execute();
             return obj->result();
-        }
-        catch (std::exception& ex)
-        {
+        } catch (std::exception& ex) {
             STREAM_LOG_ERR(__PRETTY_FUNCTION__ << " exception: " << ex.what())
             return handler_result();
-        }
-        catch (...)
-        {
+        } catch (...) {
             STREAM_LOG_ERR(__PRETTY_FUNCTION__ << " unhandled exception")
             return handler_result();
         }

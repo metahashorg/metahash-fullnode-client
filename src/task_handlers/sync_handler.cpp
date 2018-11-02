@@ -5,12 +5,7 @@
 #include "../wallet_storage/wallet_storage.h"
 #include "../log/log.h"
 
-#include "fetch_balance_handler_sync.h"
-#include "fetch_history_handler_sync.h"
-#include "send_tx_handler_sync.h"
-
-template <class T>
-void base_sync_handler<T>::execute()
+void base_sync_handler::execute()
 {
     BGN_TRY
     {
@@ -18,7 +13,3 @@ void base_sync_handler<T>::execute()
     }
     END_TRY
 }
-
-template class base_handler<fetch_balance_handler_sync>;
-template class base_handler<fetch_history_handler_sync>;
-template class base_handler<send_tx_handler_sync>;

@@ -3,11 +3,10 @@
 
 #include "network_handler.h"
 
-class get_dump_block_by_hash : public base_network_handler<get_dump_block_by_hash> {
+class get_dump_block_by_hash : public base_network_handler, public Perform<get_dump_block_by_hash> {
 public:
-    typedef base_network_handler<get_dump_block_by_hash> base;
     
-    get_dump_block_by_hash(http_session_ptr session): base(settings::server::tor, session) {
+    get_dump_block_by_hash(http_session_ptr session): base_network_handler(settings::server::tor, session) {
         std::stringstream ss;
         ss << __FUNCTION__;
         m_duration.set_message(ss.str());

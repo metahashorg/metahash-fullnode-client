@@ -4,12 +4,11 @@
 #include "network_handler.h"
 #include "../wallet_storage/wallet_storage.h"
 
-template <class T>
-class create_tx_base_handler : public base_network_handler<T>
+class create_tx_base_handler : public base_network_handler
 {
 public:
     create_tx_base_handler(http_session_ptr session):
-        base_network_handler<T>(settings::server::proxy, session),
+        base_network_handler(settings::server::proxy, session),
         m_fee(0),
         m_value(0),
         m_nonce(0)
