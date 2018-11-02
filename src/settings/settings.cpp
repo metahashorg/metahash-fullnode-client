@@ -103,5 +103,8 @@ namespace settings
         
         if (vm.count("validate_blocks"))
             settings::service::validateBlocks = vm["validate_blocks"].as<bool>();
+        
+        if (vm.count("use_local_database"))
+            settings::service::useLocalDatabase = vm["use_local_database"].as<bool>();
     }
 }

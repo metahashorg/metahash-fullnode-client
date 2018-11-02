@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
             ("blocks_folder",		po::value<std::string>(),	"blocks folder")
             ("leveldb_folder",		po::value<std::string>(),	"leveldb folder")
             ("validate_blocks",		po::value<bool>(),	" validate blocks")
+            ("use_local_database",		po::value<bool>(),	" use_local_database")
             ("any",                                     "accept any connections");
 
         po::variables_map vm;
