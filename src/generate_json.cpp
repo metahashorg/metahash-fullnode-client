@@ -140,17 +140,14 @@ std::string transactionToJson(const RequestId &requestId, const TransactionInfo 
     return jsonToString(doc, isFormat);
 }
 
-std::string addressesInfoToJson(const RequestId &requestId, const std::string &address, const std::vector<TransactionInfo> &infos, const BlockChainReadInterface &blockchain, size_t currentBlock, bool isFormat, const JsonVersion &version) {
-    rapidjson::Document doc(rapidjson::kObjectType);
+void addressesInfoToJson(const std::string &address, const std::vector<TransactionInfo> &infos, const BlockChainReadInterface &blockchain, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     auto &allocator = doc.GetAllocator();
-    addIdToResponse(requestId, doc, allocator);
     rapidjson::Value resultValue(rapidjson::kArrayType);
     for (const TransactionInfo &tx: infos) {
         const BlockHeader &bh = blockchain.getBlock(tx.blockNumber);
         resultValue.PushBack(transactionInfoToJson(tx, bh, currentBlock, allocator, 2, version), allocator);
     }
     doc.AddMember("result", resultValue, allocator);
-    return jsonToString(doc, isFormat);
 }
 
 std::string transactionsToJson(const RequestId &requestId, const std::vector<TransactionInfo> &infos, const BlockChainReadInterface &blockchain, bool isFormat, const JsonVersion &version) {
@@ -166,12 +163,10 @@ std::string transactionsToJson(const RequestId &requestId, const std::vector<Tra
     return jsonToString(doc, isFormat);
 }
 
-std::string balanceInfoToJson(const RequestId &requestId, const std::string &address, const BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version) {
+void balanceInfoToJson(const std::string &address, const BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     const bool isStringValue = version == JsonVersion::V2;
     
-    rapidjson::Document doc(rapidjson::kObjectType);
     auto &allocator = doc.GetAllocator();
-    addIdToResponse(requestId, doc, allocator);
     rapidjson::Value resultValue(rapidjson::kObjectType);
     resultValue.AddMember("address", strToJson(address, allocator), allocator);
     resultValue.AddMember("received", intOrString(balance.received, isStringValue, allocator), allocator);
@@ -193,7 +188,6 @@ std::string balanceInfoToJson(const RequestId &requestId, const std::string &add
         resultValue.AddMember("forged", intOrString(balance.forged->forged, isStringValue, allocator), allocator);
     }
     doc.AddMember("result", resultValue, allocator);
-    return jsonToString(doc, isFormat);
 }
 
 static rapidjson::Value blockHeaderToJson(const BlockHeader &bh, const std::optional<std::reference_wrapper<const BlockHeader>> &nextBlock, rapidjson::Document::AllocatorType &allocator, const JsonVersion &version) {

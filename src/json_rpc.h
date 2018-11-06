@@ -115,6 +115,10 @@ public:
 
     rapidjson::Value& get_value(rapidjson::Value& root, const std::string& name, rapidjson::Type Type);
 
+    rapidjson::Document& getDoc() {
+        return m_doc;
+    }
+    
 protected:
     rapidjson::Document m_doc;
 };

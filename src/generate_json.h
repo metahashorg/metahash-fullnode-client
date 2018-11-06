@@ -5,6 +5,8 @@
 #include <variant>
 #include <functional>
 
+#include <rapidjson/document.h>
+
 #include "BlockInfo.h"
 
 class BlockChainReadInterface;
@@ -26,9 +28,9 @@ std::string transactionToJson(const RequestId &requestId, const TransactionInfo 
 
 std::string transactionsToJson(const RequestId &requestId, const std::vector<TransactionInfo> &infos, const BlockChainReadInterface &blockchain, bool isFormat, const JsonVersion &version);
 
-std::string addressesInfoToJson(const RequestId &requestId, const std::string &address, const std::vector<TransactionInfo> &infos, const BlockChainReadInterface &blockchain, size_t currentBlock, bool isFormat, const JsonVersion &version);
+void addressesInfoToJson(const std::string &address, const std::vector<TransactionInfo> &infos, const BlockChainReadInterface &blockchain, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
-std::string balanceInfoToJson(const RequestId &requestId, const std::string &address, const BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version);
+void balanceInfoToJson(const std::string &address, const BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
 std::string blockHeaderToJson(const RequestId &requestId, const BlockHeader &bh, const std::optional<std::reference_wrapper<const BlockHeader>> &nextBlock, bool isFormat, const JsonVersion &version);
 

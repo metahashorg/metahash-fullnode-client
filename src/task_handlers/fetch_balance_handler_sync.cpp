@@ -34,10 +34,5 @@ void fetch_balance_handler_sync::executeImpl() {
     
     const BalanceInfo balance = sync.getBalance(Address(address));
     
-    RequestId rId;
-    rId.id = m_id;
-    rId.isSet = true;
-    const std::string response = balanceInfoToJson(rId, address, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1);
-    
-    m_writer.parse(response);
+    balanceInfoToJson(address, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.getDoc());
 }

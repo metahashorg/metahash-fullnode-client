@@ -34,10 +34,5 @@ void fetch_history_handler_sync::executeImpl() {
     
     const std::vector<TransactionInfo> txs = sync.getTxsForAddress(Address(address), true, 0, 0);
     
-    RequestId rId;
-    rId.id = m_id;
-    rId.isSet = true;
-    const std::string response = addressesInfoToJson(rId, address, txs, sync.getBlockchain(), 0, false, JsonVersion::V1);
-    
-    m_writer.parse(response);
+    addressesInfoToJson(address, txs, sync.getBlockchain(), 0, false, JsonVersion::V1, m_writer.getDoc());
 }
