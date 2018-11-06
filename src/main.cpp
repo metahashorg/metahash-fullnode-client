@@ -44,12 +44,6 @@ int main(int argc, char* argv[])
             ("port",		po::value<unsigned short>(),"service port, default is 9999")
             ("tor",			po::value<std::string>(),	"torrent address")
             ("proxy",		po::value<std::string>(),	"proxy address")
-            ("storage",		po::value<std::string>(),	"storage of wallets")
-            ("torrent_server",		po::value<std::string>(),	"server torrent")
-            ("blocks_folder",		po::value<std::string>(),	"blocks folder")
-            ("leveldb_folder",		po::value<std::string>(),	"leveldb folder")
-            ("validate_blocks",		po::value<bool>(),	" validate blocks")
-            ("use_local_database",		po::value<bool>(),	" use_local_database")
             ("any",                                     "accept any connections");
 
         po::variables_map vm;
@@ -64,21 +58,21 @@ int main(int argc, char* argv[])
 
         settings::read(vm);
 
-        const std::vector<std::string> serverIps = {settings::service::torrentServer};
+        const std::vector<std::string> serverIps = {settings::system::torrentServer};
         std::unique_ptr<P2P> p2p = std::make_unique<P2P_Ips>(serverIps, 2);
         
-        if (settings::service::useLocalDatabase) {
+        if (settings::system::useLocalDatabase) {
             syncSingleton() = std::make_unique<Sync>(
-                settings::service::blocksFolder, 
-                Sync::LevelDbOptions(8, true, true, settings::service::leveldbFolder, 100),
+                settings::system::blocksFolder, 
+                Sync::LevelDbOptions(8, true, true, settings::system::leveldbFolder, 100),
                 Sync::CachesOptions(0, 1, 100),
-                p2p.get(), false, settings::service::validateBlocks
+                p2p.get(), false, settings::system::validateBlocks
             );
         }
         
         Thread runServerThread(runServer);
         
-        if (settings::service::useLocalDatabase) {
+        if (settings::system::useLocalDatabase) {
             syncSingleton()->synchronize(2, true);
         }
         

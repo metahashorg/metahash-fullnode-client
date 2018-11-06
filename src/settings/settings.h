@@ -17,13 +17,6 @@ namespace settings
         static unsigned short port;
         static int threads;
         static std::vector<std::string> access;
-        static std::string torrentServer;
-        
-        static std::string leveldbFolder;
-        static std::string blocksFolder;
-        static bool validateBlocks;
-        
-        static bool useLocalDatabase;
     };
 
     struct server
@@ -35,6 +28,13 @@ namespace settings
     struct system
     {
         static std::string wallet_stotage;
+        static std::string torrentServer;
+        
+        static std::string leveldbFolder;
+        static std::string blocksFolder;
+        static bool validateBlocks;
+        
+        static bool useLocalDatabase;
     };
 
     void read();

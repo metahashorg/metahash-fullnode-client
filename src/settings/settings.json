@@ -3,11 +3,7 @@
  {
   "threads": 4,
   "port": 9999,
-  "torrent_server": "172.104.224.65:5795",
-  "blocks_folder": "./blocks/",
-  "leveldb_folder": "./leveldb/",
-  "validate_blocks": false,
-  "use_local_database": true
+  "torrent_server": "172.104.224.65:5795"
  },
  "server":
  {
@@ -16,6 +12,11 @@
  },
  "system":
  {
-  "wallets-storage": "/home/aaa/projects/metahash_proxy/wallets"
+  "wallets-storage": "/home/aaa/projects/metahash_proxy/wallets",
+  "blocks_folder": "./blocks/",
+  "leveldb_folder": "./leveldb/",
+  "validate_blocks": false,
+  "use_local_database": true
+
  }
 }

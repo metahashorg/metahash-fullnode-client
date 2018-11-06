@@ -60,7 +60,7 @@ void http_session::process_request()
     json_rpc_writer writer;
     if (reader.parse(m_req.body()))
     {
-        auto it = map_handlers.find(std::make_pair(reader.get_method(), settings::service::useLocalDatabase));
+        auto it = map_handlers.find(std::make_pair(reader.get_method(), settings::system::useLocalDatabase));
         if (it == map_handlers.end())
         {
             STREAM_LOG_DBG("Incorrect service method " << reader.get_method())

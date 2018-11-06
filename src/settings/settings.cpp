@@ -22,11 +22,11 @@ namespace settings
     unsigned short service::port = {9999};
     int service::threads = {4};
     std::vector<std::string> service::access;
-    std::string service::torrentServer = "172.104.224.65:5795";
-    std::string service::leveldbFolder = "leveldb/";
-    std::string service::blocksFolder = "blocks/";
-    bool service::validateBlocks = false;
-    bool service::useLocalDatabase = false;
+    std::string system::torrentServer = "172.104.224.65:5795";
+    std::string system::leveldbFolder = "leveldb/";
+    std::string system::blocksFolder = "blocks/";
+    bool system::validateBlocks = false;
+    bool system::useLocalDatabase = true;
     
     // server
     std::string server::tor     = {"tor.net-dev.metahash.org:5795"};
@@ -66,9 +66,18 @@ namespace settings
 
             server::tor     = tree.get<std::string>("server.tor", "tor.net-dev.metahash.org:5795");
             server::proxy   = tree.get<std::string>("server.proxy", "proxy.net-dev.metahash.org:9999");
-
+            
             system::wallet_stotage = tree.get<std::string>("system.wallets-storage", boost::filesystem::current_path().append("/wallet").c_str());
-
+                       
+            settings::system::torrentServer = tree.get<std::string>("system.torrent_server");
+            
+            settings::system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
+            
+            settings::system::blocksFolder = tree.get<std::string>("system.blocks_folder");
+            
+            settings::system::validateBlocks = tree.get<bool>("system.validate_blocks");
+            
+            settings::system::useLocalDatabase = tree.get<bool>("system.use_local_database");
         } catch (std::exception& e)
         {
             STREAM_LOG_ERR("Failed on read settings: " << e.what());
@@ -91,23 +100,8 @@ namespace settings
 
         if (vm.count("proxy"))
             settings::server::proxy = vm["proxy"].as<std::string>();
-
+        
         if (vm.count("storage"))
             settings::system::wallet_stotage = vm["storage"].as<std::string>();
-        
-        if (vm.count("torrent_server"))
-            settings::service::torrentServer = vm["torrent_server"].as<std::string>();
-        
-        if (vm.count("leveldb_folder"))
-            settings::service::leveldbFolder = vm["leveldb_folder"].as<std::string>();
-        
-        if (vm.count("blocks_folder"))
-            settings::service::blocksFolder = vm["blocks_folder"].as<std::string>();
-        
-        if (vm.count("validate_blocks"))
-            settings::service::validateBlocks = vm["validate_blocks"].as<bool>();
-        
-        if (vm.count("use_local_database"))
-            settings::service::useLocalDatabase = vm["use_local_database"].as<bool>();
     }
 }
