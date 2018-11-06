@@ -42,14 +42,17 @@ add_executable(${PROJECT_NAME}
     generate_json.cpp
     )
 
-include_directories(
+include_directories( SYSTEM
     #${Boost_LIBRARY_DIRS} /
     ${OPENSSL_INCLUDE_DIRS} 
     ${BOOST_LIBS}/include/
+    )
+include_directories(
     common/
     sync/
     ./
     )
+
 
 find_package(Threads)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
@@ -73,5 +76,5 @@ find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
 include_directories(${OPENSSL_INCLUDE_DIR})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/usr/local/lib/libcrypto.so /usr/local/lib/libssl.so")
-set (CMAKE_CXX_FLAGS "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -Ofast")
+set (CMAKE_CXX_FLAGS "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -Ofast -Wall -Wextra -Werror -Wno-unused-parameter")
 #set (CMAKE_CXX_FLAGS "-g -rdynamic")

@@ -56,8 +56,7 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc
 
         std::cout << reader.stringify();
 
-        json_rpc_id _id = reader.get_id();
-
+        //json_rpc_id _id = reader.get_id();
         //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
 
         auto err = reader.get_error();
@@ -102,8 +101,7 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc
 }
 
 void send_tx_handler::processResponse(json_rpc_id id, json_rpc_reader &reader) {    
-    json_rpc_id _id = reader.get_id();
-    
+    //json_rpc_id _id = reader.get_id();
     //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
     
     auto err = reader.get_error();

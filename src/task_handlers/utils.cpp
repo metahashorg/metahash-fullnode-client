@@ -178,10 +178,7 @@ namespace utils
         if (m_run)
         {
             m_run = false;
-            boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
-            boost::posix_time::time_duration dur = end - m_start;
-            long msec = dur.total_milliseconds();
-            STREAM_LOG_DBG(m_msg << ": " << msec << " milisec")
+            STREAM_LOG_DBG(m_msg << ": " << (boost::posix_time::microsec_clock::local_time() - m_start).total_milliseconds() << " milisec")
         }
     }
 }

@@ -34,8 +34,7 @@ bool send_tx_handler_sync::prepare_params()
 }
 
 void send_tx_handler_sync::processResponse(json_rpc_id id, json_rpc_reader &reader) {    
-    json_rpc_id _id = reader.get_id();
-    
+    //json_rpc_id _id = reader.get_id();
     //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
     
     auto err = reader.get_error();
