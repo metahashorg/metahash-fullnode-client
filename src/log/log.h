@@ -4,7 +4,7 @@
 #include <sstream>
 #include <thread>
 
-#define USE_DEBUG_LOG_MESSAGE
+//#define USE_DEBUG_LOG_MESSAGE
 
 namespace logg
 {
