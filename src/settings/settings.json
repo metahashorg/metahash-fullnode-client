@@ -2,8 +2,7 @@
  "service":
  {
   "threads": 4,
-  "port": 9999,
-  "torrent_server": "172.104.224.65:5795"
+  "port": 9999
  },
  "server":
  {
@@ -12,11 +11,11 @@
  },
  "system":
  {
-  "wallets-storage": "/home/aaa/projects/metahash_proxy/wallets",
+   "torrent_server": "tor.net-dev.metahash.org:5795",
+  "wallets-storage": "./wallets",
   "blocks_folder": "./blocks/",
   "leveldb_folder": "./leveldb/",
   "validate_blocks": false,
   "use_local_database": true
-
  }
 }

@@ -37,51 +37,45 @@ namespace settings
 
     void read()
     {
-        try
+        pt::ptree tree;
+        auto path = boost::filesystem::current_path();
+        path.append("/settings.json");
+        pt::read_json(path.c_str(), tree);
+
+        service::port = tree.get<unsigned short>("service.port", 9999);
+        service::threads = tree.get<int>("service.threads", 4);
+
+        asio::io_context ctx;
+        tcp::resolver resolver(ctx);
+        boost::property_tree::ptree access;
+        access = tree.get_child("service.access", access);
+        for (auto &v : access)
         {
-            pt::ptree tree;
-            auto path = boost::filesystem::current_path();
-            path.append("/settings.json");
-            pt::read_json(path.c_str(), tree);
-
-            service::port = tree.get<unsigned short>("service.port", 9999);
-            service::threads = tree.get<int>("service.threads", 4);
-
-            asio::io_context ctx;
-            tcp::resolver resolver(ctx);
-            boost::property_tree::ptree access;
-            access = tree.get_child("service.access", access);
-            for (auto &v : access)
+            boost::system::error_code er;
+            auto eps = resolver.resolve({v.second.data(), ""}, er);
+            if (er)
             {
-                boost::system::error_code er;
-                auto eps = resolver.resolve({v.second.data(), ""}, er);
-                if (er)
-                {
-                    STREAM_LOG_WRN("Couldn't resolve " << v.second.data() << " : " << er.message());
-                    continue;
-                }
-                for (auto &e : eps)
-                    service::access.push_back(e.endpoint().address().to_string());
+                STREAM_LOG_WRN("Couldn't resolve " << v.second.data() << " : " << er.message());
+                continue;
             }
-
-            server::tor     = tree.get<std::string>("server.tor", "tor.net-dev.metahash.org:5795");
-            server::proxy   = tree.get<std::string>("server.proxy", "proxy.net-dev.metahash.org:9999");
-            
-            system::wallet_stotage = tree.get<std::string>("system.wallets-storage", boost::filesystem::current_path().append("/wallet").c_str());
-                       
-            settings::system::torrentServer = tree.get<std::string>("system.torrent_server");
-            
-            settings::system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
-            
-            settings::system::blocksFolder = tree.get<std::string>("system.blocks_folder");
-            
-            settings::system::validateBlocks = tree.get<bool>("system.validate_blocks");
-            
-            settings::system::useLocalDatabase = tree.get<bool>("system.use_local_database");
-        } catch (std::exception& e)
-        {
-            STREAM_LOG_ERR("Failed on read settings: " << e.what());
+            for (auto &e : eps)
+                service::access.push_back(e.endpoint().address().to_string());
         }
+
+        server::tor     = tree.get<std::string>("server.tor", "tor.net-dev.metahash.org:5795");
+        server::proxy   = tree.get<std::string>("server.proxy", "proxy.net-dev.metahash.org:9999");
+        
+        system::wallet_stotage = tree.get<std::string>("system.wallets-storage", boost::filesystem::current_path().append("/wallet").c_str());
+                    
+        settings::system::torrentServer = tree.get<std::string>("system.torrent_server");
+        
+        settings::system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
+        
+        settings::system::blocksFolder = tree.get<std::string>("system.blocks_folder");
+        
+        settings::system::validateBlocks = tree.get<bool>("system.validate_blocks");
+        
+        settings::system::useLocalDatabase = tree.get<bool>("system.use_local_database");
     }
 
     void read(boost::program_options::variables_map& vm)
