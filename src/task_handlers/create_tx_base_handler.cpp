@@ -1,5 +1,6 @@
 #include "create_tx_base_handler.h"
 
+#include "settings/settings.h"
 #include "utils.h"
 
 create_tx_base_handler::create_tx_base_handler(http_session_ptr session)

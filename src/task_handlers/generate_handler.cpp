@@ -1,6 +1,8 @@
 #include "generate_handler.h"
 #include "../wallet_storage/wallet_storage.h"
 
+#include "cpplib_open_ssl_decor/crypto.h"
+
 // generate_handler
 bool generate_handler::prepare_params()
 {

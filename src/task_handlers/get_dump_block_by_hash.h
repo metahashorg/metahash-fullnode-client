@@ -3,6 +3,8 @@
 
 #include "network_handler.h"
 
+#include "settings/settings.h"
+
 class get_dump_block_by_hash : public base_network_handler, public Perform<get_dump_block_by_hash> {
 public:
     

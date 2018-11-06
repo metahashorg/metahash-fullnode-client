@@ -2,7 +2,7 @@
 
 #include <memory>
 
-base_sync_handler::base_sync_handler(const std::string &host, http_session_ptr session) 
+base_sync_handler::base_sync_handler(http_session_ptr session) 
     : base_handler(session)
 {}
 

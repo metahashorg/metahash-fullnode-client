@@ -7,7 +7,7 @@
 
 class base_sync_handler : public base_handler {
 public:
-    base_sync_handler(const std::string& host, http_session_ptr session);
+    base_sync_handler(http_session_ptr session);
     
     virtual ~base_sync_handler() override { }
     

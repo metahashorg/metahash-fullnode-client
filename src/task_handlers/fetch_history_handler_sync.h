@@ -6,7 +6,7 @@
 class fetch_history_handler_sync : public base_sync_handler, public Perform<fetch_history_handler_sync> {
 public:
     
-    fetch_history_handler_sync(http_session_ptr session): base_sync_handler(settings::server::tor, session) {
+    fetch_history_handler_sync(http_session_ptr session): base_sync_handler(session) {
         std::stringstream ss;
         ss << __FUNCTION__;
         m_duration.set_message(ss.str());

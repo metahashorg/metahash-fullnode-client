@@ -3,6 +3,8 @@
 
 #include "network_handler.h"
 
+#include "settings/settings.h"
+
 class get_count_blocks_handler : public base_network_handler, public Perform<get_count_blocks_handler> {
 public:
     
