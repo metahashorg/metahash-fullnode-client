@@ -3,6 +3,10 @@
 
 #include <chrono>
 
+using namespace std::chrono_literals;
+using namespace std::literals;
+using namespace std::literals::chrono_literals;
+
 using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 using time_point_system = std::chrono::time_point<std::chrono::system_clock>;
 
@@ -12,9 +16,7 @@ using seconds = std::chrono::seconds;
 using hours = std::chrono::hours;
 using days = std::chrono::duration<long, std::ratio_multiply<hours::period, std::ratio<24>>::type>;
 
-using namespace std::chrono_literals;
-using namespace std::literals;
-using namespace std::literals::chrono_literals;
+namespace common {
 
 inline time_point now() {
     return std::chrono::steady_clock::now();
@@ -46,11 +48,11 @@ class Timer {
 public:
     
     Timer() 
-        : beginTime(::now())
+        : beginTime(common::now())
     {}
     
     void stop() {
-        stoppedTime = ::now();
+        stoppedTime = common::now();
         isStopped = true;
     }
     
@@ -70,5 +72,7 @@ private:
     time_point stoppedTime;
     
 };
+
+}
 
 #endif // DURATION_H_

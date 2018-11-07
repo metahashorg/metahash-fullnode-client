@@ -8,6 +8,8 @@
 
 #include "duration.h"
 
+namespace torrent_node_lib {
+
 class Address {
 public:
     
@@ -376,5 +378,7 @@ size_t getMaxBlockNumber(const std::vector<TransactionStatus> &infos);
 
 template<class Info>
 bool isGreater(const Info &info, size_t blockNumber);
+
+}
 
 #endif // BLOCK_INFO_H_

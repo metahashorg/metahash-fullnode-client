@@ -8,6 +8,8 @@
 
 #include "duration.h"
 
+namespace common {
+
 struct StopException {
     
 };
@@ -79,5 +81,7 @@ struct ThreadImpl {
 };
 
 using Thread = ThreadImpl<true>;
+
+}
 
 #endif // STOP_PROGRAM_H_

@@ -5,6 +5,6 @@
 
 #include "sync/synchronize_blockchain.h"
 
-std::unique_ptr<Sync>& syncSingleton();
+std::unique_ptr<torrent_node_lib::Sync>& syncSingleton();
 
 #endif // SYNC_SINGLETON_H_

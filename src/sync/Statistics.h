@@ -6,10 +6,12 @@
 
 #include "OopUtils.h"
 
+namespace torrent_node_lib {
+    
 struct BlockInfo;
 struct BlockHeader;
 
-class Statistics: public no_copyable, no_moveable {   
+class Statistics: public common::no_copyable, common::no_moveable {   
 public:
     
     virtual void start() = 0;
@@ -56,5 +58,7 @@ void setStatistics(std::unique_ptr<Statistics> &&newStatistics);
 void startStatistics();
 
 void joinStatistics();
+
+}
 
 #endif // STATISTICS_H_

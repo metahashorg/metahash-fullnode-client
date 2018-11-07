@@ -3,9 +3,11 @@
 
 #include "OopUtils.h"
 
+namespace torrent_node_lib {
+
 struct BlockHeader;
 
-class BlockChainReadInterface : public no_copyable, no_moveable {
+class BlockChainReadInterface : public common::no_copyable, common::no_moveable {
 public:
     
     virtual BlockHeader getBlock(const std::string &hash) const = 0;
@@ -19,5 +21,7 @@ public:
     virtual ~BlockChainReadInterface() = default;
 
 };
+
+}
 
 #endif // BLOCKCHAIN_INTERFACE_H_

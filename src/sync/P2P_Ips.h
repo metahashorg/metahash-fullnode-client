@@ -3,6 +3,8 @@
 
 #include "P2P.h"
 
+namespace torrent_node_lib {
+
 class P2P_Ips: public P2P {   
 public:
     
@@ -31,5 +33,7 @@ private:
     size_t countConnections;
     
 };
+
+}
 
 #endif // P2P_IPS_H_

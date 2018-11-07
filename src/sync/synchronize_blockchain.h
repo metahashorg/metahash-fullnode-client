@@ -8,6 +8,8 @@
 #include <memory>
 #include <set>
 
+namespace torrent_node_lib {
+
 class BlockChainReadInterface;
 struct Address;
 struct TransactionInfo;
@@ -19,7 +21,7 @@ class P2P;
 
 class SyncImpl;
 
-class Sync: public no_copyable, no_moveable {
+class Sync: public common::no_copyable, common::no_moveable {
 public:
     
     struct LevelDbOptions {
@@ -80,6 +82,8 @@ public:
 
     size_t getKnownBlock() const;
     
+    void fillSignedTransactionsInBlock(BlockHeader &bh) const;
+    
 private:
     
     std::unique_ptr<SyncImpl> impl;
@@ -91,5 +95,7 @@ enum class BlockVersion {
 };
 
 void initBlockchainUtils(const BlockVersion &blockVersion);
+
+}
 
 #endif // SYNCHRONIZE_BLOCKCHAIN_H_

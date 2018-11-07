@@ -5,6 +5,8 @@
 #include <string>
 #include <set>
 
+namespace torrent_node_lib {
+    
 using Modules = std::bitset<7>;
 
 extern const int MODULE_BLOCK;
@@ -26,5 +28,7 @@ extern const std::string MODULE_USERS_STR;
 void parseModules(const std::set<std::string> &modulesStrs);
 
 extern Modules modules;
+
+}
 
 #endif // MODULES_H_

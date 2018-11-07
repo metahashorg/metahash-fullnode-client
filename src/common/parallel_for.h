@@ -11,6 +11,8 @@
 #include "log.h"
 #include "stopProgram.h"
 
+namespace common {
+
 template<typename Iter, class Operator>
 inline void parallelFor(int countThreads, Iter begin, Iter end, const Operator &worker) {
     const size_t countElements = std::distance(begin, end);
@@ -64,6 +66,8 @@ inline void parallelFor(int countThreads, Iter begin, Iter end, const Operator &
         th.join();
     }
     CHECK(!errorStr.has_value(), errorStr.value());
+}
+
 }
 
 #endif // PARALLEL_FOR_H_

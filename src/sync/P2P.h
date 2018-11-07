@@ -7,6 +7,8 @@
 #include <optional>
 #include <mutex>
 
+namespace torrent_node_lib {
+
 struct CurlException {
     
     CurlException(const std::string &message)
@@ -74,5 +76,7 @@ protected:
     static bool process(const std::vector<std::reference_wrapper<const Server>> &requestServers, const std::vector<Segment> &segments, const MakeQsAndPostFunction &makeQsAndPost, const RequestFunction &requestFunction);
     
 };
+
+}
 
 #endif // P2P_H_

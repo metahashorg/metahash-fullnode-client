@@ -3,6 +3,8 @@
 
 #include <string>
 
+namespace common {
+
 using exception = std::string;
 
 struct UserException {
@@ -13,16 +15,18 @@ struct UserException {
     {}
 };
 
+}
+
 #define throwErr(s) { \
 { \
-    throw exception((s) + std::string(". Error at file ") \
+    throw common::exception((s) + std::string(". Error at file ") \
         + std::string(__FILE__) + std::string(" line ") + std::to_string(__LINE__)); \
 } \
 }
 
 #define throwUserErr(s) { \
 { \
-    throw UserException((s) + std::string(". Error at file ") \
+    throw common::UserException((s) + std::string(". Error at file ") \
         + std::string(__FILE__) + std::string(" line ") + std::to_string(__LINE__)); \
 } \
 }

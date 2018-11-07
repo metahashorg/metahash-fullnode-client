@@ -1,6 +1,8 @@
 #ifndef OOP_UTILS_H_
 #define OOP_UTILS_H_
 
+namespace common {
+
 class no_copyable {
 public:
     
@@ -29,6 +31,8 @@ public:
     
 };
 
+}
+
 // Обертка для деструктора shared_ptr (для unique_ptr деструктор проверяет объект на null перед удалением)
 #define DELETER(function) \
     [](auto *element) { \
@@ -36,5 +40,5 @@ public:
             function(element); \
         } \
     }
-
+    
 #endif // OOP_UTILS_H_

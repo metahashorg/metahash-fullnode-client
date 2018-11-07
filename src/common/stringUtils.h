@@ -4,6 +4,8 @@
 #include <string>
 #include <algorithm>
 
+namespace common {
+
 inline std::string ltrim(const std::string &s) {
     std::string copy(s);
     copy.erase(copy.begin(), std::find_if(copy.begin(), copy.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
@@ -36,6 +38,8 @@ inline std::string toUpper(const std::string &str) {
     toUpperStr.reserve(str.size() + 1);
     std::transform(str.begin(), str.end(), std::back_inserter(toUpperStr), toupper);
     return toUpperStr;
+}
+
 }
 
 #endif // STRING_UTILS_H_

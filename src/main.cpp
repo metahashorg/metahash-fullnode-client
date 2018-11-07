@@ -21,19 +21,19 @@ namespace bs = boost::system;
 static std::unique_ptr<http_server> server;
 
 void runServer() {
-    sleep(1s);
+    common::sleep(1s);
     server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
     server->run();
 };
 
 int main(int argc, char* argv[])
 {
-    initializeStopProgram();
-    configureConsoleLog(log4cpp::Priority::DEBUG);
+    common::initializeStopProgram();
+    common::configureConsoleLog(log4cpp::Priority::DEBUG);
     try {
-        initBlockchainUtils(BlockVersion::V2);
-        std::set<std::string> modulesStrs = {MODULE_BLOCK_STR, MODULE_TXS_STR, MODULE_BALANCE_STR, MODULE_ADDR_TXS_STR, MODULE_BLOCK_RAW_STR};
-        parseModules(modulesStrs);
+        torrent_node_lib::initBlockchainUtils(torrent_node_lib::BlockVersion::V2);
+        std::set<std::string> modulesStrs = {torrent_node_lib::MODULE_BLOCK_STR, torrent_node_lib::MODULE_TXS_STR, torrent_node_lib::MODULE_BALANCE_STR, torrent_node_lib::MODULE_ADDR_TXS_STR, torrent_node_lib::MODULE_BLOCK_RAW_STR};
+        torrent_node_lib::parseModules(modulesStrs);
                 
         settings::read();
 
@@ -59,18 +59,18 @@ int main(int argc, char* argv[])
         settings::read(vm);
 
         const std::vector<std::string> serverIps = {settings::system::torrentServer};
-        std::unique_ptr<P2P> p2p = std::make_unique<P2P_Ips>(serverIps, 2);
+        std::unique_ptr<torrent_node_lib::P2P> p2p = std::make_unique<torrent_node_lib::P2P_Ips>(serverIps, 2);
         
         if (settings::system::useLocalDatabase) {
-            syncSingleton() = std::make_unique<Sync>(
+            syncSingleton() = std::make_unique<torrent_node_lib::Sync>(
                 settings::system::blocksFolder, 
-                Sync::LevelDbOptions(8, true, true, settings::system::leveldbFolder, 100),
-                Sync::CachesOptions(0, 1, 100),
+                torrent_node_lib::Sync::LevelDbOptions(8, true, true, settings::system::leveldbFolder, 100),
+                torrent_node_lib::Sync::CachesOptions(0, 1, 100),
                 p2p.get(), false, settings::system::validateBlocks
             );
         }
         
-        Thread runServerThread(runServer);
+        common::Thread runServerThread(runServer);
         
         if (settings::system::useLocalDatabase) {
             syncSingleton()->synchronize(2, true);

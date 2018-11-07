@@ -19,9 +19,9 @@ bool send_tx_handler_sync::prepare_params()
             this->m_nonce = std::stoull(tmp);
         } else {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
-            const Sync &sync = *syncSingleton();
+            const torrent_node_lib::Sync &sync = *syncSingleton();
             
-            const BalanceInfo balance = sync.getBalance(Address(this->m_address));
+            const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(this->m_address));
             this->m_nonce = balance.countSpent + 1;
         }
 

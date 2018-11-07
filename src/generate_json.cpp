@@ -9,6 +9,9 @@
 #include "check.h"
 #include "convertStrings.h"
 
+using namespace common;
+using namespace torrent_node_lib;
+
 static void addIdToResponse(const RequestId &requestId, rapidjson::Value &json, rapidjson::Document::AllocatorType &allocator) {
     if (requestId.isSet) {
         if (std::holds_alternative<std::string>(requestId.id)) {

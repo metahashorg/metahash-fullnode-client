@@ -23,10 +23,10 @@ http_server::~http_server()
 
 void http_server::checkTimeout() {
     try {
-        checkStopSignal();
+        common::checkStopSignal();
         checkTimeoutTimer.expires_after(seconds(1));
         checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
-    } catch (const StopException &e) {
+    } catch (const common::StopException &e) {
         stop();
     }
 }

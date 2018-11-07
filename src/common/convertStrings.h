@@ -6,6 +6,8 @@
 
 #include "BigInteger.h"
 
+namespace common {
+
 template<typename Iterator>
 inline std::string toHex(Iterator begin, Iterator end) {
     std::string result;
@@ -101,6 +103,8 @@ inline Type hexStrToInt(const std::string &str) {
     }
     
     return result;
+}
+
 }
 
 #endif // CONVERT_STRINGS_H_
