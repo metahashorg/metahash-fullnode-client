@@ -236,7 +236,7 @@ std::string blockHeadersToJson(const RequestId &requestId, const std::vector<Blo
     rapidjson::Value vals(rapidjson::kArrayType);
     for (auto iter = bh.begin(); iter != bh.end();) {
         const BlockHeader &b  = *iter;
-        const auto nextIter = iter++;
+        const auto nextIter = ++iter;
         std::optional<std::reference_wrapper<const BlockHeader>> nextBlock;
         if (nextIter != bh.end()) {
             nextBlock = std::cref(*nextIter);
