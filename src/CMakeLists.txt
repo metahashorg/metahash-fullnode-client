@@ -46,6 +46,7 @@ include_directories( SYSTEM
     #${Boost_LIBRARY_DIRS} /
     ${OPENSSL_INCLUDE_DIRS} 
     ${BOOST_LIBS}/include/
+    ../3rdParty/log4cpp/include/
     )
 include_directories(
     common/
@@ -64,7 +65,7 @@ link_directories(${PROJECT_NAME} ${Boost_LIBRARY_DIRS})
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 
 find_library(COMMON_LIB common HINTS common/)
-find_library(LOG4CPP log4cpp HINTS common/)
+find_library(LOG4CPP log4cpp HINTS ../3rdParty/log4cpp/)
 find_library(SYNC torrent_node_lib HINTS sync/)
 find_library(LEVELDB NAMES libleveldb.a HINTS sync/)
 find_library(LEVELDB_SNAPPY NAMES libsnappy.a HINTS sync/)
