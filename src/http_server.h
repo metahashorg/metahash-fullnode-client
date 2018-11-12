@@ -1,7 +1,8 @@
 #pragma once
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
-#include <boost/asio.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/system_timer.hpp>
 
 namespace	asio    = boost::asio;
 namespace	ip      = boost::asio::ip;

@@ -5,9 +5,9 @@
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio/ssl.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
 #include "json_rpc.h"
 #include "task_handlers/time_duration.h"

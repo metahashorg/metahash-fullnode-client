@@ -4,11 +4,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/asio.hpp>
 #include "../log/log.h"
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/program_options.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
 namespace   pt      = boost::property_tree;
 namespace	asio    = boost::asio;

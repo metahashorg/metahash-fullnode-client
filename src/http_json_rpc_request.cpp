@@ -3,6 +3,9 @@
 #include "log/log.h"
 #include <iostream>
 
+#include <boost/asio/placeholders.hpp>
+#include <boost/asio/connect.hpp>
+
 #include "boost/random.hpp"
 
 http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_context& execute_context):
