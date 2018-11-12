@@ -1,11 +1,34 @@
-# metahash_crypt_example_c
+# metahash-crypt-client
 
-Developers and community enthusiast are advised to read the [Wiki page](https://github.com/metahashorg/crypt_example_c/wiki), which contains detailed information about **Metahash C++ client** as well as its capabilities, available methods and tips. 
-
-Besides, for your convenience you are free to download an already built docker container, see [releases](https://github.com/metahashorg/crypt_example_c/releases) of this repository for more details.
-
-### Dependencies:
+### Dependices:
 ```
 boost 1.67
 rapidjson
 ```
+
+### Using:
+```
+run --help what would see allowed options
+run --request what would will see description for requests
+```
+
+### Requests:
+```
+Generate wallet 
+{"id":decimal, "version":"2.0","method":"generate", "params":{"password":str}}
+В данной версии пароль не указывается
+
+Balance of wallet 
+{"id":decimal, "version":"2.0","method":"fetch-balance", "params":{"address":hexstr}}
+
+History of wallet 
+{"id":decimal, "version":"2.0","method":"fetch-history", "params":{"address":hexstr}}
+
+Create transaction 
+{"id":decimal, "version":"2.0","method":"create-tx", "params":{"address":hexstr, "password":str, "to":hexstr, "value":decimal/all, "fee":decimal/auto, "nonce":decimal}}
+
+Send transaction 
+{"id":decimal, "version":"2.0","method":"send-tx", "params":{"address":hexstr, "password":str, "to":hexstr, "value":decimal/all, "fee":decimal/auto, "nonce":decimal}}
+nonce можно не узазывать, тогда произойдет автовычисление
+```
+
