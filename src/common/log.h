@@ -5,10 +5,11 @@
 #include "log4cpp/Priority.hh"
 
 #include <thread>
+#include <string>
 
 namespace common {
 
-void configureLog(log4cpp::Priority::Value priority);
+void configureLog(log4cpp::Priority::Value priority, const std::string &folder = "");
 
 void configureSysLog(log4cpp::Priority::Value priority, const std::string& name, const std::string& syslogName);
 

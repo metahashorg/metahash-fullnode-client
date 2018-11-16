@@ -2,7 +2,10 @@
 #include "log.h"
 #include <syslog.h>
 #include <iostream>
+#include <fstream>
+#include <experimental/filesystem>
 
+namespace fs = std::experimental::filesystem;
 
 namespace logg
 {
@@ -31,6 +34,10 @@ void logger::push(int pri, const std::string& mess)
     std::lock_guard<std::mutex> guard(_locker);
     ::syslog(pri, "%s: %s", pri_str[pri].c_str(), mess.c_str());
     std::cout << pri_str[pri] << ": " << mess << std::endl;
+    std::ofstream logFile;
+    fs::create_directories("./log");
+    logFile.open("./log/log.txt", std::ios_base::trunc);
+    logFile << pri_str[pri] << ": " << mess << std::endl;
 }
 
 void push_err(const std::string& mess)
