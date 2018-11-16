@@ -36,7 +36,7 @@ void logger::push(int pri, const std::string& mess)
     std::cout << pri_str[pri] << ": " << mess << std::endl;
     std::ofstream logFile;
     fs::create_directories("./log");
-    logFile.open("./log/log.txt", std::ios_base::trunc);
+    logFile.open("./log/log.txt", std::ios::app);
     logFile << pri_str[pri] << ": " << mess << std::endl;
 }
 

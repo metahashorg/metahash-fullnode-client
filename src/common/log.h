@@ -9,7 +9,7 @@
 
 namespace common {
 
-void configureLog(log4cpp::Priority::Value priority, const std::string &folder = "");
+void configureLog(log4cpp::Priority::Value priority, const std::string &folder = "", bool isAppend = false);
 
 void configureSysLog(log4cpp::Priority::Value priority, const std::string& name, const std::string& syslogName);
 

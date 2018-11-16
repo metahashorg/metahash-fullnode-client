@@ -29,7 +29,7 @@ void runServer() {
 int main(int argc, char* argv[])
 {
     common::initializeStopProgram();
-    common::configureLog(log4cpp::Priority::DEBUG, "./log/");
+    common::configureLog(log4cpp::Priority::DEBUG, "./log/", true);
     try {
         torrent_node_lib::initBlockchainUtils(torrent_node_lib::BlockVersion::V2);
         std::set<std::string> modulesStrs = {torrent_node_lib::MODULE_BLOCK_STR, torrent_node_lib::MODULE_TXS_STR, torrent_node_lib::MODULE_BALANCE_STR, torrent_node_lib::MODULE_ADDR_TXS_STR, torrent_node_lib::MODULE_BLOCK_RAW_STR};
