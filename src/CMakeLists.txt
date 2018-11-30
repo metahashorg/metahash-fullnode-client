@@ -1,11 +1,13 @@
 set(BOOST_LIBS "" CACHE STRING "Path to boost lib")
 if ("${BOOST_LIBS}" STREQUAL "")
-    find_package(Boost 1.67)
+    find_package(Boost 1.67 COMPONENTS program_options filesystem system)
     set(BOOST_LIBS_INCLUDE ${Boost_INCLUDE_DIRS})
     set(BOOST_LIBS_LIBS ${Boost_LIBRARY_DIRS})
+    set(BOOST_LIBRS "${Boost_LIBRARIES}")
 else()
     set(BOOST_LIBS_INCLUDE ${BOOST_LIBS}/include)
     set(BOOST_LIBS_LIBS ${BOOST_LIBS}/lib)
+    set(BOOST_LIBRS "${BOOST_LIBS_LIBS}/libboost_filesystem.a" "${BOOST_LIBS_LIBS}/libboost_program_options.a" "${BOOST_LIBS_LIBS}/libboost_system.a")
 endif()
 
 add_executable(${PROJECT_NAME}
@@ -67,7 +69,7 @@ find_package(Threads)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
 #find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
-target_link_libraries(${PROJECT_NAME} "${BOOST_LIBS_LIBS}/libboost_filesystem.a" "${BOOST_LIBS_LIBS}/libboost_program_options.a" "${BOOST_LIBS_LIBS}/libboost_system.a")
+target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRS})
 
 link_directories(${PROJECT_NAME} ${Boost_LIBRARY_DIRS})
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
@@ -81,9 +83,12 @@ find_library(LEVELDB_MEMENV NAMES libmemenv.a HINTS sync/)
 target_link_libraries(${PROJECT_NAME} ${SYNC} ${COMMON_LIB} ${LEVELDB} ${LEVELDB_SNAPPY} ${LEVELDB_MEMENV} ${LOG4CPP})
 target_link_libraries(${PROJECT_NAME} stdc++fs.a curl)
 
+find_library(LIB_CRYPTO NAMES libcrypto.so HINTS /usr/local/lib/)
+find_library(LIB_SSL NAMES libssl.so HINTS /usr/local/lib/)
+
 find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
 include_directories(${OPENSSL_INCLUDE_DIR})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/usr/local/lib/libcrypto.so /usr/local/lib/libssl.so")
+target_link_libraries(${PROJECT_NAME} ${LIB_CRYPTO} ${LIB_SSL})
 set (CMAKE_CXX_FLAGS "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -Ofast -Wall -Wextra -Werror -Wno-unused-parameter")
 #set (CMAKE_CXX_FLAGS "-g -rdynamic")
