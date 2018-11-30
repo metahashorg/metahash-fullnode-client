@@ -1,9 +1,16 @@
 # metahash-crypt-client
 
-### Dependices:
+### Building:
 ```
-boost 1.67
-rapidjson
+apt install rapidjson-dev libgmp-dev libcurl4-gnutls-dev
+
+cd /tmp/
+git clone https://github.com/metahashorg/crypt_example_c
+cd crypt_example_c/
+mkdir build
+cd build
+cmake ..
+make
 ```
 
 ### Using:
