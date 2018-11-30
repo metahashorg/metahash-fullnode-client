@@ -1,14 +1,8 @@
-set(BOOST_LIBS "" CACHE STRING "Path to boost lib")
-if ("${BOOST_LIBS}" STREQUAL "")
-    find_package(Boost 1.67 COMPONENTS program_options filesystem system)
-    set(BOOST_LIBS_INCLUDE ${Boost_INCLUDE_DIRS})
-    set(BOOST_LIBS_LIBS ${Boost_LIBRARY_DIRS})
-    set(BOOST_LIBRS "${Boost_LIBRARIES}")
-else()
-    set(BOOST_LIBS_INCLUDE ${BOOST_LIBS}/include)
-    set(BOOST_LIBS_LIBS ${BOOST_LIBS}/lib)
-    set(BOOST_LIBRS "${BOOST_LIBS_LIBS}/libboost_filesystem.a" "${BOOST_LIBS_LIBS}/libboost_program_options.a" "${BOOST_LIBS_LIBS}/libboost_system.a")
-endif()
+set(BOOST_LIBS_INCLUDE ../3rdParty/boost/include)
+set(BOOST_LIBS_LIBS ../3rdParty/boost/lib)
+find_library(BOOST1 NAMES libboost_filesystem.a HINTS ${BOOST_LIBS_LIBS})
+find_library(BOOST2 NAMES libboost_program_options.a HINTS ${BOOST_LIBS_LIBS})
+find_library(BOOST3 NAMES libboost_system.a HINTS ${BOOST_LIBS_LIBS})
 
 add_executable(${PROJECT_NAME}
     main.cpp
@@ -71,8 +65,7 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 #find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRS})
 
-link_directories(${PROJECT_NAME} ${Boost_LIBRARY_DIRS})
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${BOOST1} ${BOOST2} ${BOOST3})
 
 find_library(COMMON_LIB common HINTS common/)
 find_library(LOG4CPP log4cpp HINTS ../3rdParty/log4cpp/)
