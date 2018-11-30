@@ -48,7 +48,7 @@ add_executable(${PROJECT_NAME}
 
 include_directories( SYSTEM
     #${Boost_LIBRARY_DIRS} /
-    ${OPENSSL_INCLUDE_DIRS} 
+    ../3rdParty/ssl/include/
     ${BOOST_LIBS_INCLUDE}
     ../3rdParty/log4cpp/include/
     )
@@ -76,8 +76,8 @@ find_library(LEVELDB_MEMENV NAMES libmemenv.a HINTS sync/)
 target_link_libraries(${PROJECT_NAME} ${SYNC} ${COMMON_LIB} ${LEVELDB} ${LEVELDB_SNAPPY} ${LEVELDB_MEMENV} ${LOG4CPP})
 target_link_libraries(${PROJECT_NAME} stdc++fs.a curl)
 
-find_library(LIB_CRYPTO NAMES libcrypto.so HINTS /usr/local/lib/)
-find_library(LIB_SSL NAMES libssl.so HINTS /usr/local/lib/)
+find_library(LIB_CRYPTO NAMES libcrypto.so HINTS ../3rdParty/ssl/lib/)
+find_library(LIB_SSL NAMES libssl.so HINTS ../3rdParty/ssl/lib/)
 
 find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
