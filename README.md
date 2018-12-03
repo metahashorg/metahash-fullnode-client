@@ -23,7 +23,7 @@ run --request what would will see description for requests
 ```
 Generate wallet 
 {"id":decimal, "version":"2.0","method":"generate", "params":{"password":"str"}}
-В данной версии пароль не указывается
+You don't need to enter the password in this version. 
 
 Balance of wallet 
 {"id":decimal, "version":"2.0","method":"fetch-balance", "params":{"address":"hexstr"}}
@@ -36,6 +36,6 @@ Create transaction
 
 Send transaction 
 {"id":decimal, "version":"2.0","method":"send-tx", "params":{"address":"hexstr", "password":"str", "to":"hexstr", "value":"decimal/all", "fee":"decimal", "nonce":"decimal", "data": "dataHex"}}
-nonce можно не узазывать, тогда произойдет автовычисление
+You may not provide nonce, in this case it will be calculated automatically.
 ```
 
