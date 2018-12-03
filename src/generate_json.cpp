@@ -33,16 +33,13 @@ static rapidjson::Value intOrString(Int intValue, bool isString, rapidjson::Docu
     }
 }
 
-std::string genErrorResponse(const RequestId &requestId, int code, const std::string &error) {
-    rapidjson::Document jsonDoc(rapidjson::kObjectType);
-    auto &allocator = jsonDoc.GetAllocator();
-    addIdToResponse(requestId, jsonDoc, allocator);
+void genErrorResponse(int code, const std::string &error, rapidjson::Document &doc) {
+    auto &allocator = doc.GetAllocator();
     
     rapidjson::Value errorJson(rapidjson::kObjectType);
     errorJson.AddMember("code", code, allocator);
     errorJson.AddMember("message", strToJson(error, allocator), allocator);
-    jsonDoc.AddMember("error", errorJson, allocator);
-    return jsonToString(jsonDoc, false);
+    doc.AddMember("error", errorJson, allocator);
 }
 
 std::string genTransactionNotFoundResponse(const RequestId& requestId, const std::string& transaction, size_t countBlocks, size_t knwonBlock) {
@@ -130,17 +127,14 @@ static rapidjson::Value transactionInfoToJson(const TransactionInfo &info, const
     }
 }
 
-std::string transactionToJson(const RequestId &requestId, const TransactionInfo &info, const BlockChainReadInterface &blockchain, size_t countBlocks, size_t knwonBlock, bool isFormat, const JsonVersion &version) {
-    rapidjson::Document doc(rapidjson::kObjectType);
+void transactionToJson(const TransactionInfo &info, const BlockChainReadInterface &blockchain, size_t countBlocks, size_t knwonBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     auto &allocator = doc.GetAllocator();
-    addIdToResponse(requestId, doc, allocator);
     rapidjson::Value resultValue(rapidjson::kObjectType);
     const BlockHeader &bh = blockchain.getBlock(info.blockNumber);
     resultValue.AddMember("transaction", transactionInfoToJson(info, bh, 0, allocator, 2, version), allocator);
     resultValue.AddMember("countBlocks", countBlocks, allocator);
     resultValue.AddMember("knownBlocks", knwonBlock, allocator);
     doc.AddMember("result", resultValue, allocator);
-    return jsonToString(doc, isFormat);
 }
 
 void addressesInfoToJson(const std::string &address, const std::vector<TransactionInfo> &infos, const BlockChainReadInterface &blockchain, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
@@ -221,15 +215,13 @@ static rapidjson::Value blockHeaderToJson(const BlockHeader &bh, const std::opti
     return resultValue;
 }
 
-std::string blockHeaderToJson(const RequestId &requestId, const BlockHeader &bh, const std::optional<std::reference_wrapper<const BlockHeader>> &nextBlock, bool isFormat, const JsonVersion &version) {
+void blockHeaderToJson(const BlockHeader &bh, const std::optional<std::reference_wrapper<const BlockHeader>> &nextBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     if (bh.blockNumber == 0) {
-        return genErrorResponse(requestId, -32603, "Incorrect block number: 0. Genesis block begin with number 1");
+        genErrorResponse(-32603, "Incorrect block number: 0. Genesis block begin with number 1", doc);
+        return;
     }
-    rapidjson::Document doc(rapidjson::kObjectType);
     auto &allocator = doc.GetAllocator();
-    addIdToResponse(requestId, doc, allocator);
     doc.AddMember("result", blockHeaderToJson(bh, nextBlock, allocator, version), allocator);
-    return jsonToString(doc, isFormat);
 }
 
 std::string blockHeadersToJson(const RequestId &requestId, const std::vector<BlockHeader> &bh, bool isFormat, const JsonVersion &version) {
@@ -246,7 +238,7 @@ std::string blockHeadersToJson(const RequestId &requestId, const std::vector<Blo
         }
         
         if (b.blockNumber == 0) {
-            return genErrorResponse(requestId, -32603, "Incorrect block number: 0. Genesis block begin with number 1");
+            //genErrorResponse(requestId, -32603, "Incorrect block number: 0. Genesis block begin with number 1");
         }
         vals.PushBack(blockHeaderToJson(b, nextBlock, allocator, version), allocator);
         
@@ -256,16 +248,15 @@ std::string blockHeadersToJson(const RequestId &requestId, const std::vector<Blo
     return jsonToString(doc, isFormat);
 }
 
-std::string blockInfoToJson(const RequestId &requestId, const BlockInfo &bi, const std::optional<std::reference_wrapper<const BlockHeader>> &nextBlock, int type, bool isFormat, const JsonVersion &version) {
+void blockInfoToJson(const BlockInfo &bi, const std::optional<std::reference_wrapper<const BlockHeader>> &nextBlock, int type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     const BlockHeader &bh = bi.header;
     
     if (bh.blockNumber == 0) {
-        return genErrorResponse(requestId, -32603, "Incorrect block number: 0. Genesis block begin with number 1");
+        genErrorResponse(-32603, "Incorrect block number: 0. Genesis block begin with number 1", doc);
+        return;
     }
     
-    rapidjson::Document doc(rapidjson::kObjectType);
     auto &allocator = doc.GetAllocator();
-    addIdToResponse(requestId, doc, allocator);
     rapidjson::Value resultValue = blockHeaderToJson(bh, nextBlock, allocator, version);
     rapidjson::Value txs(rapidjson::kArrayType);
     for (const TransactionInfo &tx: bi.txs) {
@@ -273,18 +264,14 @@ std::string blockInfoToJson(const RequestId &requestId, const BlockInfo &bi, con
     }
     resultValue.AddMember("txs", txs, allocator);
     doc.AddMember("result", resultValue, allocator);
-    return jsonToString(doc, isFormat);
 }
 
-std::string genCountBlockJson(const RequestId &requestId, size_t countBlocks, bool isFormat, const JsonVersion &version) {
+void genCountBlockJson(size_t countBlocks, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     const bool isStringValue = version == JsonVersion::V2;
-    rapidjson::Document doc(rapidjson::kObjectType);
     auto &allocator = doc.GetAllocator();
-    addIdToResponse(requestId, doc, allocator);
     rapidjson::Value resultValue(rapidjson::kObjectType);
     resultValue.AddMember("count_blocks", intOrString(countBlocks, isStringValue, allocator), allocator);
     doc.AddMember("result", resultValue, allocator);
-    return jsonToString(doc, isFormat);
 }
 
 std::string genBlockDumpJson(const RequestId &requestId, const std::string &blockDump, bool isFormat) {

@@ -17,6 +17,10 @@
 #include "fetch_balance_handler_sync.h"
 #include "fetch_history_handler_sync.h"
 #include "send_tx_handler_sync.h"
+#include "get_count_blocks_handler_sync.h"
+#include "get_block_by_hash_handler_sync.h"
+#include "get_block_by_number_handler_sync.h"
+#include "get_tx_handler_sync.h"
 
 const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> map_handlers = {
     { std::pair<std::string, UseLocalDatabase>("generate", false),					generate_handler::perform },
@@ -37,5 +41,9 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> map_handl
     { std::pair<std::string, UseLocalDatabase>("create-tx", true),					create_tx_handler::perform },
     { std::pair<std::string, UseLocalDatabase>("fetch-balance", true),				fetch_balance_handler_sync::perform },
     { std::pair<std::string, UseLocalDatabase>("fetch-history", true),				fetch_history_handler_sync::perform },
-    { std::pair<std::string, UseLocalDatabase>("send-tx", true),					send_tx_handler_sync::perform }
+    { std::pair<std::string, UseLocalDatabase>("send-tx", true),					send_tx_handler_sync::perform },
+    { std::pair<std::string, UseLocalDatabase>("get-count-blocks", true),			get_count_blocks_handler_sync::perform },
+    { std::pair<std::string, UseLocalDatabase>("get-block-by-hash", true),			get_block_by_hash_handler_sync::perform },
+    { std::pair<std::string, UseLocalDatabase>("get-block-by-number", true),		get_block_by_number_handler_sync::perform },
+    { std::pair<std::string, UseLocalDatabase>("get-tx", true),						get_tx_handler_sync::perform }
 };

@@ -1,0 +1,34 @@
+#include "get_tx_handler_sync.h"
+
+#include "../SyncSingleton.h"
+
+#include "../generate_json.h"
+
+#include "../sync/BlockInfo.h"
+#include "../sync/BlockChainReadInterface.h"
+
+bool get_tx_handler_sync::prepare_params()
+{
+    BGN_TRY
+    {
+        CHK_PRM(m_id, "id field not found")
+        
+        auto params = m_reader.get_params();
+        CHK_PRM(params, "params field not found")
+        
+        CHK_PRM(m_reader.get_value(*params, "hash", hash), "hash field not found")
+        CHK_PRM(!hash.empty(), "hash is empty")
+                
+        return true;
+    }
+    END_TRY_RET(false)
+}
+
+void get_tx_handler_sync::executeImpl() {
+    CHK_PRM(syncSingleton() != nullptr, "Sync not set");
+    const torrent_node_lib::Sync &sync = *syncSingleton();
+    
+    const torrent_node_lib::TransactionInfo tx = sync.getTransaction(hash);
+    
+    transactionToJson(tx, sync.getBlockchain(), sync.getBlockchain().countBlocks(), sync.getKnownBlock(), false, JsonVersion::V1, m_writer.getDoc());
+}

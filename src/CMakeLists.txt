@@ -42,6 +42,10 @@ add_executable(${PROJECT_NAME}
     task_handlers/fetch_balance_handler_sync.cpp
     task_handlers/fetch_history_handler_sync.cpp
     task_handlers/send_tx_handler_sync.cpp
+    task_handlers/get_count_blocks_handler_sync.cpp
+    task_handlers/get_block_by_hash_handler_sync.cpp
+    task_handlers/get_block_by_number_handler_sync.cpp
+    task_handlers/get_tx_handler_sync.cpp
     
     generate_json.cpp
     )
