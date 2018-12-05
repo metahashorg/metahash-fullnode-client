@@ -15,33 +15,23 @@ bool get_block_by_hash_handler::prepare_params()
 
         m_writer.add_param("hash", hash);
 
+        auto &jsonParams = *params;
+        
         uint32_t type(0);
-        auto jValue = this->m_reader.get("type", *params);
-        if (jValue)
-        {
-            std::string tmp;
-            CHK_PRM(json_utils::val2str(jValue, tmp), "type field incorrect format")
-            type = static_cast<uint32_t>(std::stoi(tmp));
+        if (jsonParams.HasMember("type") && jsonParams["type"].IsInt64()) {
+            type = jsonParams["type"].GetInt64();
             m_writer.add_param("type", type);
         }
-
+        
         mh_count_t countTxs(0);
-        jValue = this->m_reader.get("countTxs", *params);
-        if (jValue)
-        {
-            std::string tmp;
-            CHK_PRM(json_utils::val2str(jValue, tmp), "countTxs field incorrect format")
-            countTxs = std::stoull(tmp);
+        if (jsonParams.HasMember("countTxs") && jsonParams["countTxs"].IsInt64()) {
+            countTxs = jsonParams["countTxs"].GetInt64();
             m_writer.add_param("countTxs", countTxs);
         }
-
+        
         mh_count_t beginTx(0);
-        jValue = this->m_reader.get("beginTx", *params);
-        if (jValue)
-        {
-            std::string tmp;
-            CHK_PRM(json_utils::val2str(jValue, tmp), "beginTx field incorrect format")
-            beginTx = std::stoull(tmp);
+        if (jsonParams.HasMember("beginTx") && jsonParams["beginTx"].IsInt64()) {
+            beginTx = jsonParams["beginTx"].GetInt64();
             m_writer.add_param("beginTx", beginTx);
         }
 

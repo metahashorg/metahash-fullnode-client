@@ -23,24 +23,16 @@ bool fetch_history_handler_sync::prepare_params()
         
         address = addr.c_str();
         
+        auto &jsonParams = *params;
+               
         countTxs = 0;
-        auto jValue = this->m_reader.get("countTxs", *params);
-        if (jValue)
-        {
-            std::string tmp;
-            CHK_PRM(json_utils::val2str(jValue, tmp), "countTxs field incorrect format")
-            countTxs = std::stoull(tmp);
-            m_writer.add_param("countTxs", countTxs);
+        if (jsonParams.HasMember("countTxs") && jsonParams["countTxs"].IsInt64()) {
+            countTxs = jsonParams["countTxs"].GetInt64();
         }
         
         beginTx = 0;
-        jValue = this->m_reader.get("beginTx", *params);
-        if (jValue)
-        {
-            std::string tmp;
-            CHK_PRM(json_utils::val2str(jValue, tmp), "beginTx field incorrect format")
-            beginTx = std::stoull(tmp);
-            m_writer.add_param("beginTx", beginTx);
+        if (jsonParams.HasMember("beginTx") && jsonParams["beginTx"].IsInt64()) {
+            beginTx = jsonParams["beginTx"].GetInt64();
         }
         
         return true;

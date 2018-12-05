@@ -9,26 +9,20 @@ bool get_blocks_handler::prepare_params()
         auto params = m_reader.get_params();
         CHK_PRM(params, "params field not found")
 
+        auto &jsonParams = *params;
+        
         mh_count_t countBlocks(0);
-        auto jValue = this->m_reader.get("countBlocks", *params);
-        if (jValue)
-        {
-            std::string tmp;
-            CHK_PRM(json_utils::val2str(jValue, tmp), "countBlocks field incorrect format")
-            countBlocks = std::stoull(tmp);
+        if (jsonParams.HasMember("countBlocks") && jsonParams["countBlocks"].IsInt64()) {
+            countBlocks = jsonParams["countBlocks"].GetInt64();
             m_writer.add_param("countBlocks", countBlocks);
         }
-
+        
         mh_count_t beginBlock(0);
-        jValue = this->m_reader.get("beginBlock", *params);
-        if (jValue)
-        {
-            std::string tmp;
-            CHK_PRM(json_utils::val2str(jValue, tmp), "beginBlock field incorrect format")
-            beginBlock = std::stoull(tmp);
+        if (jsonParams.HasMember("beginBlock") && jsonParams["beginBlock"].IsInt64()) {
+            beginBlock = jsonParams["beginBlock"].GetInt64();
             m_writer.add_param("beginBlock", beginBlock);
         }
-
+        
         return true;
     }
     END_TRY_RET(false)

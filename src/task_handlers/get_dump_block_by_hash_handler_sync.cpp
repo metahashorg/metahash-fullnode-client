@@ -21,18 +21,19 @@ bool get_dump_block_by_hash_handler_sync::prepare_params()
         CHK_PRM(m_reader.get_value(*params, "hash", hash), "hash field not found")
         CHK_PRM(!hash.empty(), "hash is empty")
 
+        auto &jsonParams = *params;
         fromByte = 0;
         toByte = std::numeric_limits<size_t>::max();
-        if (m_reader.get_doc().HasMember("fromByte") && m_reader.get_doc()["fromByte"].IsInt64()) {
-            fromByte = m_reader.get_doc()["fromByte"].GetInt64();
+        if (jsonParams.HasMember("fromByte") && jsonParams["fromByte"].IsInt64()) {
+            fromByte = jsonParams["fromByte"].GetInt64();
         }
-        if (m_reader.get_doc().HasMember("toByte") && m_reader.get_doc()["toByte"].IsInt64()) {
-            toByte = m_reader.get_doc()["toByte"].GetInt64();
+        if (jsonParams.HasMember("toByte") && jsonParams["toByte"].IsInt64()) {
+            toByte = jsonParams["toByte"].GetInt64();
         }
         
         isHex = false;
-        if (m_reader.get_doc().HasMember("isHex") && m_reader.get_doc()["isHex"].IsBool()) {
-            isHex = m_reader.get_doc()["isHex"].GetBool();
+        if (jsonParams.HasMember("isHex") && jsonParams["isHex"].IsBool()) {
+            isHex = jsonParams["isHex"].GetBool();
         }
         
         return true;
