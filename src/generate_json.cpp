@@ -274,12 +274,9 @@ void genCountBlockJson(size_t countBlocks, bool isFormat, const JsonVersion &ver
     doc.AddMember("result", resultValue, allocator);
 }
 
-std::string genBlockDumpJson(const RequestId &requestId, const std::string &blockDump, bool isFormat) {
-    rapidjson::Document doc(rapidjson::kObjectType);
+void genBlockDumpJson(const std::string &blockDump, bool isFormat, rapidjson::Document &doc) {
     auto &allocator = doc.GetAllocator();
-    addIdToResponse(requestId, doc, allocator);
     rapidjson::Value resultValue(rapidjson::kObjectType);
     resultValue.AddMember("dump", strToJson(blockDump, allocator), allocator);
     doc.AddMember("result", resultValue, allocator);
-    return jsonToString(doc, isFormat);
 }

@@ -42,6 +42,6 @@ void blockInfoToJson(const torrent_node_lib::BlockInfo &bi, const std::optional<
 
 void genCountBlockJson(size_t countBlocks, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
-std::string genBlockDumpJson(const RequestId &requestId, const std::string &blockDump, bool isFormat);
+void genBlockDumpJson(const std::string &blockDump, bool isFormat, rapidjson::Document &doc);
 
 #endif // GENERATE_JSON_H_

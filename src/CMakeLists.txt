@@ -46,6 +46,8 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_block_by_hash_handler_sync.cpp
     task_handlers/get_block_by_number_handler_sync.cpp
     task_handlers/get_tx_handler_sync.cpp
+    task_handlers/get_dump_block_by_hash_handler_sync.cpp
+    task_handlers/get_dump_block_by_number_handler_sync.cpp
     
     generate_json.cpp
     )
