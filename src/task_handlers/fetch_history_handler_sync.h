@@ -21,6 +21,10 @@ public:
 private:
     
     std::string address;
+    
+    mh_count_t countTxs;
+    
+    mh_count_t beginTx;
 };
 
 #endif // FETCH_HISTORY_HANDLER_SYNC_H_

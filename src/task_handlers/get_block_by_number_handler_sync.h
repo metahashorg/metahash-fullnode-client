@@ -23,6 +23,10 @@ private:
     size_t number;
     
     uint32_t type;
+    
+    mh_count_t countTxs;
+    
+    mh_count_t beginTx;
 };
 
 #endif // GET_BLOCK_BY_NUMBER_HANDLER_SYNC_H_

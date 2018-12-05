@@ -30,6 +30,26 @@ bool get_block_by_hash_handler_sync::prepare_params()
             m_writer.add_param("type", type);
         }
                 
+        countTxs = 0;
+        jValue = this->m_reader.get("countTxs", *params);
+        if (jValue)
+        {
+            std::string tmp;
+            CHK_PRM(json_utils::val2str(jValue, tmp), "countTxs field incorrect format")
+            countTxs = std::stoull(tmp);
+            m_writer.add_param("countTxs", countTxs);
+        }
+        
+        beginTx = 0;
+        jValue = this->m_reader.get("beginTx", *params);
+        if (jValue)
+        {
+            std::string tmp;
+            CHK_PRM(json_utils::val2str(jValue, tmp), "beginTx field incorrect format")
+            beginTx = std::stoull(tmp);
+            m_writer.add_param("beginTx", beginTx);
+        }
+                
         return true;
     }
     END_TRY_RET(false)
@@ -50,7 +70,7 @@ void get_block_by_hash_handler_sync::executeImpl() {
     if (type == 0 || type == 4) {
         blockHeaderToJson(bh, nextBh, false, JsonVersion::V1, m_writer.getDoc());
     } else {
-        const torrent_node_lib::BlockInfo bi = sync.getFullBlock(bh, 0, 0);
+        const torrent_node_lib::BlockInfo bi = sync.getFullBlock(bh, beginTx, countTxs);
         blockInfoToJson(bi, nextBh, type, false, JsonVersion::V1, m_writer.getDoc());
     }
 }
