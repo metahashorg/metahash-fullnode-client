@@ -41,6 +41,7 @@ bool get_dump_block_by_hash_handler_sync::prepare_params()
 }
 
 void get_dump_block_by_hash_handler_sync::executeImpl() {
+BGN_TRY {
     CHK_PRM(syncSingleton() != nullptr, "Sync not set");
     const torrent_node_lib::Sync &sync = *syncSingleton();
     
@@ -62,4 +63,5 @@ void get_dump_block_by_hash_handler_sync::executeImpl() {
     } catch (...) {
         genErrorResponse(-32603, "Unknown error", m_writer.getDoc());
     }
+} END_TRY_RET();
 }

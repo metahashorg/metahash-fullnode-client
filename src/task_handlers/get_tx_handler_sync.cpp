@@ -25,10 +25,12 @@ bool get_tx_handler_sync::prepare_params()
 }
 
 void get_tx_handler_sync::executeImpl() {
+BGN_TRY {
     CHK_PRM(syncSingleton() != nullptr, "Sync not set");
     const torrent_node_lib::Sync &sync = *syncSingleton();
     
     const torrent_node_lib::TransactionInfo tx = sync.getTransaction(hash);
     
     transactionToJson(tx, sync.getBlockchain(), sync.getBlockchain().countBlocks(), sync.getKnownBlock(), false, JsonVersion::V1, m_writer.getDoc());
+} END_TRY_RET();
 }

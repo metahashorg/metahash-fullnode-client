@@ -49,10 +49,12 @@ bool fetch_history_handler_sync::prepare_params()
 }
 
 void fetch_history_handler_sync::executeImpl() {
+BGN_TRY {
     CHK_PRM(syncSingleton() != nullptr, "Sync not set");
     const torrent_node_lib::Sync &sync = *syncSingleton();
     
     const std::vector<torrent_node_lib::TransactionInfo> txs = sync.getTxsForAddress(torrent_node_lib::Address(address), true, beginTx, countTxs);
     
     addressesInfoToJson(address, txs, sync.getBlockchain(), 0, false, JsonVersion::V1, m_writer.getDoc());
+} END_TRY_RET();
 }

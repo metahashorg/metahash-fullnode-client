@@ -56,6 +56,7 @@ bool get_block_by_hash_handler_sync::prepare_params()
 }
 
 void get_block_by_hash_handler_sync::executeImpl() {
+BGN_TRY {
     CHK_PRM(syncSingleton() != nullptr, "Sync not set");
     const torrent_node_lib::Sync &sync = *syncSingleton();
     
@@ -73,4 +74,5 @@ void get_block_by_hash_handler_sync::executeImpl() {
         const torrent_node_lib::BlockInfo bi = sync.getFullBlock(bh, beginTx, countTxs);
         blockInfoToJson(bi, nextBh, type, false, JsonVersion::V1, m_writer.getDoc());
     }
+} END_TRY_RET();
 }

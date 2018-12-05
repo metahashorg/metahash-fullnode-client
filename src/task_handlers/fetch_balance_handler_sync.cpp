@@ -29,10 +29,12 @@ bool fetch_balance_handler_sync::prepare_params()
 }
 
 void fetch_balance_handler_sync::executeImpl() {
+BGN_TRY {
     CHK_PRM(syncSingleton() != nullptr, "Sync not set");
     const torrent_node_lib::Sync &sync = *syncSingleton();
     
     const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(address));
     
     balanceInfoToJson(address, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.getDoc());
+} END_TRY_RET();
 }

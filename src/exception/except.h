@@ -42,6 +42,14 @@ protected:
         param;\
         return ret;\
     }\
+    catch (const std::string& ex)\
+    {\
+        STREAM_LOG_ERR("Exception \"" << ex << "\" in func " << __PRETTY_FUNCTION__)\
+        this->m_writer.reset();\
+        this->m_writer.set_error(-32666, ex);\
+        param;\
+        return ret;\
+    }\
     catch (std::exception& ex)\
     {\
         STREAM_LOG_ERR("Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__)\

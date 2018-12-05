@@ -34,6 +34,7 @@ bool send_tx_handler_sync::prepare_params()
 }
 
 void send_tx_handler_sync::processResponse(json_rpc_id id, json_rpc_reader &reader) {    
+BGN_TRY {
     //json_rpc_id _id = reader.get_id();
     //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
     
@@ -49,4 +50,5 @@ void send_tx_handler_sync::processResponse(json_rpc_id id, json_rpc_reader &read
         CHK_PRM(params->IsString(), "params field not found");
         this->m_writer.set_result(*params);
     }
+} END_TRY_RET();
 }

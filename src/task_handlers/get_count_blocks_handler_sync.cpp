@@ -19,10 +19,12 @@ bool get_count_blocks_handler_sync::prepare_params()
 }
 
 void get_count_blocks_handler_sync::executeImpl() {
+BGN_TRY {
     CHK_PRM(syncSingleton() != nullptr, "Sync not set");
     const torrent_node_lib::Sync &sync = *syncSingleton();
     
     const size_t countBlocks = sync.getBlockchain().countBlocks();
     
     genCountBlockJson(countBlocks, false, JsonVersion::V1, m_writer.getDoc());
+} END_TRY_RET();
 }
