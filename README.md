@@ -1,8 +1,8 @@
 # metahash-crypt-client
 
 ### Building:
-```
-apt install rapidjson-dev libgmp-dev libcurl4-gnutls-dev
+```shell
+sudo apt install rapidjson-dev libgmp-dev libcurl4-gnutls-dev
 
 cd /tmp/
 git clone https://github.com/metahashorg/crypt_example_c
@@ -11,6 +11,10 @@ mkdir build
 cd build
 cmake ..
 make
+```
+Note: if you receive error like "Command 'cmake' not found." you need to install cmake:
+```shell
+sudo apt install cmake
 ```
 
 ### Using:
