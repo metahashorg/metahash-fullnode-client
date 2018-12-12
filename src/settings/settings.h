@@ -37,6 +37,13 @@ namespace settings
         static bool useLocalDatabase;
     };
 
+    struct statistic {
+        static std::string statisticNetwork;
+        static std::string statisticGroup;
+        static std::string statisticServer;
+        static std::string latencyFile;
+    };
+    
     void read();
     void read(boost::program_options::variables_map& vm);
 }

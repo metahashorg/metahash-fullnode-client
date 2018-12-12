@@ -16,6 +16,8 @@ struct TransactionInfo;
 struct BlockHeader;
 struct BlockInfo;
 struct BalanceInfo;
+struct DelegateState;
+struct V8Details;
 
 class P2P;
 
@@ -83,6 +85,10 @@ public:
     size_t getKnownBlock() const;
     
     void fillSignedTransactionsInBlock(BlockHeader &bh) const;
+    
+    std::vector<std::pair<Address, DelegateState>> getDelegateStates(const Address &fromAddress) const;
+    
+    V8Details getContractDetails(const Address &contractAddress) const;
     
 private:
     

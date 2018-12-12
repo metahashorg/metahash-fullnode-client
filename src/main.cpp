@@ -12,6 +12,9 @@
 
 #include "SyncSingleton.h"
 
+#include "common/network_utils.h"
+#include "StatisticsServer.h"
+
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/program_options.hpp>
 
@@ -58,6 +61,10 @@ int main(int argc, char* argv[])
 
         settings::read(vm);
 
+        const std::string thisServer = common::getHostName();
+        std::unique_ptr<torrent_node_lib::Statistics> statistics = std::make_unique<torrent_node_lib::StatisticsServer>(thisServer, settings::statistic::statisticNetwork, settings::statistic::statisticGroup, settings::statistic::statisticServer, settings::statistic::latencyFile, "vc1");
+        torrent_node_lib::setStatistics(std::move(statistics));
+                
         const std::vector<std::string> serverIps = {settings::system::torrentServer};
         std::unique_ptr<torrent_node_lib::P2P> p2p = std::make_unique<torrent_node_lib::P2P_Ips>(serverIps, 2);
         
@@ -72,11 +79,15 @@ int main(int argc, char* argv[])
         
         common::Thread runServerThread(runServer);
         
+        torrent_node_lib::startStatistics();
+        
         if (settings::system::useLocalDatabase) {
             syncSingleton()->synchronize(2, true);
         }
         
         runServerThread.join();
+        
+        torrent_node_lib::joinStatistics();
         
         return EXIT_SUCCESS;
     }

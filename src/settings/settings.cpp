@@ -27,6 +27,10 @@ namespace settings
     std::string system::blocksFolder = "blocks/";
     bool system::validateBlocks = false;
     bool system::useLocalDatabase = true;
+    std::string statistic::statisticNetwork;
+    std::string statistic::statisticGroup;
+    std::string statistic::statisticServer;
+    std::string statistic::latencyFile;
     
     // server
     std::string server::tor     = {"tor.net-dev.metahash.org:5795"};
@@ -76,6 +80,11 @@ namespace settings
         settings::system::validateBlocks = tree.get<bool>("system.validate_blocks");
         
         settings::system::useLocalDatabase = tree.get<bool>("system.use_local_database");
+        
+        settings::statistic::statisticNetwork = tree.get<std::string>("statistic.network");
+        settings::statistic::statisticGroup = tree.get<std::string>("statistic.group");
+        settings::statistic::statisticServer = tree.get<std::string>("statistic.server");
+        settings::statistic::latencyFile = tree.get<std::string>("statistic.latency_file");
     }
 
     void read(boost::program_options::variables_map& vm)

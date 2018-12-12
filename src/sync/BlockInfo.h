@@ -120,6 +120,13 @@ struct TransactionStatus {
         int64_t value;
         std::string delegateHash;
         
+        UnDelegate() = default;
+        
+        UnDelegate(int64_t value, const std::string &delegateHash)
+            : value(value)
+            , delegateHash(delegateHash)
+        {}
+        
         void serialize(std::vector<char> &buffer) const;
         static UnDelegate deserialize(const std::string &raw, size_t &fromPos);
     };
@@ -320,18 +327,39 @@ struct BlocksMetadata {
     std::string blockHash;
     std::string prevBlockHash;
     size_t addressCounter = 0;
+    size_t blockNumber = 0;
        
     BlocksMetadata() = default;
     
-    BlocksMetadata(const std::string &blockHash, const std::string &prevBlockHash, size_t addressCounter)
+    BlocksMetadata(const std::string &blockHash, const std::string &prevBlockHash, size_t addressCounter, size_t blockNumber)
         : blockHash(blockHash)
         , prevBlockHash(prevBlockHash)
         , addressCounter(addressCounter)
+        , blockNumber(blockNumber)
+    {}
+    
+    std::string serialize() const;
+       
+    static BlocksMetadata deserialize(const std::string &raw);
+    
+};
+
+struct ScriptBlockInfo {
+    size_t blockNumber = 0;
+    std::string blockHash;
+    size_t countVal = 0;
+    
+    ScriptBlockInfo() = default;
+    
+    ScriptBlockInfo(size_t blockNumber, const std::string &blockHash, size_t countVal)
+        : blockNumber(blockNumber)
+        , blockHash(blockHash)
+        , countVal(countVal)
     {}
     
     std::string serialize() const;
     
-    static BlocksMetadata deserialize(const std::string &raw);
+    static ScriptBlockInfo deserialize(const std::string &raw);
     
 };
 
@@ -359,17 +387,86 @@ struct BatchResults {
 
 BalanceInfo calcBalance(const Address &address, const std::vector<TransactionInfo> &txs);
 
+struct DelegateState {
+    int64_t value = 0;
+    
+    std::string hash;
+    
+    DelegateState() = default;
+    
+    DelegateState(int64_t value, const std::string &hash)
+        : value(value)
+        , hash(hash)
+    {}
+    
+    void serialize(std::vector<char> &buffer) const;
+    
+    static DelegateState deserialize(const std::string &raw);
+};
+
+struct DelegateStateHelper {
+    size_t blockNumber = 0;
+    
+    DelegateStateHelper() = default;
+    
+    DelegateStateHelper(size_t blockNumber)
+        : blockNumber(blockNumber)
+    {}
+    
+    void serialize(std::vector<char> &buffer) const;
+    
+    static DelegateStateHelper deserialize(const std::string &raw);
+    
+};
+
 struct V8State {
     enum class ErrorType {
         OK, USER_ERROR, SERVER_ERROR, SCRIPT_ERROR
     };
     
+    V8State() = default;
+    
+    V8State(size_t blockNumber)
+        : blockNumber(blockNumber)
+    {}
+    
     Address address;
     std::string state;
     
+    size_t blockNumber = 0;
+    
+    std::string details;
+    
     size_t errorCode = 0;
-    ErrorType errorType;
+    ErrorType errorType = ErrorType::OK;
     std::string errorMessage;
+    
+    std::string serialize() const;
+    
+    static V8State deserialize(const std::string &raw);
+
+};
+
+struct V8Details {
+    enum class ErrorType {
+        OK, USER_ERROR, SERVER_ERROR, SCRIPT_ERROR
+    };
+    
+    V8Details() = default;
+    
+    V8Details(const std::string &details, const std::string &lastError)
+        : details(details)
+        , lastError(lastError)
+    {}
+    
+    std::string details;
+    
+    std::string lastError;
+
+    std::string serialize() const;
+    
+    static V8Details deserialize(const std::string &raw);
+    
 };
 
 size_t getMaxBlockNumber(const std::vector<TransactionInfo> &infos);
