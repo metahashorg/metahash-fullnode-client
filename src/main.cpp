@@ -61,9 +61,13 @@ int main(int argc, char* argv[])
 
         settings::read(vm);
 
-        const std::string thisServer = common::getHostName();
-        std::unique_ptr<torrent_node_lib::Statistics> statistics = std::make_unique<torrent_node_lib::StatisticsServer>(thisServer, settings::statistic::statisticNetwork, settings::statistic::statisticGroup, settings::statistic::statisticServer, settings::statistic::latencyFile, "vc1");
-        torrent_node_lib::setStatistics(std::move(statistics));
+        const bool isStartStatistic = !settings::statistic::statisticNetwork.empty();
+        
+        if (isStartStatistic) {
+            const std::string thisServer = common::getHostName();
+            std::unique_ptr<torrent_node_lib::Statistics> statistics = std::make_unique<torrent_node_lib::StatisticsServer>(thisServer, settings::statistic::statisticNetwork, settings::statistic::statisticGroup, settings::statistic::statisticServer, settings::statistic::latencyFile, "vc1");
+            torrent_node_lib::setStatistics(std::move(statistics));
+        }
                 
         const std::vector<std::string> serverIps = {settings::system::torrentServer};
         std::unique_ptr<torrent_node_lib::P2P> p2p = std::make_unique<torrent_node_lib::P2P_Ips>(serverIps, 2);
@@ -79,7 +83,9 @@ int main(int argc, char* argv[])
         
         common::Thread runServerThread(runServer);
         
-        torrent_node_lib::startStatistics();
+        if (isStartStatistic) {
+            torrent_node_lib::startStatistics();
+        }
         
         if (settings::system::useLocalDatabase) {
             syncSingleton()->synchronize(2, true);
@@ -87,7 +93,9 @@ int main(int argc, char* argv[])
         
         runServerThread.join();
         
-        torrent_node_lib::joinStatistics();
+        if (isStartStatistic) {
+            torrent_node_lib::joinStatistics();
+        }
         
         return EXIT_SUCCESS;
     }

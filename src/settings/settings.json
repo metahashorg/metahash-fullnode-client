@@ -1,28 +1,28 @@
 {
  "service":
  {
-  "threads": 4,
-  "port": 9999
+  "threads": 4, // Количество тредов
+  "port": 9999 // Порт, на котором сервис будет принимать запросы
  },
  "server":
  {
-  "tor": "tor.net-dev.metahash.org:5795",
-  "proxy": "proxy.net-dev.metahash.org:9999"
+  "tor": "tor.net-dev.metahash.org:5795", // сеть для чтения и отправки транзакций
+  "proxy": "proxy.net-dev.metahash.org:9999" // сеть для чтения и отправки транзакций
  },
  "system":
  {
-   "torrent_server": "tor.net-dev.metahash.org:5795",
-  "wallets-storage": "./wallets",
-  "blocks_folder": "./blocks/",
-  "leveldb_folder": "./leveldb/",
-  "validate_blocks": false,
-  "use_local_database": true
+   "torrent_server": "tor.net-dev.metahash.org:5795", // сеть для чтения и отправки транзакций. Должна совпадать с тем, что выше. (Возможно в след версии я уберу настройку)
+  "wallets-storage": "./wallets", // Папка, куда будут складываться кошельки
+  "blocks_folder": "./blocks/", // Папки для хранения базы данных блоков
+  "leveldb_folder": "./leveldb/",  // Папки для хранения базы данных блоков
+  "validate_blocks": false, // Валидировать ли блоки
+  "use_local_database": true // Выкачивать базу данных или посылать запросы каждый раз на сервера tor.
  },
  "statistic":
  {
-  "network": "n2",
-  "group": "g2",
-  "server": "127.0.0.1:2031",
-  "latency_file": ""
+  "network": "n2", // Имя для отмечания в статистике
+  "group": "g2", // Имя для отмечания в статистике
+  "server": "127.0.0.1:2031", // Сервер статистики
+  "latency_file": "" // latency file (забить)
   }
 }

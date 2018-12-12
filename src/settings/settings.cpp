@@ -81,10 +81,12 @@ namespace settings
         
         settings::system::useLocalDatabase = tree.get<bool>("system.use_local_database");
         
-        settings::statistic::statisticNetwork = tree.get<std::string>("statistic.network");
-        settings::statistic::statisticGroup = tree.get<std::string>("statistic.group");
-        settings::statistic::statisticServer = tree.get<std::string>("statistic.server");
-        settings::statistic::latencyFile = tree.get<std::string>("statistic.latency_file");
+        if (tree.find("statistic") != tree.not_found()) {
+            settings::statistic::statisticNetwork = tree.get<std::string>("statistic.network");
+            settings::statistic::statisticGroup = tree.get<std::string>("statistic.group");
+            settings::statistic::statisticServer = tree.get<std::string>("statistic.server");
+            settings::statistic::latencyFile = tree.get<std::string>("statistic.latency_file");
+        }
     }
 
     void read(boost::program_options::variables_map& vm)
