@@ -18,6 +18,8 @@ struct BlockInfo;
 struct BalanceInfo;
 struct DelegateState;
 struct V8Details;
+struct CommonBalance;
+struct V8Code;
 
 class P2P;
 
@@ -70,7 +72,7 @@ public:
 
     void addUsers(const std::set<Address> &addresses);
     
-    std::vector<TransactionInfo> getTxsForAddress(const Address &address, bool isTxHash, size_t from, size_t count) const;
+    std::vector<TransactionInfo> getTxsForAddress(const Address &address, size_t from, size_t count) const;
 
     TransactionInfo getTransaction(const std::string &txHash) const;
 
@@ -89,6 +91,10 @@ public:
     std::vector<std::pair<Address, DelegateState>> getDelegateStates(const Address &fromAddress) const;
     
     V8Details getContractDetails(const Address &contractAddress) const;
+    
+    CommonBalance getCommonBalance() const;
+    
+    V8Code getContractCode(const Address &contractAddress) const;
     
 private:
     
