@@ -38,28 +38,22 @@ int main(int argc, char* argv[])
         std::set<std::string> modulesStrs = {torrent_node_lib::MODULE_BLOCK_STR, torrent_node_lib::MODULE_TXS_STR, torrent_node_lib::MODULE_BALANCE_STR, torrent_node_lib::MODULE_ADDR_TXS_STR, torrent_node_lib::MODULE_BLOCK_RAW_STR};
         torrent_node_lib::parseModules(modulesStrs);
                 
-        settings::read();
-
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help",									"produce help message")
-            ("threads",		po::value<int>(),			"number of threads")
-            ("port",		po::value<unsigned short>(),"service port, default is 9999")
-            ("tor",			po::value<std::string>(),	"torrent address")
-            ("proxy",		po::value<std::string>(),	"proxy address")
-            ("any",                                     "accept any connections");
+            ("config",		po::value<std::string>(),	"config address");
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
 
-        if (vm.count("help"))
-        {
+        if (vm.count("help")) {
             std::cout << desc << std::endl;
             return EXIT_SUCCESS;
         }
 
-        settings::read(vm);
+        const std::string configPath = settings::getConfigPath(vm);
+        settings::read(configPath);
 
         const bool isStartStatistic = !settings::statistic::statisticNetwork.empty();
         

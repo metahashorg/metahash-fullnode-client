@@ -39,11 +39,17 @@ namespace settings
     // system
     std::string system::wallet_stotage = { boost::filesystem::current_path().append("/wallet").c_str() };
 
-    void read()
-    {
+    void read(const std::string &pathToConfig) {
         pt::ptree tree;
-        auto path = boost::filesystem::current_path();
-        path.append("/settings.json");
+        
+        boost::filesystem::path path;
+        if (pathToConfig.empty()) {
+            path = boost::filesystem::current_path();
+            path.append("/settings.json");
+        } else {
+            path = pathToConfig;
+        }
+        
         pt::read_json(path.c_str(), tree);
 
         service::port = tree.get<unsigned short>("service.port", 9999);
@@ -89,24 +95,10 @@ namespace settings
         }
     }
 
-    void read(boost::program_options::variables_map& vm)
-    {
-        if (vm.count("any"))
-            settings::service::any_conns = true;
-
-        if (vm.count("threads"))
-            settings::service::threads = std::max(vm["threads"].as<int>(), 1);
-
-        if (vm.count("port"))
-            settings::service::port = vm["port"].as<unsigned short>();
-
-        if (vm.count("tor"))
-            settings::server::tor = vm["tor"].as<std::string>();
-
-        if (vm.count("proxy"))
-            settings::server::proxy = vm["proxy"].as<std::string>();
-        
-        if (vm.count("storage"))
-            settings::system::wallet_stotage = vm["storage"].as<std::string>();
+    std::string getConfigPath(boost::program_options::variables_map& vm) {
+        if (vm.count("config")) {
+            return vm["config"].as<std::string>();
+        }
+        return "";
     }
 }
