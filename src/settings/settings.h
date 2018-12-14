@@ -44,6 +44,7 @@ namespace settings
         static std::string latencyFile;
     };
     
-    void read();
-    void read(boost::program_options::variables_map& vm);
+    void read(const std::string &pathToConfig);
+    
+    std::string getConfigPath(boost::program_options::variables_map& vm);
 }

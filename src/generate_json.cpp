@@ -65,7 +65,7 @@ static rapidjson::Value transactionInfoToJson(const TransactionInfo &info, const
         infoJson.AddMember("from", strToJson(info.fromAddress.calcHexString(), allocator), allocator);
         infoJson.AddMember("to", strToJson(info.toAddress.calcHexString(), allocator), allocator);
         infoJson.AddMember("value", intOrString(info.value, isStringValue, allocator), allocator);
-        infoJson.AddMember("transaction", strToJson(info.hash, allocator), allocator);
+        infoJson.AddMember("transaction", strToJson(toHex(info.hash.begin(), info.hash.end()), allocator), allocator);
         infoJson.AddMember("data", strToJson(toHex(info.data.begin(), info.data.end()), allocator), allocator);
         infoJson.AddMember("timestamp", intOrString(bh.timestamp, isStringValue, allocator), allocator);
         infoJson.AddMember("type", strToJson(bh.getBlockType(), allocator), allocator);
@@ -102,7 +102,7 @@ static rapidjson::Value transactionInfoToJson(const TransactionInfo &info, const
                     const TransactionStatus::UnDelegate &undelegateStatus = std::get<TransactionStatus::UnDelegate>(info.status->status);
                     infoJson.RemoveMember("delegate");
                     infoJson.AddMember("delegate", intOrString(undelegateStatus.value, isStringValue, allocator), allocator);
-                    infoJson.AddMember("delegateHash", strToJson(undelegateStatus.delegateHash, allocator), allocator);
+                    infoJson.AddMember("delegateHash", strToJson(toHex(undelegateStatus.delegateHash.begin(), undelegateStatus.delegateHash.end()), allocator), allocator);
                 } else if (std::holds_alternative<TransactionStatus::V8Status>(info.status->status)) {
                     const TransactionStatus::V8Status &v8Status = std::get<TransactionStatus::V8Status>(info.status->status);
                     if (!info.status->isSuccess) {
@@ -121,7 +121,7 @@ static rapidjson::Value transactionInfoToJson(const TransactionInfo &info, const
         }
         return infoJson;
     } else if (type == 1) {
-        return strToJson(info.hash, allocator);
+        return strToJson(toHex(info.hash.begin(), info.hash.end()), allocator);
     } else {
         throwUserErr("Incorrect transaction info type " + std::to_string(type));
     }

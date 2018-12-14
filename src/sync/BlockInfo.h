@@ -182,6 +182,7 @@ struct TransactionInfo {
     int64_t fees = 0;
     uint64_t nonce = 0;
     size_t blockNumber = 0;
+    size_t sizeRawTx = 0;
     bool isSaveToBd = true;
     
     bool isSignBlockTx = false;
@@ -262,6 +263,17 @@ struct BalanceInfo {
 };
 
 BalanceInfo operator+(const BalanceInfo &first, const BalanceInfo &second);
+
+struct CommonBalance {
+    size_t money = 0;
+    size_t blockNumber = 0;
+       
+    CommonBalance() = default;
+    
+    void serialize(std::vector<char> &buffer) const;
+    
+    static CommonBalance deserialize(const std::string &raw);
+};
 
 struct BlockHeader {
     size_t timestamp;
@@ -448,10 +460,6 @@ struct V8State {
 };
 
 struct V8Details {
-    enum class ErrorType {
-        OK, USER_ERROR, SERVER_ERROR, SCRIPT_ERROR
-    };
-    
     V8Details() = default;
     
     V8Details(const std::string &details, const std::string &lastError)
@@ -466,6 +474,21 @@ struct V8Details {
     std::string serialize() const;
     
     static V8Details deserialize(const std::string &raw);
+    
+};
+
+struct V8Code {
+    V8Code() = default;
+    
+    V8Code(const std::vector<unsigned char> &code)
+        : code(code)
+    {}
+    
+    std::vector<unsigned char> code;
+    
+    std::string serialize() const;
+    
+    static V8Code deserialize(const std::string &raw);
     
 };
 
