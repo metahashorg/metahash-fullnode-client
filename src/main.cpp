@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help",									"produce help message")
+            ("any",			"accept any connections")
             ("config",		po::value<std::string>(),	"config address");
 
         po::variables_map vm;

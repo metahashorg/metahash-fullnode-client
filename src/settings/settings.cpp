@@ -96,6 +96,10 @@ namespace settings
     }
 
     std::string getConfigPath(boost::program_options::variables_map& vm) {
+        if (vm.count("any")) {
+            settings::service::any_conns = true;
+        }
+        
         if (vm.count("config")) {
             return vm["config"].as<std::string>();
         }
