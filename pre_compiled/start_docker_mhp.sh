@@ -6,7 +6,7 @@ net=$2
 
 if [ -z $docker_image ]
 then
-	echo usage: $0 docker_image_name network(default is dev)
+	echo "usage: $0 docker_image_name network(default is dev)"
 	exit 2
 fi
 
