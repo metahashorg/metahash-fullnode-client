@@ -1,4 +1,5 @@
 # metahash-crypt-client
+This repository contains Metahash Crypt Client's source code written in C++. For more details about Metahash client see [wiki](https://github.com/metahashorg/crypt_example_c/wiki). You can build container from Dockerfile, please read [Create-docker-file]( https://github.com/metahashorg/crypt_example_c/wiki/Create-docker-file).
 
 ### Building:
 ```shell
