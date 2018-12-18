@@ -6,8 +6,8 @@ This repository contains Metahash Fullnode Client's source code written in C++. 
 sudo apt install rapidjson-dev libgmp-dev libcurl4-gnutls-dev
 
 cd /tmp/
-git clone https://github.com/metahashorg/crypt_example_c
-cd crypt_example_c/
+git clone https://github.com/metahashorg/metahash-fullnode-client
+cd metahash_client/
 mkdir build
 cd build
 cmake ..
