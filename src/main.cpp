@@ -12,6 +12,8 @@
 
 #include "SyncSingleton.h"
 
+#include "nslookup.h"
+
 #include "common/network_utils.h"
 #include "StatisticsServer.h"
 
@@ -56,6 +58,9 @@ int main(int argc, char* argv[])
         const std::string configPath = settings::getConfigPath(vm);
         settings::read(configPath);
 
+        const std::string bestTorrentIp = getBestIp(settings::server::tor);
+        settings::server::tor = bestTorrentIp;
+        
         const bool isStartStatistic = !settings::statistic::statisticNetwork.empty();
         
         if (isStartStatistic) {
@@ -64,7 +69,7 @@ int main(int argc, char* argv[])
             torrent_node_lib::setStatistics(std::move(statistics));
         }
                 
-        const std::vector<std::string> serverIps = {settings::system::torrentServer};
+        const std::vector<std::string> serverIps = {settings::server::tor};
         std::unique_ptr<torrent_node_lib::P2P> p2p = std::make_unique<torrent_node_lib::P2P_Ips>(serverIps, 2);
         
         if (settings::system::useLocalDatabase) {
@@ -93,10 +98,11 @@ int main(int argc, char* argv[])
         }
         
         return EXIT_SUCCESS;
-    }
-    catch (const std::exception& e)
-    {
+    } catch (const std::exception& e) {
         STREAM_LOG_ERR(e.what());
+        return EXIT_FAILURE;
+    } catch (const std::string& e) {
+        STREAM_LOG_ERR(e);
         return EXIT_FAILURE;
     }
 }

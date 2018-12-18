@@ -28,7 +28,6 @@ namespace settings
     struct system
     {
         static std::string wallet_stotage;
-        static std::string torrentServer;
         
         static std::string leveldbFolder;
         static std::string blocksFolder;

@@ -22,7 +22,6 @@ namespace settings
     unsigned short service::port = {9999};
     int service::threads = {4};
     std::vector<std::string> service::access;
-    std::string system::torrentServer = "172.104.224.65:5795";
     std::string system::leveldbFolder = "leveldb/";
     std::string system::blocksFolder = "blocks/";
     bool system::validateBlocks = false;
@@ -77,8 +76,6 @@ namespace settings
         
         system::wallet_stotage = tree.get<std::string>("system.wallets-storage", boost::filesystem::current_path().append("/wallet").c_str());
                     
-        settings::system::torrentServer = tree.get<std::string>("system.torrent_server");
-        
         settings::system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
         
         settings::system::blocksFolder = tree.get<std::string>("system.blocks_folder");

@@ -13,6 +13,8 @@ add_executable(${PROJECT_NAME}
     json_rpc.cpp
     http_session.cpp
     log/log.cpp
+    nslookup.cpp
+    
     task_handlers/utils.cpp
     task_handlers/task_handlers.h
     task_handlers/base_handler.cpp
@@ -80,7 +82,7 @@ find_library(LEVELDB NAMES libleveldb.a HINTS sync/)
 find_library(LEVELDB_SNAPPY NAMES libsnappy.a HINTS sync/)
 find_library(LEVELDB_MEMENV NAMES libmemenv.a HINTS sync/)
 target_link_libraries(${PROJECT_NAME} ${SYNC} ${COMMON_LIB} ${LEVELDB} ${LEVELDB_SNAPPY} ${LEVELDB_MEMENV} ${LOG4CPP})
-target_link_libraries(${PROJECT_NAME} stdc++fs.a curl)
+target_link_libraries(${PROJECT_NAME} stdc++fs.a curl resolv)
 
 find_library(LIB_CRYPTO NAMES libcrypto.so HINTS ../3rdParty/ssl/lib/)
 find_library(LIB_SSL NAMES libssl.so HINTS ../3rdParty/ssl/lib/)
