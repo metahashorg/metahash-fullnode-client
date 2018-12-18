@@ -27,7 +27,7 @@ cd $workdir
 
 if [ ! -f settings.json.$net ]
 then
-	wget -q https://raw.githubusercontent.com/metahashorg/crypt_example_c/master/pre_compiled/settings.json.$net
+	wget -q https://raw.githubusercontent.com/metahashorg/metahash-fullnode-client/master/pre_compiled/settings.json.$net
 
 	if [ $? -ne 0 ]
 	then
