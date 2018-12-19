@@ -1,3 +1,10 @@
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake_modules/")
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+git_local_changes(GIT_LOCAL_CHANGES)
+
+configure_file("${CMAKE_CURRENT_LIST_DIR}/cmake_modules/GitSHA1.cpp.in" "${CMAKE_BINARY_DIR}/GitSHA1.cpp" @ONLY)
+
 set(BOOST_LIBS_INCLUDE ../3rdParty/boost/include)
 set(BOOST_LIBS_LIBS ../3rdParty/boost/lib)
 find_library(BOOST1 NAMES libboost_filesystem.a HINTS ${BOOST_LIBS_LIBS})
@@ -33,6 +40,8 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_block_by_hash_handler.cpp
     task_handlers/get_last_txs_handler.cpp
     task_handlers/get_count_blocks_handler.cpp
+    task_handlers/status_handler.cpp
+    
     wallet_storage/wallet_storage.cpp
     cpplib_open_ssl_decor/crypto.cpp
     
@@ -50,6 +59,8 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_tx_handler_sync.cpp
     task_handlers/get_dump_block_by_hash_handler_sync.cpp
     task_handlers/get_dump_block_by_number_handler_sync.cpp
+    
+    ${CMAKE_BINARY_DIR}/GitSHA1.cpp
     
     generate_json.cpp
     )

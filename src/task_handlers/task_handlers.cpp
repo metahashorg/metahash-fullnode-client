@@ -13,6 +13,7 @@
 #include "get_dump_block_by_number.h"
 #include "get_tx_handler.h"
 #include "get_last_txs_handler.h"
+#include "status_handler.h"
 
 #include "fetch_balance_handler_sync.h"
 #include "fetch_history_handler_sync.h"
@@ -38,6 +39,7 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> map_handl
     { std::pair<std::string, UseLocalDatabase>("get-tx", false),						get_tx_handler::perform },
     { std::pair<std::string, UseLocalDatabase>("fetch-balance", false),				fetch_balance_handler::perform },
     { std::pair<std::string, UseLocalDatabase>("fetch-history", false),				fetch_history_handler::perform },
+    { std::pair<std::string, UseLocalDatabase>("status", false),				status_handler::perform },
     
     { std::pair<std::string, UseLocalDatabase>("generate", true),					generate_handler::perform },
     { std::pair<std::string, UseLocalDatabase>("create-tx", true),					create_tx_handler::perform },
@@ -49,5 +51,6 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> map_handl
     { std::pair<std::string, UseLocalDatabase>("get-block-by-number", true),		get_block_by_number_handler_sync::perform },
     { std::pair<std::string, UseLocalDatabase>("get-tx", true),						get_tx_handler_sync::perform },
     { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-hash", true),		get_dump_block_by_hash_handler_sync::perform },
-    { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-number", true),	get_dump_block_by_number_handler_sync::perform }
+    { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-number", true),	get_dump_block_by_number_handler_sync::perform },
+    { std::pair<std::string, UseLocalDatabase>("status", true),				status_handler::perform }
 };
