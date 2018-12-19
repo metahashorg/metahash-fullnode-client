@@ -3,7 +3,7 @@ This repository contains Metahash Fullnode Client's source code written in C++.
 
 There are 3 ways to build MetaHash client you may choose from:
 1) build from source code, see Building section below,
-2) build docker container from Dockerfile, see [Create-docker-file]( https://github.com/metahashorg/metahash-fullnode-client/wiki/Create-docker-file,
+2) build docker container from Dockerfile, see [Create-docker-file](https://github.com/metahashorg/metahash-fullnode-client/wiki/Create-docker-file),
 3) download an already built container, see [article](https://github.com/metahashorg/metahash-fullnode-client/wiki/Installation).
 
 For more details about Metahash fullnode client capabilities, installation and usage see [wiki](https://github.com/metahashorg/metahash-fullnode-client/wiki).
