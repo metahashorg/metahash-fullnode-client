@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8.0)
 
-project(metahash_c_service VERSION 1.0.0 LANGUAGES C CXX)
+project(metahash-fullnode-client VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
