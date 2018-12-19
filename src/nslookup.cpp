@@ -98,14 +98,14 @@ static int writer(char *data, size_t size, size_t nmemb, std::string *buffer) {
     return result;
 }
 
-std::unique_ptr<CURL, void(*)(void*)> getInstance() {
+static std::unique_ptr<CURL, void(*)(void*)> getInstance() {
     std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
     CHECK(curl != nullptr, "curl == nullptr");
     
     return curl;
 }
 
-std::string request(CURL* instance, const std::string& url, const std::string& postData, const std::string& header, const std::string& password) {   
+static std::string request(CURL* instance, const std::string& url, const std::string& postData, const std::string& header, const std::string& password) {   
     CHECK(instance != nullptr, "Incorrect curl instance");
     CURL* curl = instance;
     CHECK(curl != nullptr, "curl == nullptr");
@@ -140,31 +140,52 @@ std::string request(CURL* instance, const std::string& url, const std::string& p
     return buffer;
 }
 
-std::string request(const std::string& url, const std::string &postData, const std::string& header, const std::string& password) {
+static std::string request(const std::string& url, const std::string &postData, const std::string& header, const std::string& password) {
     std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> ci = getInstance();
     return request(ci.get(), url, postData, header, password);
 }
 
+static bool validateIpAddress(const std::string &ipAddress) {
+    struct sockaddr_in sa;
+    int result = inet_pton(AF_INET, ipAddress.c_str(), &(sa.sin_addr));
+    return result != 0;
+}
+
 std::string getBestIp(const std::string &address) {
-    const auto foundPort = address.find(':');
-    std::string server;
+    std::string server = address;
+    const auto foundScheme = server.find("://");
+    std::string scheme;
+    if (foundScheme != server.npos) {
+        scheme = server.substr(0, foundScheme + 3);
+        server = server.substr(foundScheme + 3);
+    }
+    
+    const auto foundPort = server.find(':');
     int port = 0;
-    if (foundPort == address.npos) {
-        server = address;
+    if (foundPort == server.npos) {
+        server = server;
     } else {
-        server = address.substr(0, foundPort);
-        port = std::stoi(address.substr(foundPort + 1));
+        port = std::stoi(server.substr(foundPort + 1));
+        server = server.substr(0, foundPort);
+    }
+    
+    if (validateIpAddress(server)) {
+        return scheme + server + ((port != 0) ? (":" + std::to_string(port)) : "");
     }
     
     const std::vector<std::string> result = nsLookup(server);
     
     std::vector<NsResult> pr;
     for (const std::string &r: result) {
-        const std::string serv = ((port != 0) ? (r + ":" + std::to_string(port)) : r);
+        const std::string serv = scheme + r + ((port != 0) ? (":" + std::to_string(port)) : "");
         common::Timer tt;
-        request(serv, "", "", "");
-        tt.stop();
-        pr.emplace_back(serv, tt.countMs());
+        try {
+            request(serv, "", "", "");
+            tt.stop();
+            pr.emplace_back(serv, tt.countMs());
+        } catch (const common::exception &e) {
+            pr.emplace_back(serv, milliseconds(10s).count());
+        }
     }
     
     const auto found = std::min_element(pr.begin(), pr.end(), [](const NsResult &first, const NsResult &second) {

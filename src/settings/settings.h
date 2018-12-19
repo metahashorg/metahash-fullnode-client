@@ -22,7 +22,9 @@ namespace settings
     struct server
     {
         static std::string tor;
+        static std::string torName;
         static std::string proxy;
+        static std::string proxyName;
     };
 
     struct system

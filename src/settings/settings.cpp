@@ -32,9 +32,12 @@ namespace settings
     std::string statistic::latencyFile;
     
     // server
-    std::string server::tor     = {"tor.net-dev.metahash.org:5795"};
-    std::string server::proxy   = {"proxy.net-dev.metahash.org:9999"};
-
+    std::string server::torName     = {"tor.net-dev.metahash.org:5795"};
+    std::string server::proxyName   = {"proxy.net-dev.metahash.org:9999"};
+    
+    std::string server::tor;
+    std::string server::proxy;
+    
     // system
     std::string system::wallet_stotage = { boost::filesystem::current_path().append("/wallet").c_str() };
 
@@ -71,8 +74,8 @@ namespace settings
                 service::access.push_back(e.endpoint().address().to_string());
         }
 
-        server::tor     = tree.get<std::string>("server.tor", "tor.net-dev.metahash.org:5795");
-        server::proxy   = tree.get<std::string>("server.proxy", "proxy.net-dev.metahash.org:9999");
+        server::torName     = tree.get<std::string>("server.tor", "tor.net-dev.metahash.org:5795");
+        server::proxyName   = tree.get<std::string>("server.proxy", "proxy.net-dev.metahash.org:9999");
         
         system::wallet_stotage = tree.get<std::string>("system.wallets-storage", boost::filesystem::current_path().append("/wallet").c_str());
                     

@@ -58,8 +58,11 @@ int main(int argc, char* argv[])
         const std::string configPath = settings::getConfigPath(vm);
         settings::read(configPath);
 
-        const std::string bestTorrentIp = getBestIp(settings::server::tor);
+        const std::string bestTorrentIp = getBestIp(settings::server::torName);
         settings::server::tor = bestTorrentIp;
+        
+        const std::string bestProxyIp = getBestIp(settings::server::proxyName);
+        settings::server::proxy = bestProxyIp;
         
         const bool isStartStatistic = !settings::statistic::statisticNetwork.empty();
         
