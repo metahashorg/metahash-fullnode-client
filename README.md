@@ -1,5 +1,12 @@
-# metahash-fullnode-client
-This repository contains Metahash Fullnode Client's source code written in C++. For more details about Metahash client see [wiki](https://github.com/metahashorg/metahash-fullnode-client/wiki). You can build container from Dockerfile, please read [Create-docker-file]( https://github.com/metahashorg/metahash-fullnode-client/wiki/Create-docker-file).
+# Metahash Fullnode Client
+This repository contains Metahash Fullnode Client's source code written in C++.
+
+There are 3 ways to build MetaHash client you may choose from:
+1) build from source code, see Building section below,
+2) build docker container from Dockerfile, see [Create-docker-file]( https://github.com/metahashorg/metahash-fullnode-client/wiki/Create-docker-file,
+3) download an already built container, see [article](https://github.com/metahashorg/metahash-fullnode-client/wiki/Installation).
+
+For more details about Metahash fullnode client capabilities, installation and usage see [wiki](https://github.com/metahashorg/metahash-fullnode-client/wiki).
 
 ### Building:
 ```shell
@@ -18,13 +25,13 @@ Note: if you receive error like "Command 'cmake' not found." you need to install
 sudo apt install cmake
 ```
 
-### Using:
+### Running
 ```
 run --help what would see allowed options
 run --request what would will see description for requests
 ```
 
-### Requests:
+### Using:
 
 #### Generate wallet 
 ```
@@ -32,12 +39,12 @@ run --request what would will see description for requests
 ```
 You don't need to enter the password in this version. 
 
-#### Balance of wallet 
+#### Wallet balance
 ```
 {"id":decimal, "version":"2.0","method":"fetch-balance", "params":{"address":"hexstr"}}
 ```
 
-#### History of wallet 
+#### Wallet history
 ```
 {"id":decimal, "version":"2.0","method":"fetch-history", "params":{"address":"hexstr"}}
 ```
