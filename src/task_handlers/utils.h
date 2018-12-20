@@ -2,9 +2,11 @@
 
 #include <string.h>
 #include <thread>
-#include <future>
 #include <chrono>
 #include <vector>
+#include <functional>
+#include <mutex>
+#include <condition_variable>
 
 namespace utils
 {
@@ -59,14 +61,14 @@ namespace utils
 
         void start(const Interval& interval, const Handler& handler, bool immediately = true);
         void stop();
-
         void run_once();
 
     private:
-        std::promise<void>  m_promise;
         std::thread         m_thr;
         Handler             m_handler;
+        std::condition_variable cond;
         std::mutex          m_locker;
         Interval            m_interval;
+        bool isStopped = true;
     };
 }

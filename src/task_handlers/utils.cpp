@@ -5,6 +5,8 @@
 #include <iostream>
 #include "time_duration.h"
 
+#include "common/log.h"
+
 namespace utils
 {
     void parse_address(const std::string& address, std::string& host, std::string& port, std::string& path, bool& use_ssl)
@@ -108,39 +110,45 @@ namespace utils
     }
 
     // Timer
-    Timer::~Timer()
-    {
+    Timer::~Timer() {
         stop();
     }
 
-    void Timer::start(const Interval& interval, const Handler& handler, bool immediately /*= true*/)
-    {
+    void Timer::start(const Interval& interval, const Handler& handler, bool immediately /*= true*/) {
         m_handler = handler;
         m_interval = interval;
-        if (immediately)
+        if (immediately) {
+            isStopped = false;
             run_once();
+        } else {
+            isStopped = true;
+        }
     }
 
-    void Timer::stop()
-    {
-        std::lock_guard<std::mutex> guard(m_locker);
-        m_handler = nullptr;
+    void Timer::stop() {
+        if (!isStopped) {
+            std::unique_lock<std::mutex> guard(m_locker);
+            isStopped = true;
+            guard.unlock();
+            cond.notify_all();
+            if (m_thr.joinable()) {
+                m_thr.join();
+            }
+        }
     }
 
-    void Timer::run_once()
-    {
-        m_promise = std::promise<void>();
-        m_thr = std::thread([&]()
-        {
-            auto fut = m_promise.get_future();
-            if (fut.wait_for(m_interval) == std::future_status::timeout)
-            {
-                std::lock_guard<std::mutex> guard(m_locker);
-                if (m_handler)
-                    m_handler();
+    void Timer::run_once() {
+        isStopped = false;
+        m_thr = std::thread([&]() {
+            std::unique_lock<std::mutex> guard(m_locker);
+            if (cond.wait_for(guard, m_interval, [&](){return isStopped;})) {
+                return;
+            }
+            guard.unlock();
+            if (m_handler) {
+                m_handler();
             }
         });
-        m_thr.detach();
     }
 
     // time_duration
