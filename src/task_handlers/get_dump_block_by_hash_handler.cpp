@@ -14,6 +14,7 @@ bool get_dump_block_by_hash::prepare_params()
         CHK_PRM(!hash.empty(), "hash is empty")
 
         m_writer.add_param("hash", hash);
+        m_writer.add_param("isHex", true);
 
         return true;
     }

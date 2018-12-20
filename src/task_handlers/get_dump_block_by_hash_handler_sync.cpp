@@ -31,10 +31,7 @@ bool get_dump_block_by_hash_handler_sync::prepare_params()
             toByte = jsonParams["toByte"].GetInt64();
         }
         
-        isHex = false;
-        if (jsonParams.HasMember("isHex") && jsonParams["isHex"].IsBool()) {
-            isHex = jsonParams["isHex"].GetBool();
-        }
+        isHex = true;
         
         return true;
     }

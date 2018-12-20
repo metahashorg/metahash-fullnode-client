@@ -15,6 +15,8 @@ bool get_dump_block_by_number::prepare_params()
         number = jsonParams["number"].GetInt64();
         m_writer.add_param("number", number);
 
+        m_writer.add_param("isHex", true);
+        
         return true;
     }
     END_TRY_RET(false)
