@@ -2,7 +2,6 @@
 #include "task_handlers/task_handlers.h"
 #include "json_rpc.h"
 #include "settings/settings.h"
-#include "log/log.h"
 #include "task_handlers/base_handler.h"
 
 http_session::http_session(tcp::socket&& socket) :
@@ -41,7 +40,7 @@ asio::io_context& http_session::get_io_context()
 
 void http_session::process_request()
 {
-    STREAM_LOG_DBG(m_socket.remote_endpoint().address().to_string() << " >> " << m_req.body().data());
+    LOGDEBUG << m_socket.remote_endpoint().address().to_string() << " >> " << m_req.body().data();
 
     if (m_req.target().to_string() != "/")
     {
@@ -63,7 +62,7 @@ void http_session::process_request()
         auto it = map_handlers.find(std::make_pair(reader.get_method(), settings::system::useLocalDatabase));
         if (it == map_handlers.end())
         {
-            STREAM_LOG_DBG("Incorrect service method " << reader.get_method())
+            LOGDEBUG << "Incorrect service method " << reader.get_method();
 
             writer.set_id(reader.get_id());
             writer.set_error(-32601, "Method not found");
@@ -80,7 +79,7 @@ void http_session::process_request()
     }
     else
     {
-        STREAM_LOG_DBG("Incorrect json " << m_req.body())
+        LOGDEBUG << "Incorrect json " << m_req.body();
 
         writer.set_error(-32700, "Parse error");
         json = writer.stringify();
@@ -109,7 +108,7 @@ void http_session::send_json(const std::string& data)
 
 void http_session::send_response(http::response<http::dynamic_body>& response)
 {
-    STREAM_LOG_DBG(m_socket.remote_endpoint().address().to_string() << " << " << beast::buffers_to_string(response.body().data()));
+    LOGDEBUG << m_socket.remote_endpoint().address().to_string() << " << " << beast::buffers_to_string(response.body().data());
 
     response.version(10);
     response.set(http::field::server, "metahash.service");

@@ -4,7 +4,6 @@
 
 #include "http_session_ptr.h"
 #include "json_rpc.h"
-#include "log/log.h"
 #include "exception/except.h"
 #include "time_duration.h"
 
@@ -61,10 +60,10 @@ public:
                 obj->execute();
             return obj->result();
         } catch (std::exception& ex) {
-            STREAM_LOG_ERR(__PRETTY_FUNCTION__ << " exception: " << ex.what())
+            LOGERR << __PRETTY_FUNCTION__ << " exception: " << ex.what();
             return handler_result();
         } catch (...) {
-            STREAM_LOG_ERR(__PRETTY_FUNCTION__ << " unhandled exception")
+            LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";
             return handler_result();
         }
     }

@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "http_json_rpc_request.h"
-#include "log/log.h"
 #include "http_session.h"
 
 base_network_handler::base_network_handler(const std::string &host, http_session_ptr session) 

@@ -2,7 +2,8 @@
 #include "http_server.h"
 #include "http_session.h"
 #include "settings/settings.h"
-#include "log/log.h"
+
+#include "log.h"
 
 #include <iostream>
 
@@ -44,14 +45,14 @@ void http_server::run()
         threads.emplace_back(new std::thread(boost::bind(&boost::asio::io_context::run, &m_io_ctx)));
     }
 
-    STREAM_LOG_INF("Service runing at " << m_ep.address().to_string() << ":" << m_ep.port())
+    LOGINFO << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port();
 
     for (std::size_t i = 0; i < threads.size(); ++i)
     {
         threads[i]->join();
     }
 
-    STREAM_LOG_INF("Service stoped")
+    LOGINFO << "Service stoped";
 }
 
 void http_server::stop()
@@ -65,7 +66,7 @@ void http_server::accept(tcp::acceptor& acceptor)
     {
         if (ec)
         {
-            STREAM_LOG_ERR("Failed on accept: " << ec.message())
+            LOGINFO << "Failed on accept: " << ec.message();
         }
         else
         {
@@ -76,7 +77,7 @@ void http_server::accept(tcp::acceptor& acceptor)
             }
             else
             {
-                STREAM_LOG_INF("Droping connection " << ep.address().to_string() << ":" << ep.port())
+                LOGINFO << "Droping connection " << ep.address().to_string() << ":" << ep.port();
                 socket.shutdown(tcp::socket::shutdown_both);
                 socket.close();
             }

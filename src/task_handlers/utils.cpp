@@ -1,7 +1,6 @@
 #include <stdarg.h>
 #include "utils.h"
 #include "../cpplib_open_ssl_decor/crypto.h"
-#include "../log/log.h"
 #include <iostream>
 #include "time_duration.h"
 
@@ -102,7 +101,7 @@ namespace utils
         }
         catch (std::exception& e)
         {
-            STREAM_LOG_ERR("generate sign failed: " << e.what())
+            LOGERR << "generate sign failed: " << e.what();
             result = "generate sign failed: ";
             result.append(e.what());
             return false;
@@ -186,7 +185,7 @@ namespace utils
         if (m_run)
         {
             m_run = false;
-            STREAM_LOG_DBG(m_msg << ": " << (boost::posix_time::microsec_clock::local_time() - m_start).total_milliseconds() << " milisec")
+            LOGDEBUG << m_msg << ": " << (boost::posix_time::microsec_clock::local_time() - m_start).total_milliseconds() << " milisec";
         }
     }
 }

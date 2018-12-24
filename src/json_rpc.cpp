@@ -1,6 +1,7 @@
 #include "json_rpc.h"
-#include "log/log.h"
 #include <sstream>
+
+#include "log.h"
 
 #include "rapidjson/writer.h"
 
@@ -23,7 +24,7 @@ bool json_rpc_reader::parse(const std::string& json)
     }
     catch (const std::exception& e)
     {
-        logg::push_err(e.what());
+        LOGERR << e.what();
         m_error.Set(rapidjson::ParseErrorCode::kParseErrorTermination);
         return false;
     }
@@ -116,7 +117,7 @@ bool json_rpc_writer::parse(const std::string& json)
     }
     catch (const std::exception& e)
     {
-        logg::push_err(e.what());
+        LOGERR << e.what();
         return false;
     }
 }

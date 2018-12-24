@@ -2,7 +2,7 @@
 
 #include <string>
 #include <sstream>
-#include "../log/log.h"
+#include "log.h"
 
 class invalid_param
 {
@@ -36,7 +36,7 @@ protected:
 #define END_TRY_RET_PARAM(ret, param) \
     catch (invalid_param& ex)\
     {\
-        STREAM_LOG_ERR("Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__)\
+        LOGERR << "Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__;\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, ex.what());\
         param;\
@@ -44,7 +44,7 @@ protected:
     }\
     catch (const std::string& ex)\
     {\
-        STREAM_LOG_ERR("Exception \"" << ex << "\" in func " << __PRETTY_FUNCTION__)\
+        LOGERR << "Exception \"" << ex << "\" in func " << __PRETTY_FUNCTION__;\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, ex);\
         param;\
@@ -52,7 +52,7 @@ protected:
     }\
     catch (std::exception& ex)\
     {\
-        STREAM_LOG_ERR("Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__)\
+        LOGERR << "Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__;\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, ex.what());\
         param;\
@@ -60,7 +60,7 @@ protected:
     }\
     catch(...)\
     {\
-        STREAM_LOG_ERR("Unhandled exception in func " << __PRETTY_FUNCTION__)\
+        LOGERR << "Unhandled exception in func " << __PRETTY_FUNCTION__;\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, "Unhandled exception");\
         param;\

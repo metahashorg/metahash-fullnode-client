@@ -1,7 +1,8 @@
 #include "http_json_rpc_request.h"
 #include "settings/settings.h"
-#include "log/log.h"
 #include <iostream>
+
+#include "log.h"
 
 #include <boost/asio/placeholders.hpp>
 #include <boost/asio/connect.hpp>
@@ -85,12 +86,12 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e)
 
     //if (e != asio::error::operation_aborted)
     {
-        logg::push_err(e.message().c_str());
+        LOGERR << e.message().c_str();
         m_result.set_error(32000, e.message().c_str());
         perform_callback();
     }
 
-    STREAM_LOG_ERR("Request error: " << e.value() << " " << e.message())
+    LOGERR << "Request error: " << e.value() << " " << e.message();
 
     if (!m_async && !m_io_ctx.stopped())
         m_io_ctx.stop();
@@ -122,7 +123,7 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
 
 void http_json_rpc_request::on_request_timeout()
 {
-    STREAM_LOG_ERR("Request timeout")
+    LOGERR << "Request timeout";
 
     m_connect_timer.stop();
 
@@ -148,7 +149,7 @@ void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::
 
 void http_json_rpc_request::on_connect_timeout()
 {
-    STREAM_LOG_DBG("Connect timeout")
+    LOGDEBUG << "Connect timeout";
 
     boost::system::error_code ec;
     m_socket.cancel(ec);
@@ -173,7 +174,7 @@ void http_json_rpc_request::on_connect(const boost::system::error_code& e, const
     }
     else
     {
-        STREAM_LOG_DBG("Send request: " << m_host << " << " << beast::buffers_to_string(m_req.body().data()))
+        LOGDEBUG << "Send request: " << m_host << " << " << beast::buffers_to_string(m_req.body().data());
 
         http::async_write(m_socket, m_req,
             boost::bind(&http_json_rpc_request::on_write, shared_from_this(), asio::placeholders::error));
@@ -185,7 +186,7 @@ void http_json_rpc_request::on_handshake(const boost::system::error_code& e)
     if (error_handler(e))
         return;
 
-    STREAM_LOG_DBG("Send request: " << m_host << " << " << beast::buffers_to_string(m_req.body().data()))
+    LOGDEBUG << "Send request: " << m_host << " << " << beast::buffers_to_string(m_req.body().data());
 
     http::async_write(m_ssl_socket, m_req,
         boost::bind(&http_json_rpc_request::on_write, shared_from_this(), asio::placeholders::error));
@@ -217,13 +218,13 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e)
     http::status status = m_response.result();
     if (status != http::status::ok)
     {
-        STREAM_LOG_DBG("Incorrect response http status: " << status)
+        LOGDEBUG << "Incorrect response http status: " << status;
     }
 
     const bool succ = m_result.parse(m_response.body());
     if (!succ)
     {
-        STREAM_LOG_DBG("Response json parse error")
+        LOGDEBUG << "Response json parse error";
         if (status != http::status::ok)
         {
             std::ostringstream stream;
@@ -232,7 +233,7 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e)
         }
     }
 
-    STREAM_LOG_DBG("Recieve response: " << m_host << " >> " << m_result.stringify())
+    LOGDEBUG << "Recieve response: " << m_host << " >> " << m_result.stringify();
 
     perform_callback();
 

@@ -3,7 +3,6 @@
 
 #include "http_server.h"
 #include "settings/settings.h"
-#include "log/log.h"
 #include "check.h"
 
 #include "common/stopProgram.h"
@@ -113,10 +112,10 @@ int main(int argc, char* argv[])
         
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {
-        STREAM_LOG_ERR(e.what());
+        LOGERR << e.what();
         return EXIT_FAILURE;
     } catch (const std::string& e) {
-        STREAM_LOG_ERR(e);
+        LOGERR << e;
         return EXIT_FAILURE;
     }
 }

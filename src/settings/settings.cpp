@@ -4,7 +4,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include "../log/log.h"
+
+#include "log.h"
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/program_options.hpp>
@@ -67,7 +68,7 @@ namespace settings
             auto eps = resolver.resolve({v.second.data(), ""}, er);
             if (er)
             {
-                STREAM_LOG_WRN("Couldn't resolve " << v.second.data() << " : " << er.message());
+                LOGWARN << "Couldn't resolve " << v.second.data() << " : " << er.message();
                 continue;
             }
             for (auto &e : eps)
