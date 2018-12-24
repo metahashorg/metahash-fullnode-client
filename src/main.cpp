@@ -4,6 +4,7 @@
 #include "http_server.h"
 #include "settings/settings.h"
 #include "log/log.h"
+#include "check.h"
 
 #include "common/stopProgram.h"
 #include "common/log.h"
@@ -26,9 +27,19 @@ namespace bs = boost::system;
 static std::unique_ptr<http_server> server;
 
 void runServer() {
-    common::sleep(1s);
-    server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
-    server->run();
+    try {
+        common::sleep(1s);
+        server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
+        server->run();
+    } catch (const common::exception &e) {
+        LOGERR << "Server run Error " << e;
+    } catch (const std::exception &e) {
+        LOGERR << "Server run Error " << e.what();
+    } catch (const common::StopException &) {
+        LOGINFO << "Server stopped";
+    } catch (...) {
+        LOGERR << "Server run Error: Unknown";
+    }
 };
 
 int main(int argc, char* argv[])
