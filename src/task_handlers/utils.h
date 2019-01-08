@@ -10,40 +10,33 @@
 
 namespace utils
 {
+    template<typename Integer>
+    inline std::string toLittleEndian(Integer integer) {
+        std::array<unsigned char, sizeof(integer)> arr;
+        for (size_t i = 0; i < arr.size(); i++) {
+            arr[i] = integer % 256;
+            integer /= 256;
+        }
+        return std::string(arr.begin(), arr.end());
+    }
+    
+    inline std::vector<unsigned char> toVect(const std::string &str) {
+        return std::vector<unsigned char>(str.begin(), str.end());
+    }
+    
     template <typename T>
-    void write_compact_int(T value, std::vector<unsigned char>& buf)
-    {
-        size_t sz = sizeof(T);
-        unsigned char* p = (unsigned char*)(&value) + (sz - 1);
-        while (sz)
-        {
-            if (*p--) break;
-            sz--;
+    void write_compact_int(T value, std::vector<unsigned char>& buf) {
+        std::vector<unsigned char> result;
+        if (value <= 249) {
+            result = toVect(toLittleEndian(uint8_t(value)));
+        } else if (value <= std::numeric_limits<uint16_t>::max()) {
+            result = toVect(toLittleEndian(uint8_t(250)) + toLittleEndian(uint16_t(value)));
+        } else if (value <= std::numeric_limits<uint32_t>::max()) {
+            result = toVect(toLittleEndian(uint8_t(251)) + toLittleEndian(uint32_t(value)));
+        } else {
+            result = toVect(toLittleEndian(uint8_t(252)) + toLittleEndian(uint64_t(value)));
         }
-        if (value == 0)
-            sz = 1;
-
-        size_t type = value >= 0xfa ? 1 : 0;
-        size_t pos = buf.size();
-        buf.resize(pos + sz + type);
-        if (type)
-        {
-            if (sz <= 2)
-                buf[pos++] = 0xfa;
-            else if (sz <= 4)
-                buf[pos++] = 0xfb;
-            else if (sz <= 8)
-                buf[pos++] = 0xfc;
-            else if (sz <= 16)
-                buf[pos++] = 0xfd;
-            else if (sz <= 32)
-                buf[pos++] = 0xfe;
-            else if (sz <= 64)
-                buf[pos++] = 0xff;
-            else
-                throw std::invalid_argument("write_compact_int");
-        }
-        memcpy(&buf[pos], &value, sz);
+        buf.insert(buf.end(), result.begin(), result.end());
     }
 
     void parse_address(const std::string& address, std::string& host, std::string& port, std::string& path, bool& use_ssl);
