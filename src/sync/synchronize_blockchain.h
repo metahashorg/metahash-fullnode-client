@@ -6,12 +6,16 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
 #include <set>
+#include <unordered_map>
+
+#include "LevelDbOptions.h"
 
 namespace torrent_node_lib {
 
 class BlockChainReadInterface;
-struct Address;
+class Address;
 struct TransactionInfo;
 struct BlockHeader;
 struct BlockInfo;
@@ -20,6 +24,13 @@ struct DelegateState;
 struct V8Details;
 struct CommonBalance;
 struct V8Code;
+struct ForgingSums;
+struct NodeTestResult;
+struct NodeTestCount;
+struct NodeTestExtendedStat;
+struct BalanceInfoWalletStats;
+struct NonForgingTxsBalance;
+struct NodesInfoForgingForDays;
 
 class P2P;
 
@@ -27,23 +38,7 @@ class SyncImpl;
 
 class Sync: public common::no_copyable, common::no_moveable {
 public:
-    
-    struct LevelDbOptions {
-        size_t writeBufSizeMb;
-        bool isBloomFilter;
-        bool isChecks;
-        std::string_view folderName;
-        size_t lruCacheMb;
-        
-        LevelDbOptions(size_t writeBufSizeMb, bool isBloomFilter, bool isChecks, std::string_view folderName, size_t lruCacheMb)
-            : writeBufSizeMb(writeBufSizeMb)
-            , isBloomFilter(isBloomFilter)
-            , isChecks(isChecks)
-            , folderName(folderName)
-            , lruCacheMb(lruCacheMb)
-        {}
-    };
-    
+       
     struct CachesOptions {
         size_t maxCountElementsBlockCache;
         size_t maxCountElementsTxsCache;
@@ -59,8 +54,10 @@ public:
 public:
     
     Sync(const std::string &folderPath, const LevelDbOptions &leveldbOpt, const CachesOptions &cachesOpt, P2P *p2p, bool getBlocksFromFile, bool isValidate);
+       
+    void setLeveldbOptScript(const LevelDbOptions &leveldbOptScript);
     
-    Sync(const std::string &folderPath, const LevelDbOptions &leveldbOpt, const LevelDbOptions &leveldbOptScript, const CachesOptions &cachesOpt, P2P *p2p, bool getBlocksFromFile, bool isValidate);
+    void setLeveldbOptNodeTest(const LevelDbOptions &leveldbOpt);
     
     const BlockChainReadInterface & getBlockchain() const;
     
@@ -95,6 +92,26 @@ public:
     CommonBalance getCommonBalance() const;
     
     V8Code getContractCode(const Address &contractAddress) const;
+    
+    ForgingSums getForgingSumForLastBlock(size_t blockIndent) const;
+    
+    std::pair<size_t, NodeTestResult> getLastNodeTestResult(const std::string &address) const;
+    
+    NodeTestCount getLastDayNodeTestCount(const std::string &address) const;
+    
+    NodeTestCount getLastDayNodesTestsCount() const;
+        
+    std::vector<std::pair<std::string, NodeTestExtendedStat>> filterLastNodes(size_t countTests) const;
+    
+    std::pair<int, size_t> calcNodeRaiting(const std::string &address, size_t countTests) const;
+    
+    size_t getLastBlockDay() const;
+    
+    std::unordered_map<std::string, BalanceInfoWalletStats> filterBalances(size_t minBalanceFilter) const;
+    
+    std::map<size_t, NonForgingTxsBalance> getNonForgingStat(size_t fromTimestamp, size_t toTimestamp) const;
+    
+    NodesInfoForgingForDays getForgingStat(size_t fromTimestamp, size_t toTimestamp) const;
     
 private:
     

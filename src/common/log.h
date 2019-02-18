@@ -1,19 +1,15 @@
 #ifndef LOG_H_
 #define LOG_H_
 
-#include "log4cpp/Category.hh"
-#include "log4cpp/Priority.hh"
+#include "logger/easylogging++.h"
 
-#include <thread>
 #include <string>
 
 namespace common {
+    
+void configureLog(const std::string &folder, bool isAppend, bool isConsole, bool isAutoSpacing);
 
-void configureLog(log4cpp::Priority::Value priority, const std::string &folder = "", bool isAppend = false);
-
-void configureSysLog(log4cpp::Priority::Value priority, const std::string& name, const std::string& syslogName);
-
-void configureConsoleLog(log4cpp::Priority::Value priority);
+void flushLogsAll();
 
 struct EmptyLog {
     template<typename T>
@@ -22,14 +18,11 @@ struct EmptyLog {
     }
 };
 
-extern log4cpp::Category& loggerRoot_;
-extern log4cpp::Category& loggerRoot2_;
-
 }
 
-#define LOGERR common::loggerRoot_ << log4cpp::Priority::ERROR << std::this_thread::get_id() << " "
-#define LOGWARN common::loggerRoot_ << log4cpp::Priority::WARN << std::this_thread::get_id() << " "
-#define LOGINFO common::loggerRoot_ << log4cpp::Priority::INFO << std::this_thread::get_id() << " "
-#define LOGDEBUG common::loggerRoot2_ << log4cpp::Priority::DEBUG << std::this_thread::get_id() << " "
+#define LOGERR LOG(ERROR)
+#define LOGWARN LOG(WARNING)
+#define LOGINFO LOG(INFO)
+#define LOGDEBUG LOG(DEBUG)
 
 #endif // LOG_H_

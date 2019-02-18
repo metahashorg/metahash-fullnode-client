@@ -7,8 +7,10 @@
 
 #include "common/stopProgram.h"
 #include "common/log.h"
+#include "common/Thread.h"
 #include "sync/Modules.h"
 #include "sync/P2P_Ips.h"
+#include "sync/LevelDbOptions.h"
 
 #include "SyncSingleton.h"
 
@@ -44,7 +46,7 @@ void runServer() {
 int main(int argc, char* argv[])
 {
     common::initializeStopProgram();
-    common::configureLog(log4cpp::Priority::DEBUG, "./log/", true);
+    common::configureLog("./log/", true, false, false);
     try {
         torrent_node_lib::initBlockchainUtils(torrent_node_lib::BlockVersion::V2);
         std::set<std::string> modulesStrs = {torrent_node_lib::MODULE_BLOCK_STR, torrent_node_lib::MODULE_TXS_STR, torrent_node_lib::MODULE_BALANCE_STR, torrent_node_lib::MODULE_ADDR_TXS_STR, torrent_node_lib::MODULE_BLOCK_RAW_STR};
@@ -88,7 +90,7 @@ int main(int argc, char* argv[])
         if (settings::system::useLocalDatabase) {
             syncSingleton() = std::make_unique<torrent_node_lib::Sync>(
                 settings::system::blocksFolder, 
-                torrent_node_lib::Sync::LevelDbOptions(8, true, true, settings::system::leveldbFolder, 100),
+                torrent_node_lib::LevelDbOptions(8, true, true, settings::system::leveldbFolder, 100),
                 torrent_node_lib::Sync::CachesOptions(0, 1, 100),
                 p2p.get(), false, settings::system::validateBlocks
             );

@@ -2,7 +2,6 @@
 #define STOP_PROGRAM_H_
 
 #include <atomic>
-#include <thread>
 #include <mutex>
 #include <condition_variable>
 
@@ -45,42 +44,6 @@ inline void conditionWait(std::condition_variable &cond, std::unique_lock<std::m
 }
 
 void whileTrue();
-
-template<bool IsJoinable = true>
-struct ThreadImpl {
-    
-    std::thread t;
-    
-    ThreadImpl() = default;
-    
-    ThreadImpl(const ThreadImpl<IsJoinable> &second) = delete;
-    ThreadImpl<IsJoinable>& operator=(const ThreadImpl<IsJoinable> &second) = delete;
-    
-    ThreadImpl(ThreadImpl<IsJoinable> &&second) = default;
-    ThreadImpl<IsJoinable>& operator=(ThreadImpl<IsJoinable> &&second) = default;
-    
-    template<typename... Args>
-    ThreadImpl(Args&& ...args)
-        : t(std::forward<Args>(args)...)
-    {}
-    
-    ~ThreadImpl() {
-        if (t.joinable()) {
-            if (IsJoinable) {
-                t.join();
-            } else {
-                t.detach();
-            }
-        }
-    }
-    
-    void join() {
-        t.join();
-    }
-    
-};
-
-using Thread = ThreadImpl<true>;
 
 }
 

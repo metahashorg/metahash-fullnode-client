@@ -5,6 +5,9 @@
 #include <vector>
 #include <optional>
 #include <variant>
+#include <set>
+#include <map>
+#include <unordered_map>
 
 #include "duration.h"
 
@@ -49,6 +52,8 @@ public:
     }
     
     bool isInitialWallet() const;
+    
+    bool isScriptAddress() const;
     
 private:
     
@@ -196,6 +201,8 @@ struct TransactionInfo {
     
     std::string allRawTx;
     
+    std::optional<int64_t> realFees;
+    
     std::optional<DelegateInfo> delegate;
     
     std::optional<ScriptInfo> scriptInfo;
@@ -204,13 +211,17 @@ struct TransactionInfo {
     
     std::optional<TransactionStatus> status;
     
+    bool isModuleNotSet = false;
+    
     bool isInitialized = false;
-        
+    
     void serialize(std::vector<char> &buffer) const;
     
     static TransactionInfo deserialize(const std::string &raw);
     
     static TransactionInfo deserialize(const std::string &raw, size_t &from);
+    
+    void calcRealFee();
     
     bool isStatusNeed() const {
         return delegate.has_value() || scriptInfo.has_value();
@@ -220,6 +231,11 @@ struct TransactionInfo {
     
     bool isIntStatusNotSuccess() const;
     
+    bool isIntStatusForging() const;
+    
+    bool isIntStatusNodeTest() const;
+    
+    static std::set<uint64_t> getForgingIntStatuses();
 };
 
 struct BalanceInfo {
@@ -375,6 +391,25 @@ struct ScriptBlockInfo {
     
 };
 
+struct NodeStatBlockInfo {
+    size_t blockNumber = 0;
+    std::string blockHash;
+    size_t countVal = 0;
+    
+    NodeStatBlockInfo() = default;
+    
+    NodeStatBlockInfo(size_t blockNumber, const std::string &blockHash, size_t countVal)
+        : blockNumber(blockNumber)
+        , blockHash(blockHash)
+        , countVal(countVal)
+    {}
+    
+    std::string serialize() const;
+    
+    static NodeStatBlockInfo deserialize(const std::string &raw);
+    
+};
+
 struct FileInfo {
     
     FilePosition filePos;
@@ -490,6 +525,187 @@ struct V8Code {
     
     static V8Code deserialize(const std::string &raw);
     
+};
+
+struct ForgingSums {
+    std::unordered_map<uint64_t, size_t> sums;
+    size_t blockNumber = 0;
+};
+
+struct NodeTestType {
+    enum class Type {
+        unknown, torrent, proxy
+    };
+    
+    Type type = Type::unknown;
+    
+    NodeTestType() = default;
+    
+    NodeTestType(Type type)
+        : type(type)
+    {}
+    
+    std::string serialize() const;
+    
+    static NodeTestType deserialize(const std::string &raw, size_t &from);
+    
+};
+
+struct NodeTestResult {
+    std::string result;
+    size_t timestamp = 0;
+    NodeTestType type;
+    std::string ip;
+    
+    NodeTestResult() = default;
+    
+    NodeTestResult(const std::string &result, size_t timestamp, NodeTestType type, const std::string &ip)
+        : result(result)
+        , timestamp(timestamp)
+        , type(type)
+        , ip(ip)
+    {}
+    
+    std::string serialize() const;
+    
+    static NodeTestResult deserialize(const std::string &raw);
+
+};
+
+struct NodeTestCount {
+    
+    size_t count = 0;
+    
+    size_t day = 0;
+       
+    NodeTestCount() = default;
+    
+    NodeTestCount(size_t count, size_t day)
+        : count(count)
+        , day(day)
+    {}
+    
+    std::string serialize() const;
+    
+    static NodeTestCount deserialize(const std::string &raw);
+    
+};
+
+struct NodeTestExtendedStat {
+    
+    NodeTestCount count;
+    
+    NodeTestType type;
+    
+    std::string ip;
+    
+    NodeTestExtendedStat() = default;
+    
+    NodeTestExtendedStat(const NodeTestCount &count, const NodeTestType &type, const std::string &ip)
+        : count(count)
+        , type(type)
+        , ip(ip)
+    {}
+    
+};
+
+struct AllTestedNodes {
+    
+    std::set<std::string> nodes;
+    
+    size_t day = 0;
+    
+    AllTestedNodes() = default;
+    
+    AllTestedNodes(size_t day)
+        : day(day)
+    {}
+    
+    std::string serialize() const;
+    
+    static AllTestedNodes deserialize(const std::string &raw);
+    
+};
+
+struct NodeRps {
+    
+    std::vector<uint64_t> rps;
+    
+    std::string serialize() const;
+    
+    static NodeRps deserialize(const std::string &raw);
+    
+};
+
+struct BalanceInfoWalletStats {
+    
+    size_t received = 0;
+    size_t spent = 0;
+
+    size_t firstReceived = 0;
+    
+    std::map<uint64_t, size_t> forgingSums;
+    
+    BalanceInfoWalletStats() = default;
+
+    void plus(const TransactionInfo &tx, const Address &address, bool changeBalance, bool isForging);
+
+};
+
+struct NonForgingTxsBalance {
+    size_t received = 0;
+    size_t fees = 0;
+    size_t count = 0;
+    
+    void plus(const TransactionInfo &tx);
+};
+
+struct NodeInfoForging {
+    size_t receivedDelegate = 0;
+    size_t spendDelegate = 0;
+    
+    size_t forged = 0;
+    
+    void plus(const TransactionInfo &tx, size_t valueUndelegate, bool isForging, bool isOkStatus) {
+        if (isForging) {
+            forged += tx.value;
+            return;
+        }
+        if (!isOkStatus) {
+            return;
+        }
+        if (tx.delegate.has_value()) {
+            if (tx.delegate->isDelegate) {
+                receivedDelegate += tx.delegate->value;
+            } else {
+                spendDelegate += valueUndelegate;
+            }
+        }
+    }
+};
+
+struct NodesInfoForging {
+    NodeInfoForging ourNode;
+    NodeInfoForging enemyNode;
+    
+    void plus(const TransactionInfo &tx, size_t valueUndelegate, bool isOur, bool isForging, bool isOkStatus) {
+        if (isOur) {
+            ourNode.plus(tx, valueUndelegate, isForging, isOkStatus);
+        } else {
+            enemyNode.plus(tx, valueUndelegate, isForging, isOkStatus);
+        }
+    }
+};
+
+struct NodesInfoForgingForDays {
+    std::map<uint64_t, NodesInfoForging> days;
+    
+    NodesInfoForging all;
+    
+    void plus(size_t day, const TransactionInfo &tx, size_t valueUndelegate, bool isOur, bool isForging, bool isOkStatus) {
+        days[day].plus(tx, valueUndelegate, isOur, isForging, isOkStatus);
+        all.plus(tx, valueUndelegate, isOur, isForging, isOkStatus);
+    }
 };
 
 size_t getMaxBlockNumber(const std::vector<TransactionInfo> &infos);
