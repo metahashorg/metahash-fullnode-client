@@ -92,6 +92,19 @@ rapidjson::Value* json_rpc_reader::get(const std::string& name, rapidjson::Value
     return &p->value;
 }
 
+bool json_rpc_reader::get_value(rapidjson::Value& root, const char* name, std::string_view& value) const
+{
+    if (!root.IsObject())
+        return false;
+    auto v = root.FindMember(name);
+    if (v != root.MemberEnd() && v->value.IsString())
+    {
+        value = v->value.GetString();
+        return true;
+    }
+    return false;
+}
+
 rapidjson::Document& json_rpc_reader::get_doc()
 {
     return m_doc;
@@ -132,7 +145,7 @@ void json_rpc_writer::set_result(rapidjson::Value& value)
     get_value(m_doc, "result", value.GetType()).CopyFrom(value, m_doc.GetAllocator());
 }
 
-void json_rpc_writer::set_error(int code, std::string message)
+void json_rpc_writer::set_error(int code, const std::string& message)
 {
     rapidjson::Value err(rapidjson::kObjectType);
 
@@ -179,7 +192,6 @@ rapidjson::Value& json_rpc_writer::get_value(rapidjson::Value& root, const std::
 
 void json_rpc_writer::reset()
 {
-    // save id, change must call set_id
     rapidjson::Value id(rapidjson::kNullType);
     if (m_doc.IsObject())
     {
@@ -264,5 +276,34 @@ namespace json_utils
         out.flush();
         result = out.str();
         return true;
+    }
+
+    void to_json(const std::string_view& param_list, rapidjson::Value& out, rapidjson::Document::AllocatorType& allocator) {
+        if (param_list.empty()) {
+            return;
+        }
+        size_t pos = 0;
+        size_t tmp = 0;
+        std::string_view v = param_list;
+        std::string_view name, value;
+        while (pos < param_list.size()) {
+            tmp = v.find('=', pos);
+            if (tmp == std::string_view::npos) {
+                break;
+            }
+            name = v.substr(pos, tmp - pos);
+            pos = ++tmp;
+            tmp = v.find('&', pos);
+            if (tmp == std::string_view::npos) {
+                tmp = param_list.size();
+            }
+            value = v.substr(pos, tmp - pos);
+            pos = ++tmp;
+
+            rapidjson::Value obj(name.data(), static_cast<rapidjson::SizeType>(name.size()), allocator);
+            //obj.SetString(value.data(), static_cast<rapidjson::SizeType>(value.size()), allocator);
+            out.AddMember(obj, rapidjson::Type::kStringType, allocator);//.SetString(value.data(), static_cast<rapidjson::SizeType>(value.size()));
+            out[std::string(name)].SetString(value.data(), static_cast<rapidjson::SizeType>(value.size()), allocator);
+        }
     }
 }

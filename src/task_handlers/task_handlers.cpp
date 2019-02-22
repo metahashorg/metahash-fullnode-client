@@ -25,7 +25,7 @@
 #include "get_dump_block_by_hash_handler_sync.h"
 #include "get_dump_block_by_number_handler_sync.h"
 
-const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> map_handlers = {
+const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_handlers = {
     { std::pair<std::string, UseLocalDatabase>("generate", false),					generate_handler::perform },
     { std::pair<std::string, UseLocalDatabase>("create-tx", false),					create_tx_handler::perform },
     { std::pair<std::string, UseLocalDatabase>("send-tx", false),					send_tx_handler::perform },
@@ -53,4 +53,8 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> map_handl
     { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-hash", true),		get_dump_block_by_hash_handler_sync::perform },
     { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-number", true),	get_dump_block_by_number_handler_sync::perform },
     { std::pair<std::string, UseLocalDatabase>("status", true),				status_handler::perform }
+};
+
+const std::map<std::string_view, handler_func> get_handlers = {
+    { "status",     status_handler::perform }
 };

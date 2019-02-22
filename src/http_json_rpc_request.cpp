@@ -149,7 +149,7 @@ void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::
 
 void http_json_rpc_request::on_connect_timeout()
 {
-    LOGDEBUG << "Connect timeout";
+    LOGERR << "Connect timeout: 500 millisec";
 
     boost::system::error_code ec;
     m_socket.cancel(ec);
@@ -218,13 +218,13 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e)
     http::status status = m_response.result();
     if (status != http::status::ok)
     {
-        LOGDEBUG << "Incorrect response http status: " << status;
+        LOGERR << "Incorrect response http status: " << status;
     }
 
     const bool succ = m_result.parse(m_response.body());
     if (!succ)
     {
-        LOGDEBUG << "Response json parse error";
+        LOGERR << "Response json parse error: " << m_result.getDoc().GetParseError();
         if (status != http::status::ok)
         {
             std::ostringstream stream;

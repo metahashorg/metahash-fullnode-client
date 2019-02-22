@@ -5,11 +5,11 @@
 #include <boost/beast/http.hpp>
 #include <boost/asio/ip/tcp.hpp>
 
-namespace	asio    = boost::asio;
-namespace	ip      = boost::asio::ip;
-using		tcp     = boost::asio::ip::tcp;
+namespace   asio    = boost::asio;
+namespace   ip      = boost::asio::ip;
+using       tcp     = boost::asio::ip::tcp;
 namespace   beast   = boost::beast;
-namespace	http    = boost::beast::http;
+namespace   http    = boost::beast::http;
 
 class http_session: public std::enable_shared_from_this<http_session>
 {
@@ -29,7 +29,10 @@ public:
 
 protected:
         void process_request();
-        void send_response(http::response<http::dynamic_body>& response);
+        void process_post_request();
+        void process_get_request();
+
+        void send_response(http::response<http::string_body>& response);
         void send_bad_request(const char* error);
 
 private:

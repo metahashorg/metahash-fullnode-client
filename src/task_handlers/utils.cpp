@@ -10,14 +10,14 @@ namespace utils
 {
     void parse_address(const std::string& address, std::string& host, std::string& port, std::string& path, bool& use_ssl)
     {
-        std::string tmp = address;
+        std::string_view tmp = address;
 
         auto pos = tmp.find("http://");
         if (pos != std::string::npos)
         {
             port.clear();
             port = "80";
-            tmp = tmp.substr(pos + 7);
+            tmp.remove_prefix(7);
         }
 
         pos = tmp.find("https://");
@@ -25,7 +25,7 @@ namespace utils
         {
             port.clear();
             port = "443";
-            tmp = tmp.substr(pos + 8);
+            tmp.remove_prefix(8);
             use_ssl = true;
         }
 
@@ -34,7 +34,7 @@ namespace utils
         {
             port.clear();
             port = tmp.substr(pos + 1);
-            tmp = tmp.substr(0, pos);
+            tmp.remove_suffix(pos + 1);
         }
 
         pos = tmp.find("/");
@@ -42,7 +42,7 @@ namespace utils
         {
             path.clear();
             path = tmp.substr(pos);
-            tmp = tmp.substr(0, pos);
+            tmp.remove_suffix(pos + 1);
         }
 
         host = tmp;

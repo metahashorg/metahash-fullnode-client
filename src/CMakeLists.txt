@@ -13,6 +13,8 @@ find_library(BOOST3 NAMES libboost_system.a HINTS ${BOOST_LIBS_LIBS})
 
 add_executable(${PROJECT_NAME}
     main.cpp
+    common/string_utils.cpp
+    common/filesystem_utils.cpp
     exception/except.cpp
     settings/settings.cpp
     http_server.cpp

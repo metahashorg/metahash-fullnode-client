@@ -4,18 +4,23 @@
 #include "base_handler.h"
 
 class status_handler : public base_handler, public Perform<status_handler> {
+
+    enum class cmd {
+        general,
+        keys
+    };
+
 public:
     status_handler(http_session_ptr session): base_handler(session) {
-        std::stringstream ss;
-        ss << __FUNCTION__;
-        m_duration.set_message(ss.str());
+        m_duration.set_message(__FUNCTION__);
     }
-    
     virtual ~status_handler() override {}
-    
+
     virtual bool prepare_params() override;
-    
     virtual void execute() override;
+
+protected:
+    cmd m_cmd = {cmd::general};
 };
 
 #endif // STATUS_HANDLER_H_
