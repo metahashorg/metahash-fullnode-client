@@ -58,4 +58,3 @@ You don't need to enter the password in this version.
 {"id":decimal, "version":"2.0","method":"send-tx", "params":{"address":"hexstr", "password":"str", "to":"hexstr", "value":"decimal/all", "fee":"decimal", "nonce":"decimal", "data": "dataHex"}}
 ```
 You may not provide nonce, in this case it will be calculated automatically.
-
