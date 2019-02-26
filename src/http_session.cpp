@@ -42,7 +42,7 @@ asio::io_context& http_session::get_io_context()
 
 void http_session::process_request()
 {
-    LOGDEBUG << m_socket.remote_endpoint().address().to_string() << " >> " << m_req.body();
+    LOGDEBUG << "HTTP Session " << m_socket.remote_endpoint().address().to_string() << " >>> " << m_req.body();
 
     switch(m_req.method()) {
     case http::verb::post:
@@ -77,7 +77,7 @@ void http_session::send_json(const std::string& data)
 
 void http_session::send_response(http::response<http::string_body>& response)
 {
-    LOGDEBUG << m_socket.remote_endpoint().address().to_string() << " << " << response.body().c_str();
+    LOGDEBUG << "HTTP Session " << m_socket.remote_endpoint().address().to_string() << " <<< " << response.body().c_str();
 
     response.version(10);
     response.set(http::field::server, "metahash.service");

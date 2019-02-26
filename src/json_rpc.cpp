@@ -24,7 +24,7 @@ bool json_rpc_reader::parse(const std::string& json)
     }
     catch (const std::exception& e)
     {
-        LOGERR << e.what();
+        LOGERR << "JsonReader parse error: " << e.what();
         m_error.Set(rapidjson::ParseErrorCode::kParseErrorTermination);
         return false;
     }
@@ -130,7 +130,7 @@ bool json_rpc_writer::parse(const std::string& json)
     }
     catch (const std::exception& e)
     {
-        LOGERR << e.what();
+        LOGERR << "JsonWriter parse error: " << e.what();
         return false;
     }
 }

@@ -9,9 +9,6 @@ class invalid_param
 public:
     invalid_param(std::string message): m_msg(message)
     {
-        std::stringstream ss;
-        ss << __PRETTY_FUNCTION__ << " in file " << __FILE__ << " at line " << __LINE__;
-        m_where = ss.str();
     }
 
     ~invalid_param() {};
@@ -26,17 +23,14 @@ protected:
 
 #define CHK_PRM(condition, message) \
     if (!(condition)) {\
-        std::ostringstream stream;\
-        stream << message;\
-        stream.flush();\
-        throw invalid_param(stream.str()); }
+        throw invalid_param(message); }
 
 #define BGN_TRY try
 
 #define END_TRY_RET_PARAM(ret, param) \
     catch (invalid_param& ex)\
     {\
-        LOGERR << "Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__;\
+        LOGERR << "InvalidParam \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, ex.what());\
         param;\
@@ -44,7 +38,7 @@ protected:
     }\
     catch (const std::string& ex)\
     {\
-        LOGERR << "Exception \"" << ex << "\" in func " << __PRETTY_FUNCTION__;\
+        LOGERR << "StringException \"" << ex << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, ex);\
         param;\
@@ -52,7 +46,7 @@ protected:
     }\
     catch (std::exception& ex)\
     {\
-        LOGERR << "Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__;\
+        LOGERR << "STD Exception \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, ex.what());\
         param;\
@@ -60,9 +54,9 @@ protected:
     }\
     catch(...)\
     {\
-        LOGERR << "Unhandled exception in func " << __PRETTY_FUNCTION__;\
+        LOGERR << "Unknown exception (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
-        this->m_writer.set_error(-32666, "Unhandled exception");\
+        this->m_writer.set_error(-32666, "Unknown exception");\
         param;\
         return ret;\
     }

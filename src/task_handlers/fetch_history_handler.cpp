@@ -16,9 +16,10 @@ bool fetch_history_handler::prepare_params()
 
         m_writer.add_param("address", addr.c_str());
 
+        /*
         auto &jsonParams = *params;
         
-        mh_count_t countTxs(0);
+        uint64_t countTxs(0);
         if (jsonParams.HasMember("countTxs") && jsonParams["countTxs"].IsInt64()) {
             countTxs = jsonParams["countTxs"].GetInt64();
             m_writer.add_param("countTxs", countTxs);
@@ -27,6 +28,17 @@ bool fetch_history_handler::prepare_params()
         mh_count_t beginTx(0);
         if (jsonParams.HasMember("beginTx") && jsonParams["beginTx"].IsInt64()) {
             beginTx = jsonParams["beginTx"].GetInt64();
+            m_writer.add_param("beginTx", beginTx);
+        }
+        */
+
+        int64_t countTxs(0);
+        if (m_reader.get_value(*params, "countTxs", countTxs)) {
+            m_writer.add_param("countTxs", countTxs);
+        }
+
+        int64_t beginTx(0);
+        if (m_reader.get_value(*params, "beginTx", beginTx)) {
             m_writer.add_param("beginTx", beginTx);
         }
 

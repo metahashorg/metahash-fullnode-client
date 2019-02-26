@@ -24,7 +24,7 @@ bool base_handler::prepare(const std::string& params)
             }
         }
 
-        LOGDEBUG << "Prepared json (" << complete << pending << "):" << "\n" << this->m_writer.stringify();
+        LOGDEBUG << "Prepared json (" << complete << "," << pending << "):" << this->m_writer.stringify();
 
         return complete;
     }

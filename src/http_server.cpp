@@ -64,22 +64,17 @@ void http_server::accept(tcp::acceptor& acceptor)
 {
     acceptor.async_accept([&](boost::system::error_code ec, tcp::socket socket)
     {
-        if (ec)
-        {
+        if (ec) {
             LOGINFO << "Failed on accept: " << ec.message();
         }
-        else
-        {
+        else {
             const tcp::endpoint& ep = socket.remote_endpoint();
-            if (check_access(ep))
-            {
+            if (check_access(ep)) {
                 std::make_shared<http_session>(std::move(socket))->run();
-            }
-            else
-            {
-                LOGINFO << "Droping connection " << ep.address().to_string() << ":" << ep.port();
+            } else {
                 socket.shutdown(tcp::socket::shutdown_both);
                 socket.close();
+                LOGINFO << "Reject connection " << ep.address().to_string() << ":" << ep.port();
             }
         }
         accept(acceptor);

@@ -5,6 +5,9 @@ git_local_changes(GIT_LOCAL_CHANGES)
 
 configure_file("${CMAKE_CURRENT_LIST_DIR}/cmake_modules/GitSHA1.cpp.in" "${CMAKE_BINARY_DIR}/GitSHA1.cpp" @ONLY)
 
+# for using in other cmake's
+set(OBJECT_FILES_DIR "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.dir" PARENT_SCOPE)
+
 set(BOOST_LIBS_INCLUDE ../3rdParty/boost/include)
 set(BOOST_LIBS_LIBS ../3rdParty/boost/lib)
 find_library(BOOST1 NAMES libboost_filesystem.a HINTS ${BOOST_LIBS_LIBS})

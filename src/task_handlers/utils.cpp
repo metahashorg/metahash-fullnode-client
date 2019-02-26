@@ -29,20 +29,20 @@ namespace utils
             use_ssl = true;
         }
 
-        pos = tmp.find(":");
-        if (pos != std::string::npos)
-        {
-            port.clear();
-            port = tmp.substr(pos + 1);
-            tmp.remove_suffix(pos + 1);
-        }
-
         pos = tmp.find("/");
         if (pos != std::string::npos)
         {
             path.clear();
             path = tmp.substr(pos);
-            tmp.remove_suffix(pos + 1);
+            tmp.remove_suffix(tmp.size() - pos);
+        }
+
+        pos = tmp.find(":");
+        if (pos != std::string::npos)
+        {
+            port.clear();
+            port = tmp.substr(pos + 1);
+            tmp.remove_suffix(tmp.size() - pos);
         }
 
         host = tmp;
@@ -185,7 +185,7 @@ namespace utils
         if (m_run)
         {
             m_run = false;
-            LOGDEBUG << m_msg << ": " << (boost::posix_time::microsec_clock::local_time() - m_start).total_milliseconds() << " milisec";
+            LOGDEBUG << m_msg << " " << (boost::posix_time::microsec_clock::local_time() - m_start).total_milliseconds() << " millisec";
         }
     }
 }

@@ -61,7 +61,7 @@ private:
     utils::Timer                        m_timer;
     utils::Timer                        m_connect_timer;
     utils::time_duration                m_duration;
-    http::request<http::dynamic_body>   m_req { http::verb::post, "/", 11 };
+    http::request<http::string_body>   m_req { http::verb::post, "/", 11 };
     http::response<http::string_body>   m_response;
     boost::beast::flat_buffer           m_buf { 8192 };
     json_rpc_writer                     m_result;
@@ -69,6 +69,7 @@ private:
     std::string                         m_host;
     ssl::context                        m_ssl_ctx;
     ssl::stream<tcp::socket>            m_ssl_socket;
+    std::string                         m_id;
     bool                                m_async;
     bool                                m_use_ssl;
 };
