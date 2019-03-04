@@ -11,18 +11,18 @@ bool get_blocks_handler::prepare_params()
 
         auto &jsonParams = *params;
         
-        mh_count_t countBlocks(0);
+        int64_t countBlocks(0);
         if (jsonParams.HasMember("countBlocks") && jsonParams["countBlocks"].IsInt64()) {
             countBlocks = jsonParams["countBlocks"].GetInt64();
             m_writer.add_param("countBlocks", countBlocks);
         }
         
-        mh_count_t beginBlock(0);
+        int64_t beginBlock(0);
         if (jsonParams.HasMember("beginBlock") && jsonParams["beginBlock"].IsInt64()) {
             beginBlock = jsonParams["beginBlock"].GetInt64();
             m_writer.add_param("beginBlock", beginBlock);
         }
-        
+
         return true;
     }
     END_TRY_RET(false)

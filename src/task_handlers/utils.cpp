@@ -134,6 +134,7 @@ namespace utils
                 m_thr.join();
             }
         }
+        m_handler = nullptr;
     }
 
     void Timer::run_once() {
@@ -146,6 +147,7 @@ namespace utils
             guard.unlock();
             if (m_handler) {
                 m_handler();
+                m_handler = nullptr;
             }
         });
     }

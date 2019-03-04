@@ -9,7 +9,7 @@ bool get_dump_block_by_number::prepare_params()
         auto params = m_reader.get_params();
         CHK_PRM(params, "params field not found")
 
-        mh_count_t number(0);
+        int64_t number(0);
         auto &jsonParams = *params;
         CHK_PRM(jsonParams.HasMember("number") && jsonParams["number"].IsInt64(), "number field not found")
         number = jsonParams["number"].GetInt64();

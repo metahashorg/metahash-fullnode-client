@@ -3,34 +3,22 @@
 
 #define BOOST_TEST_MODULE task handlers
 #include <boost/test/included/unit_test.hpp>
-/*
-#include "data_storage/data_address.h"
 #include "task_handlers/task_handlers.h"
 #include "task_handlers/generate_handler.h"
 #include "task_handlers/fetch_balance_handler.h"
 #include "task_handlers/fetch_history_handler.h"
 #include "task_handlers/create_tx_handler.h"
 #include "task_handlers/send_tx_handler.h"
-#include "task_handlers/create_tx_token_handler.h"
-#include "task_handlers/send_tx_token_handler.h"
-#include "task_handlers/add_addresses_to_batch.h"
-#include "task_handlers/del_addresses_to_batch.h"
-#include "task_handlers/get_addresses_to_batch.h"
-#include "task_handlers/batch_balance.h"
-#include "task_handlers/batch_history.h"
-#include "task_handlers/add_addresses_to_batch_tkn.h"
-#include "task_handlers/del_addresses_to_batch_tkn.h"
-#include "task_handlers/get_addresses_to_batch_tkn.h"
-#include "task_handlers/batch_balance_tkn.h"
-#include "task_handlers/batch_history_tkn.h"
-#include "task_handlers/add_to_tracking_handler.h"
-#include "task_handlers/del_from_tracking_handler.h"
-#include "task_handlers/get_tracking_handler.h"
-#include "task_handlers/fetch_balance_tkn.h"
-#include "task_handlers/fetch_history_tkn.h"
 #include "task_handlers/status_handler.h"
-#include "task_handlers/get_transaction_params.h"
-#include "task_handlers/get_transaction_params_tkn.h"
+#include "task_handlers/get_tx_handler.h"
+#include "task_handlers/get_dump_block_by_hash.h"
+#include "task_handlers/get_dump_block_by_number.h"
+#include "task_handlers/get_blocks_handler.h"
+#include "task_handlers/get_block_by_number_handler.h"
+#include "task_handlers/get_block_by_hash_handler.h"
+#include "task_handlers/get_last_txs_handler.h"
+#include "task_handlers/get_count_blocks_handler.h"
+
 
 namespace {
 
@@ -38,7 +26,7 @@ template<class T>
 bool test(const std::string& name, const std::string& input, const std::string& output, bool check_map = true)
 {
     T handler(nullptr);
-    if (check_map && post_handlers.find(name) == post_handlers.end()) {
+    if (check_map && post_handlers.find(std::make_pair(name, false)) == post_handlers.end()) {
         BOOST_FAIL("\nHandler: " << name << "\n"
                   << "Error:   does not found in handlers map");
         return false;
@@ -66,7 +54,7 @@ bool test(const std::string& name, const std::string& input, const std::string& 
 };
 
 };
-*/
+
 BOOST_AUTO_TEST_CASE(handlers_test)
 {
 }

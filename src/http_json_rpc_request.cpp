@@ -153,7 +153,8 @@ void http_json_rpc_request::on_connect_timeout()
     boost::system::error_code ec;
     m_socket.cancel(ec);
 
-    m_connect_timer.run_once();
+    //m_connect_timer.run_once();
+    m_connect_timer.stop();
 }
 
 void http_json_rpc_request::on_connect(const boost::system::error_code& e, const tcp::endpoint& ep)
