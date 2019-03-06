@@ -72,8 +72,9 @@ void http_server::accept(tcp::acceptor& acceptor)
             if (check_access(ep)) {
                 std::make_shared<http_session>(std::move(socket))->run();
             } else {
-                socket.shutdown(tcp::socket::shutdown_both);
-                socket.close();
+                boost::system::error_code er;
+                socket.shutdown(tcp::socket::shutdown_both, er);
+                socket.close(er);
                 LOGINFO << "Reject connection " << ep.address().to_string() << ":" << ep.port();
             }
         }
@@ -83,17 +84,19 @@ void http_server::accept(tcp::acceptor& acceptor)
 
 bool http_server::check_access(const tcp::endpoint& ep)
 {
-
-    if (settings::service::any_conns)
+    if (settings::service::any_conns) {
         return true;
+    }
 
-    if (ep.address().is_loopback())
+    if (ep.address().is_loopback()) {
         return true;
+    }
 
     if (std::find(settings::service::access.begin(),
-              settings::service::access.end(),
-              ep.address().to_string()) != settings::service::access.end())
+                  settings::service::access.end(),
+                  ep.address().to_string()) != settings::service::access.end()) {
         return true;
+    }
 
     return false;
 }

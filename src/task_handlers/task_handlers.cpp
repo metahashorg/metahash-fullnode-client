@@ -43,15 +43,15 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_hand
     
     { std::pair<std::string, UseLocalDatabase>("generate", true),                   perform<generate_handler> },
     { std::pair<std::string, UseLocalDatabase>("create-tx", true),                  perform<create_tx_handler> },
-    { std::pair<std::string, UseLocalDatabase>("fetch-balance", true),              perform<fetch_balance_handler_sync> },
-    { std::pair<std::string, UseLocalDatabase>("fetch-history", true),              perform<fetch_history_handler_sync> },
-    { std::pair<std::string, UseLocalDatabase>("send-tx", true),                    perform<send_tx_handler_sync> },
-    { std::pair<std::string, UseLocalDatabase>("get-count-blocks", true),           perform<get_count_blocks_handler_sync> },
-    { std::pair<std::string, UseLocalDatabase>("get-block-by-hash", true),          perform<get_block_by_hash_handler_sync> },
-    { std::pair<std::string, UseLocalDatabase>("get-block-by-number", true),        perform<get_block_by_number_handler_sync> },
-    { std::pair<std::string, UseLocalDatabase>("get-tx", true),                     perform<get_tx_handler_sync> },
-    { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-hash", true),     perform<get_dump_block_by_hash_handler_sync> },
-    { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-number", true),   perform<get_dump_block_by_number_handler_sync> },
+    { std::pair<std::string, UseLocalDatabase>("fetch-balance", true),              perform<fetch_balance_handler_sync> }, // +
+    { std::pair<std::string, UseLocalDatabase>("fetch-history", true),              perform<fetch_history_handler_sync> }, // +
+    { std::pair<std::string, UseLocalDatabase>("send-tx", true),                    perform<send_tx_handler_sync> }, // +
+    { std::pair<std::string, UseLocalDatabase>("get-count-blocks", true),           perform<get_count_blocks_handler_sync> }, // +
+    { std::pair<std::string, UseLocalDatabase>("get-block-by-hash", true),          perform<get_block_by_hash_handler_sync> }, // +
+    { std::pair<std::string, UseLocalDatabase>("get-block-by-number", true),        perform<get_block_by_number_handler_sync> }, // +
+    { std::pair<std::string, UseLocalDatabase>("get-tx", true),                     perform<get_tx_handler_sync> }, // +
+    { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-hash", true),     perform<get_dump_block_by_hash_handler_sync> }, // +
+    { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-number", true),   perform<get_dump_block_by_number_handler_sync> }, // +
     { std::pair<std::string, UseLocalDatabase>("status", true),                     perform<status_handler> }
 };
 

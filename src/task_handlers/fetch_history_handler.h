@@ -2,20 +2,22 @@
 #define __FETCH_HISTORY_HANDLER_H__
 
 #include "network_handler.h"
-#include "settings/settings.h"
 
 class fetch_history_handler : public base_network_handler
 {
 public:
-    fetch_history_handler(http_session_ptr session)
-        : base_network_handler(settings::server::tor, session) {
-        m_duration.set_message(__func__);
-    }
-    
+    fetch_history_handler(http_session_ptr session);
     virtual ~fetch_history_handler() override {}
+
+    virtual void execute() override;
 
 protected:
     virtual bool prepare_params() override;
+
+private:
+    std::string m_addr;
+    int64_t m_countTxs;
+    int64_t m_beginTx;
 };
 
 #endif // __FETCH_HISTORY_HANDLER_H__

@@ -50,7 +50,7 @@ bool create_tx_base_handler::build_request() {
     BGN_TRY {
         std::string sign;
         std::string transaction;
-        CHK_PRM(utils::gen_sign(transaction, sign, m_keys.prv_key, "xDDDdx", m_to.c_str(), m_value, m_fee, m_nonce, m_data.size() / 2, m_data.c_str()), "failed on gen sign")
+        CHK_PRM(utils::gen_sign(transaction, sign, m_keys.prv_key, "xUUUux", m_to.c_str(), m_value, m_fee, m_nonce, m_data.size() / 2, m_data.c_str()), "failed on gen sign")
 
         m_writer.reset();
         m_writer.set_method("mhc_send");

@@ -59,6 +59,12 @@ namespace utils
             {
                 switch(*fmt)
                 {
+                case 'u':
+                    utils::write_compact_int(va_arg(args, int32_t), data);
+                    break;
+                case 'U':
+                    utils::write_compact_int(va_arg(args, int64_t), data);
+                    break;
                 case 'd':
                     utils::write_compact_int(va_arg(args, uint32_t), data);
                     break;

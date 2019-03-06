@@ -11,9 +11,9 @@ public:
 
 protected:
     virtual bool prepare_params() override;
-    virtual void processResponse(json_rpc_id id, json_rpc_reader &reader) override;
+    virtual void processResponse(json_rpc_reader &reader) override;
 
-    void on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id);
+    void on_get_balance();
 };
 
 #endif // __SEND_TX_HANDLER_SYNC_H__

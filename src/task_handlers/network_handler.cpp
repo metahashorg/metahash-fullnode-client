@@ -7,52 +7,36 @@ base_network_handler::base_network_handler(const std::string &host, http_session
     : base_handler(session)
 {
     m_request = std::make_shared<http_json_rpc_request>(host, session->get_io_context());
-    int a = m_request->weak_from_this().use_count();
-    a = 0;
 }
 
 base_network_handler::~base_network_handler()
 {
-    auto a = m_request->weak_from_this();
-    int b = a.use_count();
-    m_request.reset();
-    b = a.use_count();
-    b = 0;
 }
 
 void base_network_handler::execute()
 {
     BGN_TRY
     {
-        int a = m_request->weak_from_this().use_count();
         m_request->set_path(m_reader.get_method());
-        a = m_request->weak_from_this().use_count();
         m_request->set_body(m_writer.stringify());
-        a = m_request->weak_from_this().use_count();
         m_result.pending = m_async_execute;
         if (!m_async_execute) {
             m_request->execute();
             m_writer.reset();
             m_writer.parse(m_request->get_result());
         } else {
-            a = m_request->weak_from_this().use_count();
-            auto b = shared_from(this);
-            a = m_request->weak_from_this().use_count();
-            m_request->execute_async(boost::bind(&base_network_handler::on_complete, b, m_id));
-            a = m_request->weak_from_this().use_count();
+            m_request->execute_async(boost::bind(&base_network_handler::on_complete, shared_from(this)));
         }
-        a = 0;
     }
     END_TRY
 }
 
-void base_network_handler::processResponse(json_rpc_id id, json_rpc_reader &reader) {
-    //json_rpc_id _id = reader.get_id();
-    //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
-    
+void base_network_handler::processResponse(json_rpc_reader &reader)
+{
+    // TODO replace this staff to on_complete
     auto err = reader.get_error();
     auto res = reader.get_result();
-    
+
     CHK_PRM(err || res, "No occur result or error")
     
     if (err) {
@@ -72,7 +56,7 @@ void base_network_handler::processResponse(json_rpc_id id, json_rpc_reader &read
     }
 }
 
-void base_network_handler::on_complete(json_rpc_id id)
+void base_network_handler::on_complete()
 {
     BGN_TRY
     {
@@ -80,7 +64,7 @@ void base_network_handler::on_complete(json_rpc_id id)
         json_rpc_reader reader;
         CHK_PRM(reader.parse(m_request->get_result()), "Invalid response json")
 
-        processResponse(id, reader);
+        processResponse(reader);
         m_session->send_json(m_writer.stringify());
 //        boost::asio::post(boost::bind(&http_session::send_json, session, m_writer.stringify()));
     }

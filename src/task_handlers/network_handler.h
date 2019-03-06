@@ -16,11 +16,10 @@ public:
 protected:
 
     // async callback
-    void on_complete(json_rpc_id id);
+    void on_complete();
 
 protected:
-
-    virtual void processResponse(json_rpc_id id, json_rpc_reader &reader);
+    virtual void processResponse(json_rpc_reader &reader);
 
 protected:
     bool m_async_execute = {true};

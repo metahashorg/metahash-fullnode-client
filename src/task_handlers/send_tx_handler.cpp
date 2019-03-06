@@ -1,5 +1,7 @@
 #include "send_tx_handler.h"
 
+#include "../SyncSingleton.h"
+#include "../sync/BlockInfo.h"
 #include "settings/settings.h"
 #include "http_session.h"
 #include "http_json_rpc_request.h"
@@ -19,8 +21,12 @@ bool send_tx_handler::prepare_params()
             CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field incorrect format")
             m_nonce = std::stoull(tmp);
         }
-        else
-        {
+        else if (settings::system::useLocalDatabase) {
+            CHK_PRM(syncSingleton() != nullptr, "Sync not set");
+            const torrent_node_lib::Sync &sync = *syncSingleton();
+            const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(m_address));
+            m_nonce = balance.countSpent + 1;
+        } else {
             m_result.pending = true;
 
             json_rpc_id id = 1;
@@ -32,11 +38,10 @@ bool send_tx_handler::prepare_params()
             request->set_path("fetch-balance");
             request->set_body(writer.stringify());
             request->execute_async(boost::bind(&send_tx_handler::on_get_balance, shared_from(this), request, id));
-
             return false;
         }
 
-        if (!this->build_request())
+        if (!build_request())
             return false;
 
         return true;
@@ -68,7 +73,7 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc
         if (err) {
             writer.set_error(*err);
         } else if (res) {
-            mh_count_t count_spent(0);
+            int64_t count_spent(0);
             if (reader.get_value(*res, "count_spent", count_spent)) {
                 success = true;
                 m_nonce = count_spent + 1;
@@ -82,15 +87,18 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc
         }
 
         if (success) {
-            boost::asio::post(boost::bind(&send_tx_handler::execute, shared_from(this)));
+            send_tx_handler::execute();
+//            boost::asio::post(boost::bind(&send_tx_handler::execute, shared_from(this)));
         } else {
-            boost::asio::post(boost::bind(&http_session::send_json, m_session, writer.stringify()));
+            m_session->send_json(writer.stringify());
+//            boost::asio::post(boost::bind(&http_session::send_json, m_session, writer.stringify()));
         }
     }
-    END_TRY_PARAM(boost::asio::post(boost::bind(&http_session::send_json, m_session, writer.stringify())))
+//    END_TRY_PARAM(boost::asio::post(boost::bind(&http_session::send_json, m_session, writer.stringify())))
+    END_TRY_PARAM(m_session->send_json(writer.stringify()))
 }
 
-void send_tx_handler::processResponse(json_rpc_id id, json_rpc_reader &reader)
+void send_tx_handler::processResponse(json_rpc_reader &reader)
 {
     //json_rpc_id _id = reader.get_id();
     //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")

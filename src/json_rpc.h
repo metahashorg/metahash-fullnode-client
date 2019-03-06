@@ -52,7 +52,6 @@ public:
         return false;
     }
     bool get_value(rapidjson::Value& root, const char* name, std::string_view& value) const;
-
     rapidjson::Document& get_doc();
 
 protected:

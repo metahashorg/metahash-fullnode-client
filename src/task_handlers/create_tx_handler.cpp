@@ -14,7 +14,7 @@ bool create_tx_handler::prepare_params()
         CHK_PRM(jValue, "nonce field not found")
         std::string tmp;
         CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field has incorrect format")
-        this->m_nonce = std::stoull(tmp);
+        m_nonce = std::stoull(tmp);
 
         if (!build_request())
             return false;

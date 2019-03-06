@@ -9,17 +9,13 @@ bool get_blocks_handler::prepare_params()
         auto params = m_reader.get_params();
         CHK_PRM(params, "params field not found")
 
-        auto &jsonParams = *params;
-        
-        int64_t countBlocks(0);
-        if (jsonParams.HasMember("countBlocks") && jsonParams["countBlocks"].IsInt64()) {
-            countBlocks = jsonParams["countBlocks"].GetInt64();
+        mh_count_t countBlocks(0);
+        if (m_reader.get_value(*params, "countBlocks", countBlocks)) {
             m_writer.add_param("countBlocks", countBlocks);
         }
-        
-        int64_t beginBlock(0);
-        if (jsonParams.HasMember("beginBlock") && jsonParams["beginBlock"].IsInt64()) {
-            beginBlock = jsonParams["beginBlock"].GetInt64();
+
+        mh_count_t beginBlock(0);
+        if (m_reader.get_value(*params, "beginBlock", beginBlock)) {
             m_writer.add_param("beginBlock", beginBlock);
         }
 

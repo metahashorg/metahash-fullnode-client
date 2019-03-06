@@ -30,12 +30,11 @@ namespace settings
     struct system
     {
         static std::string wallet_stotage;
-        
         static std::string leveldbFolder;
         static std::string blocksFolder;
         static bool validateBlocks;
-        
         static bool useLocalDatabase;
+        static bool allow_state_block;
     };
 
     struct statistic {

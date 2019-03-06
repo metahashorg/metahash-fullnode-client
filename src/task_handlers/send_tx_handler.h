@@ -16,7 +16,7 @@ protected:
     void on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id);
 
 protected:
-    void processResponse(json_rpc_id id, json_rpc_reader &reader) override;
+    void processResponse(json_rpc_reader &reader) override;
 };
 
 #endif // __SEND_TX_HANDLER_H__
