@@ -39,3 +39,16 @@ bool get_block_by_hash_handler::prepare_params()
     }
     END_TRY_RET(false)
 }
+
+void get_block_by_hash_handler::processResponse(json_rpc_id id, json_rpc_reader &reader)
+{
+    base_network_handler::processResponse(id, reader);
+    if (!settings::system::allowStateBlocks) {
+        auto res = reader.get_result();
+        if (res) {
+            std::string type;
+            CHK_PRM(reader.get_value(*res, "type", type), "'type' field not found");
+            CHK_PRM(type.compare("state") != 0, "block is state-block and has been ignored");
+        }
+    }
+}

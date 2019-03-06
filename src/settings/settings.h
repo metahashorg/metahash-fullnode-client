@@ -34,7 +34,7 @@ namespace settings
         static std::string leveldbFolder;
         static std::string blocksFolder;
         static bool validateBlocks;
-        
+        static bool allowStateBlocks;
         static bool useLocalDatabase;
     };
 

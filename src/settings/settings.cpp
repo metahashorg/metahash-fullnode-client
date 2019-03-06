@@ -27,6 +27,7 @@ namespace settings
     std::string system::blocksFolder = "blocks/";
     bool system::validateBlocks = false;
     bool system::useLocalDatabase = true;
+    bool system::allowStateBlocks = false;
     std::string statistic::statisticNetwork;
     std::string statistic::statisticGroup;
     std::string statistic::statisticServer;
@@ -87,6 +88,8 @@ namespace settings
         settings::system::validateBlocks = tree.get<bool>("system.validate_blocks");
         
         settings::system::useLocalDatabase = tree.get<bool>("system.use_local_database");
+
+        settings::system::allowStateBlocks = tree.get<bool>("system.allow_state_blocks", false);
         
         if (tree.find("statistic") != tree.not_found()) {
             settings::statistic::statisticNetwork = tree.get<std::string>("statistic.network");

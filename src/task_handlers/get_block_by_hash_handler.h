@@ -17,6 +17,9 @@ public:
     virtual ~get_block_by_hash_handler() override {}
     
     virtual bool prepare_params() override;
+
+protected:
+    virtual void processResponse(json_rpc_id id, json_rpc_reader &reader) override;
     
 };
 
