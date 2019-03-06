@@ -1,4 +1,4 @@
-#include "get_dump_block_by_hash.h"
+#include "get_dump_block_by_hash_handler.h"
 #include "settings/settings.h"
 #include "../SyncSingleton.h"
 #include "../generate_json.h"

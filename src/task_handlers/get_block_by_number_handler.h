@@ -16,10 +16,10 @@ protected:
     virtual void processResponse(json_rpc_reader &reader) override;
 
 private:
-    int64_t m_number;
-    int64_t m_type;
-    int64_t m_countTxs;
-    int64_t m_beginTx;
+    mh_count_t m_number;
+    mh_count_t m_type;
+    mh_count_t m_countTxs;
+    mh_count_t m_beginTx;
 };
 
 #endif // __GET_BLOCK_BY_NUMBER_HANDLER_H__
