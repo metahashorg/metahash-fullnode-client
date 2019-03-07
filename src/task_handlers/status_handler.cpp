@@ -39,6 +39,9 @@ void status_handler::execute()
             m_writer.add_result("network_tor", settings::server::tor);
             m_writer.add_result("network_proxy", settings::server::proxy);
             m_writer.add_result("use_local_database", settings::system::useLocalDatabase);
+            m_writer.add_result("allow_state_blocks", settings::system::allowStateBlocks);
+            m_writer.add_result("jrpc_timeout", settings::system::jrpc_timeout);
+            m_writer.add_result("jrpc_conn_timeout", settings::system::jrpc_conn_timeout);
             if (syncSingleton() != nullptr) {
                 const torrent_node_lib::Sync &sync = *syncSingleton();
                 m_writer.add_result("blocks_count", sync.getBlockchain().countBlocks());
@@ -71,6 +74,7 @@ void status_handler::execute()
             m_writer.get_value(m_writer.getDoc(), "result", rapidjson::Type::kObjectType).AddMember("keys", arr, m_writer.get_allocator());
             break;
         }
+
         default:
             m_writer.set_error(1, "unrecognized command");
             break;

@@ -75,7 +75,7 @@ void get_block_by_number_handler::execute()
 
             const torrent_node_lib::BlockHeader bh = sync.getBlockchain().getBlock(m_number);
 
-            if (!settings::system::allow_state_block && bh.isStateBlock()) {
+            if (!settings::system::allowStateBlocks && bh.isStateBlock()) {
                 return genErrorResponse(-32603, "block " + std::to_string(m_number) + " is a state block and was ignored", m_writer.getDoc());
             }
 
@@ -101,7 +101,7 @@ void get_block_by_number_handler::execute()
 void get_block_by_number_handler::processResponse(json_rpc_reader &reader)
 {
     base_network_handler::processResponse(reader);
-    if (!settings::system::allow_state_block) {
+    if (!settings::system::allowStateBlocks) {
         auto res = reader.get_result();
         if (res) {
             std::string_view type;

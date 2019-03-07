@@ -3,6 +3,7 @@
 #include "../generate_json.h"
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
+#include "settings/settings.h"
 
 bool get_block_by_number_handler_sync::prepare_params()
 {
@@ -46,7 +47,11 @@ BGN_TRY {
     const torrent_node_lib::BlockHeader bh = sync.getBlockchain().getBlock(number);
     
     if (!bh.blockNumber.has_value()) {
-        return genErrorResponse(-32603, "block " + std::to_string(number) + " not found", m_writer.getDoc());
+        return genErrorResponse(-32603, "block " + std::to_string(number) + " has not found", m_writer.getDoc());
+    }
+
+    if (!settings::system::allowStateBlocks && bh.isStateBlock()) {
+        return genErrorResponse(-32603, "block " + std::to_string(number) + " is state block and has been ignored", m_writer.getDoc());
     }
     
     torrent_node_lib::BlockHeader nextBh = sync.getBlockchain().getBlock(*bh.blockNumber + 1);
