@@ -11,11 +11,14 @@
  },
  "system":
  {
-   "torrent_server": "tor.net-dev.metahash.org:5795",
+  "torrent_server": "tor.net-dev.metahash.org:5795",
   "wallets-storage": "/opt/mhservice/wallet",
   "blocks_folder": "./blocks/",
   "leveldb_folder": "./leveldb/",
   "validate_blocks": false,
-  "use_local_database": false
+  "use_local_database": false,
+  "jrpc_conn_timeout": 1000,
+  "jrpc_timeout": 60000,
+  "allow_state_blocks": false
  }
 }

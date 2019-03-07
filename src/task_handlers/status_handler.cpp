@@ -26,6 +26,10 @@ void status_handler::execute()
         m_writer.add_result("network_proxy_name", settings::server::proxyName);
         m_writer.add_result("network_tor", settings::server::tor);
         m_writer.add_result("network_proxy", settings::server::proxy);
+
+        m_writer.add_result("allow_state_blocks", settings::system::allowStateBlocks);
+        m_writer.add_result("jrpc_timeout", settings::system::jrpc_timeout);
+        m_writer.add_result("jrpc_conn_timeout", settings::system::jrpc_conn_timeout);
     }
     END_TRY
 }

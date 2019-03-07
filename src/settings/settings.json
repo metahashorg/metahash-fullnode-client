@@ -15,7 +15,10 @@
   "blocks_folder": "./blocks/", // Папки для хранения базы данных блоков
   "leveldb_folder": "./leveldb/",  // Папки для хранения базы данных блоков
   "validate_blocks": false, // Валидировать ли блоки
-  "use_local_database": true // Выкачивать базу данных или посылать запросы каждый раз на сервера tor.
+  "use_local_database": true, // Выкачивать базу данных или посылать запросы каждый раз на сервера tor.
+  "jrpc_conn_timeout": 1000, // таймаут подключения json-rpc
+  "jrpc_timeout": 60000, // таймаут выполнения json rpc
+  "allow_state_blocks": false // разрешать возвращать стейт блоки
  },
  "statistic":
  {

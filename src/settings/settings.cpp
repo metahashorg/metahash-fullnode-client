@@ -28,6 +28,8 @@ namespace settings
     bool system::validateBlocks = false;
     bool system::useLocalDatabase = true;
     bool system::allowStateBlocks = false;
+    unsigned int system::jrpc_conn_timeout = 1000;
+    unsigned int system::jrpc_timeout = 60000;
     std::string statistic::statisticNetwork;
     std::string statistic::statisticGroup;
     std::string statistic::statisticServer;
@@ -80,7 +82,9 @@ namespace settings
         server::proxyName   = tree.get<std::string>("server.proxy", "proxy.net-dev.metahash.org:9999");
         
         system::wallet_stotage = tree.get<std::string>("system.wallets-storage", boost::filesystem::current_path().append("/wallet").c_str());
-                    
+        system::jrpc_conn_timeout = tree.get<unsigned int>("system.jrpc_conn_timeout", 1000);
+        system::jrpc_timeout    = tree.get<unsigned int>("system.jrpc_timeout", 60000);
+
         settings::system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
         
         settings::system::blocksFolder = tree.get<std::string>("system.blocks_folder");

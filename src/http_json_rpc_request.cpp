@@ -123,11 +123,11 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
 
 void http_json_rpc_request::on_request_timeout()
 {
-    LOGERR << "Request timeout";
+    LOGERR << "Request timeout " << settings::system::jrpc_timeout << " ms";
 
     m_connect_timer.stop();
 
-    m_result.set_error(32001, "Request timeout");
+    m_result.set_error(32001, "Request timeout " + std::to_string(settings::system::jrpc_timeout) + " ms");
     perform_callback();
     boost::system::error_code ec;
     m_socket.close(ec);
@@ -140,7 +140,7 @@ void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::
     if (error_handler(e))
         return;
 
-    m_connect_timer.start(std::chrono::milliseconds(500),
+    m_connect_timer.start(std::chrono::milliseconds(settings::system::jrpc_conn_timeout),
                           boost::bind(&http_json_rpc_request::on_connect_timeout, shared_from_this()));
 
     asio::async_connect(is_ssl() ? m_ssl_socket.lowest_layer() : m_socket, eps,
@@ -149,12 +149,17 @@ void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::
 
 void http_json_rpc_request::on_connect_timeout()
 {
-    LOGDEBUG << "Connect timeout";
+    LOGDEBUG << "Connection timeout " << settings::system::jrpc_conn_timeout << " ms to " << m_host;
 
+    m_result.set_error(32002, "Connection timeout " + std::to_string(settings::system::jrpc_conn_timeout) + " ms " + m_host);
+    perform_callback();
     boost::system::error_code ec;
-    m_socket.cancel(ec);
+    m_socket.close(ec);
+    m_ssl_socket.shutdown(ec);
+    m_duration.stop();
 
-    m_connect_timer.run_once();
+//    m_connect_timer.run_once();
+    m_connect_timer.stop();
 }
 
 void http_json_rpc_request::on_connect(const boost::system::error_code& e, const tcp::endpoint& ep)
@@ -164,7 +169,7 @@ void http_json_rpc_request::on_connect(const boost::system::error_code& e, const
     if (error_handler(e))
         return;
 
-    m_timer.start(std::chrono::milliseconds(3000),
+    m_timer.start(std::chrono::milliseconds(settings::system::jrpc_timeout),
                   boost::bind(&http_json_rpc_request::on_request_timeout, shared_from_this()));
 
     if (is_ssl())
