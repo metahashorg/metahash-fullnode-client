@@ -9,21 +9,33 @@
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ip/tcp.hpp>
 
+#include <mutex>
+
 #include "json_rpc.h"
 #include "task_handlers/time_duration.h"
 #include "task_handlers/utils.h"
 
-namespace	asio    = boost::asio;
-namespace	ssl     = boost::asio::ssl;
-namespace	ip      = boost::asio::ip;
-using		tcp     = boost::asio::ip::tcp;
+namespace   asio    = boost::asio;
+namespace   ssl     = boost::asio::ssl;
+namespace   ip      = boost::asio::ip;
+using       tcp     = boost::asio::ip::tcp;
 namespace   beast   = boost::beast;
-namespace	http    = boost::beast::http;
+namespace   http    = boost::beast::http;
 
 using http_json_rpc_execute_callback = std::function<void()>;
 
 class http_json_rpc_request: public std::enable_shared_from_this<http_json_rpc_request>
 {
+    enum class state {
+        undefined,
+        error,
+        connection_timeout,
+        timeout,
+        connected,
+        processing,
+        completed
+    };
+
 public:
     http_json_rpc_request(const std::string& host, asio::io_context& execute_context);
     ~http_json_rpc_request();
@@ -46,7 +58,7 @@ protected:
     void on_request_timeout();
     void on_connect_timeout();
 
-    bool error_handler(const boost::system::error_code& e);
+    bool error_handler(const boost::system::error_code& e, const char* message);
 
     void perform_callback();
 
@@ -61,7 +73,7 @@ private:
     utils::Timer                        m_timer;
     utils::Timer                        m_connect_timer;
     utils::time_duration                m_duration;
-    http::request<http::string_body>   m_req { http::verb::post, "/", 11 };
+    http::request<http::string_body>    m_req { http::verb::post, "/", 11 };
     http::response<http::string_body>   m_response;
     boost::beast::flat_buffer           m_buf { 8192 };
     json_rpc_writer                     m_result;
@@ -72,4 +84,6 @@ private:
     std::string                         m_id;
     bool                                m_async;
     bool                                m_use_ssl;
+    state                               m_state;
+    std::mutex                          m_locker;
 };
