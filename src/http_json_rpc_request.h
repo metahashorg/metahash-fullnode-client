@@ -1,13 +1,15 @@
-#pragma once
+#ifndef __HTTP_JSON_RPC_REQUEST_H__
+#define __HTTP_JSON_RPC_REQUEST_H__
 
 #include <string.h>
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/bind.hpp>
+#include <boost/beast/core/flat_buffer.hpp>
+#include <boost/beast/http/string_body.hpp>
+#include <boost/beast/http/message.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/io_context.hpp>
 
 #include <mutex>
 
@@ -26,16 +28,6 @@ using http_json_rpc_execute_callback = std::function<void()>;
 
 class http_json_rpc_request: public std::enable_shared_from_this<http_json_rpc_request>
 {
-    enum class state {
-        undefined,
-        error,
-        connection_timeout,
-        timeout,
-        connected,
-        processing,
-        completed
-    };
-
 public:
     http_json_rpc_request(const std::string& host, asio::io_context& execute_context);
     ~http_json_rpc_request();
@@ -51,14 +43,13 @@ public:
 protected:
     void on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps);
     void on_connect(const boost::system::error_code& ec, const tcp::endpoint& ep);
-    void on_connect2(const boost::system::error_code& e, std::vector<tcp::endpoint>::iterator i);
     void on_handshake(const boost::system::error_code& e);
     void on_write(const boost::system::error_code& e);
     void on_read(const boost::system::error_code& e);
     void on_request_timeout();
     void on_connect_timeout();
 
-    bool error_handler(const boost::system::error_code& e, const char* message);
+    bool error_handler(const boost::system::error_code& e, const char* from);
 
     void perform_callback();
 
@@ -84,6 +75,8 @@ private:
     std::string                         m_id;
     bool                                m_async;
     bool                                m_use_ssl;
-    state                               m_state;
+    bool                                m_canceled;
     std::mutex                          m_locker;
 };
+
+#endif // __HTTP_JSON_RPC_REQUEST_H__

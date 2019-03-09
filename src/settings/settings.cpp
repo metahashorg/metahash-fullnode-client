@@ -1,7 +1,7 @@
 #include "settings.h"
 
-#include <iostream>
-#include <boost/filesystem.hpp>
+//#include <iostream>
+//#include <boost/filesystem.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -43,15 +43,14 @@ namespace settings
     std::string server::proxy;
     
     // system
-    std::string system::wallet_stotage = { boost::filesystem::current_path().append("/wallet").c_str() };
+    std::string system::wallet_stotage = { "./wallet" };
 
     void read(const std::string &pathToConfig) {
         pt::ptree tree;
         
-        boost::filesystem::path path;
+        std::string path;
         if (pathToConfig.empty()) {
-            path = boost::filesystem::current_path();
-            path.append("/settings.json");
+            path.append("./settings.json");
         } else {
             path = pathToConfig;
         }
@@ -65,47 +64,41 @@ namespace settings
         tcp::resolver resolver(ctx);
         boost::property_tree::ptree access;
         access = tree.get_child("service.access", access);
-        for (auto &v : access)
-        {
+        for (auto &v : access) {
             boost::system::error_code er;
             auto eps = resolver.resolve({v.second.data(), ""}, er);
-            if (er)
-            {
+            if (er) {
                 LOGWARN << "Couldn't resolve " << v.second.data() << " : " << er.message();
                 continue;
             }
-            for (auto &e : eps)
+            for (auto &e : eps) {
                 service::access.push_back(e.endpoint().address().to_string());
+            }
         }
 
         server::torName     = tree.get<std::string>("server.tor", "tor.net-dev.metahash.org:5795");
         server::proxyName   = tree.get<std::string>("server.proxy", "proxy.net-dev.metahash.org:9999");
         
-        system::wallet_stotage = tree.get<std::string>("system.wallets-storage", boost::filesystem::current_path().append("/wallet").c_str());
+        system::wallet_stotage = tree.get<std::string>("system.wallets-storage", "./wallet");
         system::jrpc_conn_timeout = tree.get<unsigned int>("system.jrpc_conn_timeout", 1000);
-        system::jrpc_timeout    = tree.get<unsigned int>("system.jrpc_timeout", 60000);
-
-        settings::system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
-        
-        settings::system::blocksFolder = tree.get<std::string>("system.blocks_folder");
-        
-        settings::system::validateBlocks = tree.get<bool>("system.validate_blocks");
-        
-        settings::system::useLocalDatabase = tree.get<bool>("system.use_local_database");
-
-        settings::system::allowStateBlocks = tree.get<bool>("system.allow_state_blocks", false);
+        system::jrpc_timeout = tree.get<unsigned int>("system.jrpc_timeout", 60000);
+        system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
+        system::blocksFolder = tree.get<std::string>("system.blocks_folder");
+        system::validateBlocks = tree.get<bool>("system.validate_blocks");
+        system::useLocalDatabase = tree.get<bool>("system.use_local_database");
+        system::allowStateBlocks = tree.get<bool>("system.allow_state_blocks", false);
         
         if (tree.find("statistic") != tree.not_found()) {
-            settings::statistic::statisticNetwork = tree.get<std::string>("statistic.network");
-            settings::statistic::statisticGroup = tree.get<std::string>("statistic.group");
-            settings::statistic::statisticServer = tree.get<std::string>("statistic.server");
-            settings::statistic::latencyFile = tree.get<std::string>("statistic.latency_file");
+            statistic::statisticNetwork = tree.get<std::string>("statistic.network");
+            statistic::statisticGroup = tree.get<std::string>("statistic.group");
+            statistic::statisticServer = tree.get<std::string>("statistic.server");
+            statistic::latencyFile = tree.get<std::string>("statistic.latency_file");
         }
     }
 
     std::string getConfigPath(boost::program_options::variables_map& vm) {
         if (vm.count("any")) {
-            settings::service::any_conns = true;
+            service::any_conns = true;
         }
         
         if (vm.count("config")) {

@@ -30,7 +30,7 @@ protected:
 #define END_TRY_RET_PARAM(ret, param) \
     catch (invalid_param& ex)\
     {\
-        LOGERR << "InvalidParam \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
+        LOGERR << "InvalidParam Exception: \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, ex.what());\
         param;\
@@ -38,7 +38,7 @@ protected:
     }\
     catch (const std::string& ex)\
     {\
-        LOGERR << "StringException \"" << ex << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
+        LOGERR << "String Exception: \"" << ex << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, ex);\
         param;\
@@ -46,7 +46,7 @@ protected:
     }\
     catch (std::exception& ex)\
     {\
-        LOGERR << "STD Exception \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
+        LOGERR << "STD Exception: \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, ex.what());\
         param;\
@@ -54,7 +54,7 @@ protected:
     }\
     catch(...)\
     {\
-        LOGERR << "Unknown exception (" << __FILE__ << " : " << __LINE__ << ")";\
+        LOGERR << "Unknown exception: (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
         this->m_writer.set_error(-32666, "Unknown exception");\
         param;\

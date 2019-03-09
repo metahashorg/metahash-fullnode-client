@@ -1,7 +1,7 @@
 #include "wallet_storage.h"
-#include <boost/filesystem.hpp>
-
+#include "common/filesystem_utils.h"
 #include "settings/settings.h"
+#include <fstream>
 
 namespace storage
 {
@@ -71,8 +71,9 @@ namespace storage
         if (path[path.size() - 1] != '/')
             path.append("/");
 
-        if (!boost::filesystem::exists(path))
-            boost::filesystem::create_directory(path);
+        if (!fs_utils::dir::is_exists(path.c_str())) {
+            fs_utils::dir::create(path.c_str());
+        }
 
         path.append(file);
 

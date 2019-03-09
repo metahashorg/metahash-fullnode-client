@@ -13,10 +13,10 @@ public:
 protected:
     virtual bool prepare_params() override;
 
-    void on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id);
+    void on_get_balance(http_json_rpc_request_ptr request);
 
 protected:
-    void processResponse(json_rpc_reader &reader) override;
+    void process_response(json_rpc_reader &reader) override;
 };
 
 #endif // __SEND_TX_HANDLER_H__

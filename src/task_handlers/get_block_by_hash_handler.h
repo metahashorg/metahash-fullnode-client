@@ -13,7 +13,7 @@ public:
 
 protected:
     virtual bool prepare_params() override;
-    virtual void processResponse(json_rpc_reader &reader);
+    virtual void process_response(json_rpc_reader &reader);
 
 private:
     std::string m_hash;

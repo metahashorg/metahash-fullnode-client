@@ -1,4 +1,10 @@
 #include "get_blocks_handler.h"
+#include "settings/settings.h"
+
+get_blocks_handler::get_blocks_handler(http_session_ptr session)
+    : base_network_handler(settings::server::tor, session) {
+    m_duration.set_message(__func__);
+}
 
 bool get_blocks_handler::prepare_params()
 {

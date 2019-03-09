@@ -1,13 +1,15 @@
 #include "http_json_rpc_request.h"
 #include "settings/settings.h"
-#include <iostream>
+#include "common/string_utils.h"
 
 #include "log.h"
 
 #include <boost/asio/placeholders.hpp>
+#include <boost/asio/write.hpp>
+#include <boost/asio/read.hpp>
 #include <boost/asio/connect.hpp>
-
-#include "boost/random.hpp"
+#include <boost/beast/http/read.hpp>
+#include <boost/beast/http/write.hpp>
 
 http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_context& execute_context):
     m_io_ctx(execute_context),
@@ -19,7 +21,7 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
     m_ssl_socket(m_io_ctx, m_ssl_ctx),
     m_async(true),
     m_use_ssl(false),
-    m_state(state::undefined)
+    m_canceled(false)
 {
     std::string addr, path, port;
     utils::parse_address(m_host, addr, port, path, m_use_ssl);
@@ -33,7 +35,10 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
 
     m_ssl_ctx.set_default_verify_paths();
     m_ssl_ctx.set_verify_mode(ssl::verify_fail_if_no_peer_cert);
-    m_ssl_ctx.set_verify_callback(boost::bind(&http_json_rpc_request::verify_certificate, this, _1, _2));
+
+    m_ssl_ctx.set_verify_callback([this](bool preverified, ssl::verify_context& ctx) -> bool {
+        return this->verify_certificate(preverified, ctx);
+    });
 }
 
 http_json_rpc_request::~http_json_rpc_request()
@@ -68,11 +73,11 @@ void http_json_rpc_request::set_body(const std::string& body)
     }
 }
 
-bool http_json_rpc_request::error_handler(const boost::system::error_code& e, const char* message)
+bool http_json_rpc_request::error_handler(const boost::system::error_code& e, const char* from)
 {
     std::lock_guard<std::mutex> lock(m_locker);
 
-    if (m_state == state::connection_timeout || m_state == state::timeout) {
+    if (m_canceled) {
         return true;
     }
 
@@ -80,12 +85,12 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
         return false;
     }
 
-    m_state = state::error;
+    m_canceled = true;
 
     m_timer.stop();
     m_connect_timer.stop();
 
-    LOGERR << "json-rpc[" << m_id << "] Request error (" << message << "): " << e.value() << " " << e.message();
+    LOGERR << "json-rpc[" << m_id << "] Request error (" << from << "): " << e.value() << " " << e.message();
 
     boost::system::error_code ec;
     if (m_socket.is_open())
@@ -97,7 +102,7 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
 
     //if (e != asio::error::operation_aborted)
     {
-        m_result.set_error(e.value(), "Request error: " + e.message());
+        m_result.set_error(e.value(), string_utils::str_concat("Request error: ", e.message()));
         perform_callback();
     }
 
@@ -121,23 +126,26 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
     m_duration.start();
 
     if (callback) {
-        m_callback = boost::bind(callback);
+        m_callback = callback;
     }
     std::string addr, path, port;
     utils::parse_address(m_host, addr, port, path, m_use_ssl);
-    m_resolver.async_resolve(addr, port,
-            boost::bind(&http_json_rpc_request::on_resolve, shared_from_this(), asio::placeholders::error, asio::placeholders::results));
+
+    auto self = shared_from_this();
+    m_resolver.async_resolve(addr, port, [self](const boost::system::error_code& e, tcp::resolver::results_type eps) {
+        self->on_resolve(e, eps);
+    });
 }
 
 void http_json_rpc_request::on_request_timeout()
 {
     std::lock_guard<std::mutex> lock(m_locker);
 
-    if (m_state == state::error) {
+    if (m_canceled) {
         return;
     }
 
-    m_state = state::timeout;
+    m_canceled = true;
 
     LOGERR << "json-rpc[" << m_id << "] Request timeout" << settings::system::jrpc_timeout << " ms";
 
@@ -157,22 +165,24 @@ void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::
     if (error_handler(e, __func__))
         return;
 
-    m_connect_timer.start(std::chrono::milliseconds(settings::system::jrpc_conn_timeout),
-                          boost::bind(&http_json_rpc_request::on_connect_timeout, shared_from_this()));
+    auto self = shared_from_this();
+    m_connect_timer.start(std::chrono::milliseconds(settings::system::jrpc_conn_timeout), [self](){
+        self->on_connect_timeout();
+    });
 
     asio::async_connect(is_ssl() ? m_ssl_socket.lowest_layer() : m_socket, eps,
-            boost::bind(&http_json_rpc_request::on_connect, shared_from_this(), asio::placeholders::error, asio::placeholders::endpoint));
+        [self](const boost::system::error_code& e, const tcp::endpoint& ep){ self->on_connect(e, ep); });
 }
 
 void http_json_rpc_request::on_connect_timeout()
 {
     std::lock_guard<std::mutex> lock(m_locker);
 
-    if (m_state == state::error) {
+    if (m_canceled) {
         return;
     }
 
-    m_state = state::connection_timeout;
+    m_canceled = true;
 
     LOGDEBUG << "json-rpc[" << m_id << "] Connection timeout " << settings::system::jrpc_conn_timeout << " ms to " << m_host;
 
@@ -184,9 +194,6 @@ void http_json_rpc_request::on_connect_timeout()
     perform_callback();
 
     m_duration.stop();
-
-//    m_connect_timer.run_once();
-//    m_connect_timer.stop();
 }
 
 void http_json_rpc_request::on_connect(const boost::system::error_code& e, const tcp::endpoint& ep)
@@ -196,21 +203,24 @@ void http_json_rpc_request::on_connect(const boost::system::error_code& e, const
     if (error_handler(e, __func__))
         return;
 
-    m_timer.start(std::chrono::milliseconds(settings::system::jrpc_timeout),
-                  boost::bind(&http_json_rpc_request::on_request_timeout, shared_from_this()));
+    auto self = shared_from_this();
+    m_timer.start(std::chrono::milliseconds(settings::system::jrpc_timeout), [self](){
+        self->on_request_timeout();
+    });
 
     if (is_ssl())
     {
-        m_ssl_socket.async_handshake(ssl::stream<tcp::socket>::client,
-            boost::bind(&http_json_rpc_request::on_handshake, shared_from_this(), asio::placeholders::error));
+        m_ssl_socket.async_handshake(ssl::stream<tcp::socket>::client, [self](const boost::system::error_code& e){
+            self->on_handshake(e);
+        });
     }
     else
     {
         LOGDEBUG << "json-rpc[" << m_id << "] Send request: " << m_host << " <<< " << m_req.body().c_str();
 
-        m_state = state::connected;
-        http::async_write(m_socket, m_req,
-            boost::bind(&http_json_rpc_request::on_write, shared_from_this(), asio::placeholders::error));
+        http::async_write(m_socket, m_req, [self](const boost::system::error_code& e, std::size_t){
+            self->on_write(e);
+        });
     }
 }
 
@@ -221,9 +231,10 @@ void http_json_rpc_request::on_handshake(const boost::system::error_code& e)
 
     LOGDEBUG << "json-rpc[" << m_id << "] Send request: " << m_host << " <<< " << m_req.body().c_str();
 
-    m_state = state::connected;
-    http::async_write(m_ssl_socket, m_req,
-        boost::bind(&http_json_rpc_request::on_write, shared_from_this(), asio::placeholders::error));
+    auto self = shared_from_this();
+    http::async_write(m_ssl_socket, m_req, [self](const boost::system::error_code& e, std::size_t){
+        self->on_write(e);
+    });
 }
 
 void http_json_rpc_request::on_write(const boost::system::error_code& e)
@@ -231,16 +242,18 @@ void http_json_rpc_request::on_write(const boost::system::error_code& e)
     if (error_handler(e, __func__))
         return;
 
-    m_state = state::processing;
+    auto self = shared_from_this();
     if (is_ssl())
     {
-        http::async_read(m_ssl_socket, m_buf, m_response,
-            boost::bind(&http_json_rpc_request::on_read, shared_from_this(), asio::placeholders::error));
+        http::async_read(m_ssl_socket, m_buf, m_response, [self](const boost::system::error_code& e, size_t){
+            self->on_read(e);
+        });
     }
     else
     {
-        http::async_read(m_socket, m_buf, m_response,
-            boost::bind(&http_json_rpc_request::on_read, shared_from_this(), asio::placeholders::error));
+        http::async_read(m_socket, m_buf, m_response, [self](const boost::system::error_code& e, size_t){
+            self->on_read(e);
+        });
     }
 }
 
@@ -250,8 +263,6 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e)
         return;
 
     m_timer.stop();
-
-    m_state = state::completed;
 
     http::status status = m_response.result();
     if (status != http::status::ok)
@@ -295,7 +306,7 @@ std::string http_json_rpc_request::get_result()
     return m_result.stringify();
 }
 
-bool http_json_rpc_request::verify_certificate(bool preverified, ssl::verify_context& ctx)
+bool http_json_rpc_request::verify_certificate(bool, ssl::verify_context&)
 {
-  return true;
+    return true;
 }

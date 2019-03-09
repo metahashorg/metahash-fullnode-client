@@ -238,44 +238,25 @@ namespace json_utils
         if (value == nullptr)
             return false;
 
-        if (value->IsString())
-        {
+        if (value->IsString()) {
             result = value->GetString();
-            return true;
+        } else {
+            std::ostringstream out;
+            if (value->IsInt()) {
+                out << value->GetInt();
+            } else if (value->IsInt64()) {
+                out << value->GetInt64();
+            } else if (value->IsUint()) {
+                out << value->GetUint();
+            } else if (value->IsUint64()) {
+                out << value->GetUint64();
+            } else {
+                return false;
+            }
+            out.flush();
+            result = out.str();
         }
-
-        std::ostringstream out;
-        if (value->IsInt())
-        {
-            out << value->GetInt();
-        }
-        else if (value->IsInt64())
-        {
-            out << value->GetInt64();
-        }
-        else if (value->IsUint())
-        {
-            out << value->GetUint();
-        }
-        else if (value->IsUint64())
-        {
-            out << value->GetUint64();
-        }
-        else if (value->IsDouble())
-        {
-            out << value->GetDouble();
-        }
-        else if (value->IsFloat())
-        {
-            out << value->GetFloat();
-        }
-        else
-        {
-            return false;
-        }
-        out.flush();
-        result = out.str();
-        return true;
+        return !result.empty();
     }
 
     void to_json(const std::string_view& param_list, rapidjson::Value& out, rapidjson::Document::AllocatorType& allocator) {

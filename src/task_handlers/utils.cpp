@@ -59,16 +59,16 @@ namespace utils
             {
                 switch(*fmt)
                 {
-                case 'u':
-                    utils::write_compact_int(va_arg(args, int32_t), data);
-                    break;
-                case 'U':
-                    utils::write_compact_int(va_arg(args, int64_t), data);
-                    break;
                 case 'd':
                     utils::write_compact_int(va_arg(args, uint32_t), data);
                     break;
                 case 'D':
+                    utils::write_compact_int(va_arg(args, uint64_t), data);
+                    break;
+                case 'u':
+                    utils::write_compact_int(va_arg(args, uint32_t), data);
+                    break;
+                case 'U':
                     utils::write_compact_int(va_arg(args, uint64_t), data);
                     break;
                 case 'x':
@@ -184,7 +184,7 @@ namespace utils
         if (!m_run)
         {
             m_run = true;
-            m_start = boost::posix_time::microsec_clock::local_time();
+            gettimeofday(&m_start, NULL);
         }
     }
 
@@ -193,7 +193,10 @@ namespace utils
         if (m_run)
         {
             m_run = false;
-            LOGDEBUG << m_msg << " " << (boost::posix_time::microsec_clock::local_time() - m_start).total_milliseconds() << " millisec";
+            struct timeval end;
+            gettimeofday(&end, NULL);
+            long elapsed = ((end.tv_sec - m_start.tv_sec) * 1000) + (end.tv_usec / 1000 - m_start.tv_usec / 1000);
+            LOGDEBUG << m_msg << " " << elapsed << " millisec";
         }
     }
 }

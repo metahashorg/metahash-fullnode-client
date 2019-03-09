@@ -49,14 +49,19 @@ int main(int argc, char* argv[])
     common::configureLog("./log/", true, false, false);
     try {
         torrent_node_lib::initBlockchainUtils(torrent_node_lib::BlockVersion::V2);
-        std::set<std::string> modulesStrs = {torrent_node_lib::MODULE_BLOCK_STR, torrent_node_lib::MODULE_TXS_STR, torrent_node_lib::MODULE_BALANCE_STR, torrent_node_lib::MODULE_ADDR_TXS_STR, torrent_node_lib::MODULE_BLOCK_RAW_STR};
+        std::set<std::string> modulesStrs = {
+            torrent_node_lib::MODULE_BLOCK_STR,
+            torrent_node_lib::MODULE_TXS_STR,
+            torrent_node_lib::MODULE_BALANCE_STR,
+            torrent_node_lib::MODULE_ADDR_TXS_STR,
+            torrent_node_lib::MODULE_BLOCK_RAW_STR};
         torrent_node_lib::parseModules(modulesStrs);
                 
         po::options_description desc("Allowed options");
         desc.add_options()
-            ("help",									"produce help message")
-            ("any",			"accept any connections")
-            ("config",		po::value<std::string>(),	"config address");
+            ("help",                                    "produce help message")
+            ("any",         "accept any connections")
+            ("config",      po::value<std::string>(),   "config address");
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -80,7 +85,9 @@ int main(int argc, char* argv[])
         
         if (isStartStatistic) {
             const std::string thisServer = common::getHostName();
-            std::unique_ptr<torrent_node_lib::Statistics> statistics = std::make_unique<torrent_node_lib::StatisticsServer>(thisServer, settings::statistic::statisticNetwork, settings::statistic::statisticGroup, settings::statistic::statisticServer, settings::statistic::latencyFile, "vc1");
+            std::unique_ptr<torrent_node_lib::Statistics> statistics = std::make_unique<torrent_node_lib::StatisticsServer>(
+                        thisServer, settings::statistic::statisticNetwork, settings::statistic::statisticGroup,
+                        settings::statistic::statisticServer, settings::statistic::latencyFile, "vc1");
             torrent_node_lib::setStatistics(std::move(statistics));
         }
                 

@@ -20,7 +20,7 @@ bool send_tx_handler_sync::prepare_params()
         } else {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();
-            
+
             const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(m_address));
             m_nonce = balance.countSpent + 1;
         }
@@ -33,7 +33,7 @@ bool send_tx_handler_sync::prepare_params()
     END_TRY_RET(false)
 }
 
-void send_tx_handler_sync::processResponse(json_rpc_reader &reader)
+void send_tx_handler_sync::process_response(json_rpc_reader &reader)
 {
     BGN_TRY
     {

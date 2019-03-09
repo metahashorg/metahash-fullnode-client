@@ -1,7 +1,7 @@
 #ifndef __CREATE_TX_HANDLER_H__
 #define __CREATE_TX_HANDLER_H__
 
-#include "base_handler.h"
+//#include "base_handler.h"
 #include "create_tx_base_handler.h"
 
 class create_tx_handler : public create_tx_base_handler

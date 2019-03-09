@@ -2,6 +2,7 @@
 #include "http_json_rpc_request.h"
 #include "http_session.h"
 #include <memory>
+#include "common/string_utils.h"
 
 base_network_handler::base_network_handler(const std::string &host, http_session_ptr session) 
     : base_handler(session)
@@ -25,26 +26,23 @@ void base_network_handler::execute()
             m_writer.reset();
             m_writer.parse(m_request->get_result());
         } else {
-            m_request->execute_async(boost::bind(&base_network_handler::on_complete, shared_from(this)));
+            auto self = shared_from(this);
+            m_request->execute_async([self](){ self->on_complete(); });
         }
     }
     END_TRY
 }
 
-void base_network_handler::processResponse(json_rpc_reader &reader)
+void base_network_handler::process_response(json_rpc_reader &reader)
 {
-    // TODO replace this staff to on_complete
-    auto err = reader.get_error();
-    auto res = reader.get_result();
-
-    CHK_PRM(err || res, "No occur result or error")
-    
-    if (err) {
+    if (auto err = reader.get_error()) {
         m_writer.set_error(*err);
-    } else if (res) {
+    } else if (auto res = reader.get_result()) {
         m_writer.set_result(*res);
+    } else {
+        CHK_PRM(false, "No occur result or error");
     }
-    
+
     rapidjson::Document& doc = reader.get_doc();
     for (auto& m : doc.GetObject()) {
         std::string name = m.name.GetString();
@@ -62,12 +60,17 @@ void base_network_handler::on_complete()
     {
         m_writer.reset();
         json_rpc_reader reader;
-        CHK_PRM(reader.parse(m_request->get_result()), "Invalid response json")
+        CHK_PRM(reader.parse(m_request->get_result()),
+                string_utils::str_concat("Invalid response json: ", std::to_string(reader.get_parse_error().Code())))
+        CHK_PRM(reader.get_error() || reader.get_result(), "No occur result or error")
 
-        processResponse(reader);
-        m_session->send_json(m_writer.stringify());
-//        boost::asio::post(boost::bind(&http_session::send_json, session, m_writer.stringify()));
+        process_response(reader);
+        send_response();
     }
-    END_TRY_PARAM(m_session->send_json(m_writer.stringify()))
-//    END_TRY_PARAM(boost::asio::post(boost::bind(&http_session::send_json, session, m_writer.stringify())))
+    END_TRY_PARAM(send_response())
+}
+
+void base_network_handler::send_response()
+{
+    m_session->send_json(m_writer.stringify());
 }

@@ -56,9 +56,9 @@ bool create_tx_base_handler::build_request() {
         m_writer.set_method("mhc_send");
         m_writer.add_param("transaction", transaction.c_str());
         m_writer.add_param("to", m_to.c_str());
-        m_writer.add_param("value", boost::lexical_cast<std::string>(m_value));
-        m_writer.add_param("fee", !m_fee ? "" : boost::lexical_cast<std::string>(m_fee));
-        m_writer.add_param("nonce", boost::lexical_cast<std::string>(m_nonce));
+        m_writer.add_param("value", std::to_string(m_value));
+        m_writer.add_param("fee", !m_fee ? "" : std::to_string(m_fee));
+        m_writer.add_param("nonce", std::to_string(m_nonce));
         m_writer.add_param("data", m_data.c_str());
         m_writer.add_param("pubkey", m_keys.pub_key);
         m_writer.add_param("sign", sign);

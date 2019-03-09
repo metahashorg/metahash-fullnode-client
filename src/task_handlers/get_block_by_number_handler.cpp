@@ -98,9 +98,9 @@ void get_block_by_number_handler::execute()
     END_TRY_RET()
 }
 
-void get_block_by_number_handler::processResponse(json_rpc_reader &reader)
+void get_block_by_number_handler::process_response(json_rpc_reader &reader)
 {
-    base_network_handler::processResponse(reader);
+    base_network_handler::process_response(reader);
     if (!settings::system::allowStateBlocks) {
         auto res = reader.get_result();
         if (res) {

@@ -1,4 +1,5 @@
 #include "base_handler.h"
+#include "string_utils.h"
 
 bool base_handler::prepare(const std::string& params)
 {
@@ -6,7 +7,8 @@ bool base_handler::prepare(const std::string& params)
     {
         m_duration.start();
 
-        CHK_PRM(m_reader.parse(params), "Parse error");
+        CHK_PRM(m_reader.parse(params),
+                string_utils::str_concat("Parse error: ", std::to_string(m_reader.get_parse_error().Code())).c_str());
 
         m_id = m_reader.get_id();
         m_writer.set_id(m_id);

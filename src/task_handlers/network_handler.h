@@ -19,7 +19,8 @@ protected:
     void on_complete();
 
 protected:
-    virtual void processResponse(json_rpc_reader &reader);
+    virtual void process_response(json_rpc_reader &reader);
+    void send_response();
 
 protected:
     bool m_async_execute = {true};
