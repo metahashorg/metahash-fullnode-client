@@ -7,7 +7,7 @@
 
 namespace common {
     
-void configureLog(const std::string &folder, bool isAppend, bool isConsole, bool isAutoSpacing);
+void configureLog(const std::string &folder, bool isAppend, bool isConsole, bool isAutoSpacing, bool isTime);
 
 void flushLogsAll();
 
