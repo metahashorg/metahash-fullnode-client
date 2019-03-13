@@ -13,8 +13,11 @@ public:
 
     virtual void execute() override;
 
-protected:
+    inline void set_async(bool value) {
+        m_async_execute = value;
+    }
 
+protected:
     // async callback
     void on_complete();
 

@@ -1,6 +1,7 @@
 #include "create_tx_base_handler.h"
 #include "settings/settings.h"
 #include "utils.h"
+#include "common/convertStrings.h"
 
 create_tx_base_handler::create_tx_base_handler(http_session_ptr session)
     : base_network_handler(settings::server::proxy, session)
@@ -46,8 +47,11 @@ bool create_tx_base_handler::check_params() {
 }
 
 
-bool create_tx_base_handler::build_request() {
-    BGN_TRY {
+bool create_tx_base_handler::build_request()
+{
+    BGN_TRY
+    {
+        m_data = common::toHex(m_data.begin(), m_data.end());
         std::string sign;
         std::string transaction;
         CHK_PRM(utils::gen_sign(transaction, sign, m_keys.prv_key, "xUUUux", m_to.c_str(), m_value, m_fee, m_nonce, m_data.size() / 2, m_data.c_str()), "failed on gen sign")

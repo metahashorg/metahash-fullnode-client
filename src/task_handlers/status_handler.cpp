@@ -3,11 +3,14 @@
 #include "cmake_modules/GitSHA1.h"
 //#include "cpplib_open_ssl_decor/crypto.h"
 #include "common/filesystem_utils.h"
+#include "common/string_utils.h"
 #include <sys/types.h>
 #include <dirent.h>
 #include "../SyncSingleton.h"
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
+#include "http_session.h"
+#include "http_json_rpc_request.h"
 
 bool status_handler::prepare_params()
 {
@@ -46,6 +49,41 @@ void status_handler::execute()
                 const torrent_node_lib::Sync &sync = *syncSingleton();
                 m_writer.add_result("blocks_count", sync.getBlockchain().countBlocks());
                 m_writer.add_result("last_block", sync.getKnownBlock());
+            } else {
+                asio::io_context io;
+                auto request = std::make_shared<http_json_rpc_request>(settings::server::tor, io);
+                request->set_path("get-count-blocks");
+                request->set_body("{\"id\":1}");
+                request->execute();
+                std::string result = request->get_result();
+                m_writer.add_result("blocks_count", "n/a");
+                for (;;) {
+                    if (result.empty()) break;
+                    json_rpc_reader reader;
+                    if (!reader.parse(result)) {
+                        m_writer.add_result("blocks_count",
+                                            string_utils::str_concat("parse error: ", std::to_string(reader.get_parse_error().Code())));
+                        break;
+                    }
+                    auto tmp = reader.get_error();
+                    if (tmp) {
+                        m_writer.add_result("blocks_count",
+                                            string_utils::str_concat("error: ", reader.stringify(tmp)));
+                        break;
+                    }
+                    tmp = reader.get_result();
+                    if (!tmp) {
+                        m_writer.add_result("blocks_count", "no result occurred");
+                        break;
+                    }
+                    uint64_t count_blocks = 0;
+                    if (!reader.get_value(*tmp, "count_blocks", count_blocks)) {
+                        m_writer.add_result("blocks_count", "'count_blocks' has not found");
+                        break;
+                    }
+                    m_writer.add_result("blocks_count", count_blocks);
+                    break;
+                }
             }
             break;
 

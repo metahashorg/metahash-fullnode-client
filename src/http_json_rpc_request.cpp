@@ -147,7 +147,7 @@ void http_json_rpc_request::on_request_timeout()
 
     m_canceled = true;
 
-    LOGERR << "json-rpc[" << m_id << "] Request timeout" << settings::system::jrpc_timeout << " ms";
+    LOGERR << "json-rpc[" << m_id << "] Request timeout " << settings::system::jrpc_timeout << " ms";
 
     m_connect_timer.stop();
     boost::system::error_code ec;
