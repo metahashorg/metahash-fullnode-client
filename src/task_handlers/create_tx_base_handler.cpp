@@ -29,7 +29,6 @@ bool create_tx_base_handler::check_params() {
 
         std::string tmp;
         CHK_PRM(json_utils::val2str(jValue, tmp), "value field incorrect format")
-
         m_value = std::stoull(tmp);
 
         jValue = m_reader.get("fee", *params);
@@ -51,6 +50,9 @@ bool create_tx_base_handler::build_request()
 {
     BGN_TRY
     {
+        if (m_fee == 0) {
+            m_fee = m_data.size();
+        }
         m_data = common::toHex(m_data.begin(), m_data.end());
         std::string sign;
         std::string transaction;
