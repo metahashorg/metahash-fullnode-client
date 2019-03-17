@@ -116,11 +116,14 @@ namespace utils
 
     // Timer
     Timer::~Timer() {
-        stop();
+        if (m_thr.joinable()) {
+            m_thr.join();
+        }
     }
 
     void Timer::start(const Interval& interval, const Handler& handler, bool immediately /*= true*/) {
-        m_handler = handler;
+        std::unique_lock<std::mutex> guard(m_locker);
+        set_callback(handler);
         m_interval = interval;
         if (immediately) {
             isStopped = false;
@@ -131,16 +134,16 @@ namespace utils
     }
 
     void Timer::stop() {
+        std::unique_lock<std::mutex> guard(m_locker);
         if (!isStopped) {
-            std::unique_lock<std::mutex> guard(m_locker);
             isStopped = true;
+            cond.notify_one();
             guard.unlock();
-            cond.notify_all();
             if (m_thr.joinable()) {
                 m_thr.join();
             }
         }
-        m_handler = nullptr;
+        set_callback(nullptr);
     }
 
     void Timer::run_once() {
@@ -150,12 +153,16 @@ namespace utils
             if (cond.wait_for(guard, m_interval, [&](){return isStopped;})) {
                 return;
             }
-            guard.unlock();
+            isStopped = true;
+//            guard.unlock();
             if (m_handler) {
                 m_handler();
-                m_handler = nullptr;
             }
         });
+    }
+
+    void Timer::set_callback(const Handler& handler) {
+        m_handler = handler;
     }
 
     // time_duration

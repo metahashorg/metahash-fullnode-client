@@ -49,7 +49,11 @@ http_json_rpc_request::~http_json_rpc_request()
         m_socket.shutdown(tcp::socket::shutdown_both, ec);
         m_socket.close(ec);
     }
-    m_ssl_socket.shutdown(ec);
+    if (m_ssl_socket.lowest_layer().is_open()){
+//        m_ssl_socket.shutdown(ec);
+        m_ssl_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
+        m_ssl_socket.lowest_layer().close(ec);
+    }
 }
 
 void http_json_rpc_request::set_path(const std::string& path)
@@ -98,7 +102,11 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
         m_socket.shutdown(tcp::socket::shutdown_both, ec);
         m_socket.close(ec);
     }
-    m_ssl_socket.shutdown(ec);
+    if (m_ssl_socket.lowest_layer().is_open()){
+//        m_ssl_socket.shutdown(ec);
+        m_ssl_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
+        m_ssl_socket.lowest_layer().close(ec);
+    }
 
     //if (e != asio::error::operation_aborted)
     {
@@ -145,19 +153,28 @@ void http_json_rpc_request::on_request_timeout()
         return;
     }
 
-    m_canceled = true;
-
     LOGERR << "json-rpc[" << m_id << "] Request timeout " << settings::system::jrpc_timeout << " ms";
 
+    m_canceled = true;
     m_connect_timer.stop();
+    m_timer.set_callback(nullptr);
+
     boost::system::error_code ec;
-    m_socket.close(ec);
-    m_ssl_socket.shutdown(ec);
+    if (m_socket.is_open())
+    {
+        m_socket.shutdown(tcp::socket::shutdown_both, ec);
+        m_socket.close(ec);
+    }
+    if (m_ssl_socket.lowest_layer().is_open()){
+//        m_ssl_socket.shutdown(ec);
+        m_ssl_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
+        m_ssl_socket.lowest_layer().close(ec);
+    }
+
+    m_duration.stop();
 
     m_result.set_error(32001, "Request timeout " + std::to_string(settings::system::jrpc_timeout) + " ms");
     perform_callback();
-
-    m_duration.stop();
 }
 
 void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps)
@@ -182,26 +199,36 @@ void http_json_rpc_request::on_connect_timeout()
         return;
     }
 
-    m_canceled = true;
-
     LOGDEBUG << "json-rpc[" << m_id << "] Connection timeout " << settings::system::jrpc_conn_timeout << " ms to " << m_host;
 
+    m_canceled = true;
+    m_timer.stop();
+    m_connect_timer.set_callback(nullptr);
+
     boost::system::error_code ec;
-    m_socket.close(ec);
-    m_ssl_socket.shutdown(ec);
+    if (m_socket.is_open())
+    {
+        m_socket.shutdown(tcp::socket::shutdown_both, ec);
+        m_socket.close(ec);
+    }
+    if (m_ssl_socket.lowest_layer().is_open()){
+//        m_ssl_socket.shutdown(ec);
+        m_ssl_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
+        m_ssl_socket.lowest_layer().close(ec);
+    }
+
+    m_duration.stop();
 
     m_result.set_error(32002, "Connection timeout " + std::to_string(settings::system::jrpc_conn_timeout) + " ms " + m_host);
     perform_callback();
-
-    m_duration.stop();
 }
 
 void http_json_rpc_request::on_connect(const boost::system::error_code& e, const tcp::endpoint& ep)
 {
-    m_connect_timer.stop();
-
     if (error_handler(e, __func__))
         return;
+
+    m_connect_timer.stop();
 
     auto self = shared_from_this();
     m_timer.start(std::chrono::milliseconds(settings::system::jrpc_timeout), [self](){
@@ -284,12 +311,12 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e)
 
     LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " >>> " << m_result.stringify();
 
+    m_duration.stop();
+
     perform_callback();
 
     if (!m_async && !m_io_ctx.stopped())
         m_io_ctx.stop();
-
-    m_duration.stop();
 }
 
 void http_json_rpc_request::perform_callback()
