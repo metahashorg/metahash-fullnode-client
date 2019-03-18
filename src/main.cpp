@@ -18,6 +18,7 @@
 
 #include "common/network_utils.h"
 #include "StatisticsServer.h"
+#include "extensions/tracking.h"
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/program_options.hpp>
@@ -102,9 +103,17 @@ int main(int argc, char* argv[])
                 p2p.get(), false, settings::system::validateBlocks
             );
         }
-        
+
+        ext::tracking_history module;
+        if (settings::extensions::use_tracking_history) {
+            module.init();
+            module.run();
+        }
+
         common::Thread runServerThread(runServer);
-        
+
+        module.stop();
+
         if (isStartStatistic) {
             torrent_node_lib::startStatistics();
         }

@@ -64,6 +64,8 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_dump_block_by_hash_handler_sync.cpp
     task_handlers/get_dump_block_by_number_handler_sync.cpp
     
+    extensions/tracking.cpp
+
     ${CMAKE_BINARY_DIR}/GitSHA1.cpp
     
     generate_json.cpp
@@ -74,6 +76,7 @@ include_directories( SYSTEM
     ../3rdParty/ssl/include/
     ${BOOST_LIBS_INCLUDE}
     ../3rdParty/log4cpp/include/
+#    ../3rd_party/leveldb/include
     )
 include_directories(
     common/

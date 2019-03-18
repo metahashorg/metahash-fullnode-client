@@ -38,12 +38,15 @@ namespace settings
     // server
     std::string server::torName     = {"tor.net-dev.metahash.org:5795"};
     std::string server::proxyName   = {"proxy.net-dev.metahash.org:9999"};
-    
     std::string server::tor;
     std::string server::proxy;
     
     // system
     std::string system::wallet_stotage = { "./wallet" };
+
+    // extensions
+    bool extensions::use_tracking_history = {false};
+    std::string extensions::tracking_history_folder  = { "./extensions/history_tracking" };
 
     void read(const std::string &pathToConfig) {
         pt::ptree tree;
@@ -94,6 +97,9 @@ namespace settings
             statistic::statisticServer = tree.get<std::string>("statistic.server");
             statistic::latencyFile = tree.get<std::string>("statistic.latency_file");
         }
+
+        extensions::use_tracking_history = tree.get<bool>("extensions.use_tracking_history", false);
+        extensions::tracking_history_folder = tree.get<std::string>("extensions.tracking_history_folder", "./extensions/history_tracking");
     }
 
     std::string getConfigPath(boost::program_options::variables_map& vm) {

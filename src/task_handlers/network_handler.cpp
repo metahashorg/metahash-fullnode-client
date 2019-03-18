@@ -7,7 +7,14 @@
 base_network_handler::base_network_handler(const std::string &host, http_session_ptr session) 
     : base_handler(session)
 {
-    m_request = std::make_shared<http_json_rpc_request>(host, session->get_io_context());
+    boost::asio::io_context* ctx = nullptr;
+    if (session) {
+        ctx = &session->get_io_context();
+    } else {
+        m_ioctx.reset(new boost::asio::io_context());
+        ctx = m_ioctx.get();
+    }
+    m_request = std::make_shared<http_json_rpc_request>(host, *ctx);
 }
 
 base_network_handler::~base_network_handler()
@@ -20,6 +27,9 @@ void base_network_handler::execute()
     {
         m_request->set_path(m_reader.get_method());
         m_request->set_body(m_writer.stringify());
+        if (!m_session) {
+            m_async_execute = false;
+        }
         m_result.pending = m_async_execute;
         if (!m_async_execute) {
             m_request->execute();

@@ -45,7 +45,12 @@ namespace settings
         static std::string statisticServer;
         static std::string latencyFile;
     };
-    
+
+    struct extensions {
+        static bool use_tracking_history;
+        static std::string tracking_history_folder;
+    };
+
     void read(const std::string &pathToConfig);
     
     std::string getConfigPath(boost::program_options::variables_map& vm);

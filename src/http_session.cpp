@@ -82,8 +82,8 @@ void http_session::send_response(http::response<http::string_body>& response)
     response.version(10);
     response.set(http::field::server, "metahash.service");
     response.set(http::field::content_length, response.body().size());
-    response.set(http::field::keep_alive, true);
-    response.keep_alive(true);
+    response.set(http::field::keep_alive, false);
+    response.keep_alive(false);
     http::write(m_socket, response);
 }
 

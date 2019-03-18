@@ -16,8 +16,8 @@ protected:
 
 private:
     std::string m_addr;
-    int64_t m_countTxs;
-    int64_t m_beginTx;
+    mh_count_t m_countTxs;
+    mh_count_t m_beginTx;
 };
 
 #endif // __FETCH_HISTORY_HANDLER_H__
