@@ -201,6 +201,9 @@ void http_json_rpc_request::on_write(const boost::system::error_code& e)
 {
     if (error_handler(e))
         return;
+
+    m_response.body_limit((std::numeric_limits<std::uint64_t>::max)());
+
     if (is_ssl())
     {
         http::async_read(m_ssl_socket, m_buf, m_response,
@@ -220,13 +223,13 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e)
 
     m_timer.stop();
 
-    http::status status = m_response.result();
+    http::status status = m_response.get().result();
     if (status != http::status::ok)
     {
         LOGDEBUG << "Incorrect response http status: " << status;
     }
 
-    const bool succ = m_result.parse(m_response.body());
+    const bool succ = m_result.parse(m_response.get().body());
     if (!succ)
     {
         LOGDEBUG << "Response json parse error";
