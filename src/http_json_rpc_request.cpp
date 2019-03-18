@@ -269,6 +269,8 @@ void http_json_rpc_request::on_write(const boost::system::error_code& e)
     if (error_handler(e, __func__))
         return;
 
+    m_response.body_limit((std::numeric_limits<std::uint64_t>::max)());
+    
     auto self = shared_from_this();
     if (is_ssl())
     {
@@ -291,13 +293,13 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e)
 
     m_timer.stop();
 
-    http::status status = m_response.result();
+    http::status status = m_response.get().result();
     if (status != http::status::ok)
     {
         LOGERR << "json-rpc[" << m_id << "] Incorrect response http status: " << status;
     }
 
-    const bool succ = m_result.parse(m_response.body());
+    const bool succ = m_result.parse(m_response.get().body());
     if (!succ)
     {
         LOGERR << "json-rpc[" << m_id << "] Response json parse error: " << m_result.getDoc().GetParseError();
