@@ -70,6 +70,30 @@ bool tracking_history::init()
             EXT_ERR("Addresses file has incorrect format: missing 'list' field");
             return false;
         }
+
+        // database init
+
+        std::string db_loc(folder + "data/");
+        if (!fs_utils::dir::is_exists(db_loc.c_str())) {
+            if (!fs_utils::dir::create(db_loc.c_str())) {
+                EXT_ERR("Could not create data storage path");
+                return false;
+            }
+        }
+
+        leveldb::Options options;
+        options.create_if_missing = true;
+
+        leveldb::DB* db = nullptr;
+        auto status = leveldb::DB::Open(options, db_loc.c_str(), &db);
+        if (!status.ok()) {
+            EXT_ERR("Could not open database: " << status.ToString().c_str());
+            return false;
+        }
+        m_db.reset(db);
+
+        // list addresses init
+
         m_list_addr.clear();
         rapidjson::Value::ConstMemberIterator it;
         for (const auto& info: list->value.GetArray()) {
@@ -106,26 +130,6 @@ bool tracking_history::init()
             return false;
         }
 
-        // database init
-
-        std::string db_loc(folder + "data/");
-        if (!fs_utils::dir::is_exists(db_loc.c_str())) {
-            if (!fs_utils::dir::create(db_loc.c_str())) {
-                EXT_ERR("Could not create data storage path");
-                return false;
-            }
-        }
-
-        leveldb::Options options;
-        options.create_if_missing = true;
-
-        leveldb::DB* db = nullptr;
-        auto status = leveldb::DB::Open(options, db_loc.c_str(), &db);
-        if (!status.ok()) {
-            EXT_ERR("Could not open database: " << status.ToString().c_str());
-            return false;
-        }
-        m_db.reset(db);
         EXT_INF("Init successfully");
         return true;
     }
@@ -193,18 +197,31 @@ leveldb::Status tracking_history::get_history(const std::string& address, std::s
 {
     EXT_BGN
     {
+        if (!m_db) {
+            return leveldb::Status::Corruption("dabase not initialized");
+        }
+        if (std::find_if(m_list_addr.begin(), m_list_addr.end(), [&address](addr_info& v){
+            return v.address == address;
+        }) == m_list_addr.end()) {
+            EXT_WRN("Address " << address << " not found");
+            return leveldb::Status::NotFound(address);
+        }
         leveldb::ReadOptions opt;
         return m_db->Get(opt, address, &result);
     }
-    EXT_END(leveldb::Status::Corruption("exception"))
+    EXT_END(leveldb::Status::Corruption("failed on getting history"))
 }
 
 bool tracking_history::put_history(const std::string& address, rapidjson::Value& data)
 {
     EXT_BGN
     {
+        if (!m_db) {
+            return false;
+        }
         std::string result;
-        leveldb::Status status = get_history(address, result);
+        leveldb::ReadOptions opt;
+        leveldb::Status status = m_db->Get(opt, address, &result);
         if (status.IsNotFound()) {
             result = "[]";
             status = leveldb::Status::OK();
