@@ -116,6 +116,8 @@ static std::string request(CURL* instance, const std::string& url, const std::st
     curl_easy_setopt(curl, CURLOPT_TCP_KEEPIDLE, 120L);
     /* interval time between keep-alive probes: 60 seconds */
     curl_easy_setopt(curl, CURLOPT_TCP_KEEPINTVL, 60L);
+    /* complete connection within 4 seconds */
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 4L);
     
     std::string buffer;
     std::unique_ptr<struct curl_slist, decltype(&curl_slist_free_all)> headers(nullptr, curl_slist_free_all);

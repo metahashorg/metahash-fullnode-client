@@ -11,7 +11,7 @@
  },
  "system":
  {
-   "torrent_server": "tor.net-main.metahashnetwork.com:5795",
+  "torrent_server": "tor.net-main.metahashnetwork.com:5795",
   "wallets-storage": "/opt/mhservice/wallet",
   "blocks_folder": "./blocks/",
   "leveldb_folder": "./leveldb/",
