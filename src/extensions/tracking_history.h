@@ -1,11 +1,15 @@
-#ifndef __TRACKING_H__
-#define __TRACKING_H__
+#ifndef __TRACKING_HISTORY_H__
+#define __TRACKING_HISTORY_H__
+
+#define RAPIDJSON_HAS_STDSTRING 1
 
 #include <string>
 #include <thread>
 #include <memory>
 #include <vector>
 #include "log.h"
+#include "leveldb/db.h"
+#include "rapidjson/document.h"
 
 namespace ext
 {
@@ -25,17 +29,22 @@ public:
     void run();
     void stop();
 
-    void get_history(const std::string_view& data, std::string& result);
+    leveldb::Status get_history(const std::string& address, std::string& result);
 
 protected:
     static void thread_proc(tracking_history* param);
 
+    void update_list();
+
+    bool put_history(const std::string& address, rapidjson::Value& data);
     void routine();
 
 protected:
     std::string m_id;
+    std::string m_file;
     std::unique_ptr<std::thread> m_worker;
     std::vector<addr_info> m_list_addr;
+    std::unique_ptr<leveldb::DB> m_db;
     bool m_run;
 };
 
@@ -56,4 +65,4 @@ catch (std::exception& ex) { \
 
 }
 
-#endif // __TRACKING_H__
+#endif // __TRACKING_HISTORY_H__

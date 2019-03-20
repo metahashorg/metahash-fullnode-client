@@ -16,6 +16,7 @@ public:
 
     void run();
     void stop();
+    bool runnig();
 
 protected:
     void accept(tcp::acceptor& acceptor);
@@ -30,6 +31,7 @@ protected:
     int                 m_thread_count;
     asio::io_context    m_io_ctx;
     tcp::endpoint       m_ep;
+    bool                m_run;
     
 private:
     

@@ -270,17 +270,17 @@ void http_json_rpc_request::on_write(const boost::system::error_code& e)
     
     auto self = shared_from_this();
     if (is_ssl()) {
-        http::async_read(m_ssl_socket, m_buf, m_response, [self](const boost::system::error_code& e, size_t){
-            self->on_read(e);
+        http::async_read(m_ssl_socket, m_buf, m_response, [self](const boost::system::error_code& e, size_t sz){
+            self->on_read(e, sz);
         });
     } else {
-        http::async_read(m_socket, m_buf, m_response, [self](const boost::system::error_code& e, size_t){
-            self->on_read(e);
+        http::async_read(m_socket, m_buf, m_response, [self](const boost::system::error_code& e, size_t sz){
+            self->on_read(e, sz);
         });
     }
 }
 
-void http_json_rpc_request::on_read(const boost::system::error_code& e)
+void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t sz)
 {
     if (error_handler(e, __func__)) {
         return;

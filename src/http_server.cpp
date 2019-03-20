@@ -12,6 +12,7 @@
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
     : m_thread_count(thread_count)
     , m_io_ctx(m_thread_count)
+    , m_run(false)
     , checkTimeoutTimer(m_io_ctx)
 {
     m_ep.port(port);
@@ -32,6 +33,11 @@ void http_server::checkTimeout() {
     }
 }
 
+bool http_server::runnig()
+{
+    return m_run;
+}
+
 void http_server::run()
 {
     tcp::acceptor acceptor(m_io_ctx, m_ep, true);
@@ -45,6 +51,7 @@ void http_server::run()
         threads.emplace_back(new std::thread(boost::bind(&boost::asio::io_context::run, &m_io_ctx)));
     }
 
+    m_run = true;
     LOGINFO << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port();
 
     for (std::size_t i = 0; i < threads.size(); ++i)
@@ -52,12 +59,14 @@ void http_server::run()
         threads[i]->join();
     }
 
+    m_run = false;
     LOGINFO << "Service stoped";
 }
 
 void http_server::stop()
 {
     m_io_ctx.stop();
+    m_run = false;
 }
 
 void http_server::accept(tcp::acceptor& acceptor)

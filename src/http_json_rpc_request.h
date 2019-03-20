@@ -46,7 +46,7 @@ protected:
     void on_connect(const boost::system::error_code& ec, const tcp::endpoint& ep);
     void on_handshake(const boost::system::error_code& e);
     void on_write(const boost::system::error_code& e);
-    void on_read(const boost::system::error_code& e);
+    void on_read(const boost::system::error_code& e, size_t sz);
     void on_request_timeout();
     void on_connect_timeout();
 

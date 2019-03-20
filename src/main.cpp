@@ -18,7 +18,7 @@
 
 #include "common/network_utils.h"
 #include "StatisticsServer.h"
-#include "extensions/tracking.h"
+#include "extensions/tracking_history.h"
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/program_options.hpp>
@@ -26,13 +26,14 @@
 namespace po = boost::program_options;
 namespace bs = boost::system;
 
-static std::unique_ptr<http_server> server;
+std::unique_ptr<http_server> g_server;
+ext::tracking_history g_track_his;
 
 void runServer() {
     try {
         common::sleep(1s);
-        server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
-        server->run();
+        g_server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
+        g_server->run();
     } catch (const common::exception &e) {
         LOGERR << "Server run Error " << e;
     } catch (const std::exception &e) {
@@ -104,15 +105,7 @@ int main(int argc, char* argv[])
             );
         }
 
-        ext::tracking_history module;
-        if (settings::extensions::use_tracking_history) {
-            module.init();
-            module.run();
-        }
-
         common::Thread runServerThread(runServer);
-
-        module.stop();
 
         if (isStartStatistic) {
             torrent_node_lib::startStatistics();
@@ -121,9 +114,17 @@ int main(int argc, char* argv[])
         if (settings::system::useLocalDatabase) {
             syncSingleton()->synchronize(2, true);
         }
-        
+
+        if (settings::extensions::use_tracking_history) {
+            if (g_track_his.init()) {
+                g_track_his.run();
+            }
+        }
+
         runServerThread.join();
-        
+
+        g_track_his.stop();
+
         if (isStartStatistic) {
             torrent_node_lib::joinStatistics();
         }

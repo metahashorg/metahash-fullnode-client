@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_last_txs_handler.cpp
     task_handlers/get_count_blocks_handler.cpp
     task_handlers/status_handler.cpp
+    task_handlers/fetch_transaction_handler.cpp
     
     wallet_storage/wallet_storage.cpp
     cpplib_open_ssl_decor/crypto.cpp
@@ -64,7 +65,7 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_dump_block_by_hash_handler_sync.cpp
     task_handlers/get_dump_block_by_number_handler_sync.cpp
     
-    extensions/tracking.cpp
+    extensions/tracking_history.cpp
 
     ${CMAKE_BINARY_DIR}/GitSHA1.cpp
     
@@ -73,16 +74,19 @@ add_executable(${PROJECT_NAME}
 
 include_directories( SYSTEM
     #${Boost_LIBRARY_DIRS} /
-    ../3rdParty/ssl/include/
     ${BOOST_LIBS_INCLUDE}
+    ../3rdParty/ssl/include/
     ../3rdParty/log4cpp/include/
-#    ../3rd_party/leveldb/include
-    )
-include_directories(
+    ../3rdParty/leveldb/include/
     common/
     sync/
     ./
     )
+#include_directories(
+#    common/
+#    sync/
+#    ./
+#    )
 
 
 find_package(Threads)

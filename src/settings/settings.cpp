@@ -46,7 +46,7 @@ namespace settings
 
     // extensions
     bool extensions::use_tracking_history = {false};
-    std::string extensions::tracking_history_folder  = { "./extensions/history_tracking" };
+    std::string extensions::tracking_history_folder  = { "./history_tracking" };
 
     void read(const std::string &pathToConfig) {
         pt::ptree tree;
@@ -99,7 +99,7 @@ namespace settings
         }
 
         extensions::use_tracking_history = tree.get<bool>("extensions.use_tracking_history", false);
-        extensions::tracking_history_folder = tree.get<std::string>("extensions.tracking_history_folder", "./extensions/history_tracking");
+        extensions::tracking_history_folder = tree.get<std::string>("extensions.tracking_history_folder", "./history_tracking");
     }
 
     std::string getConfigPath(boost::program_options::variables_map& vm) {

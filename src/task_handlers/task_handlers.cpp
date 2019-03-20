@@ -14,6 +14,7 @@
 #include "get_tx_handler.h"
 #include "get_last_txs_handler.h"
 #include "status_handler.h"
+#include "fetch_transaction_handler.h"
 
 #include "fetch_balance_handler_sync.h"
 #include "fetch_history_handler_sync.h"
@@ -40,7 +41,8 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_hand
     { std::pair<std::string, UseLocalDatabase>("fetch-balance", false),             perform<fetch_balance_handler> },
     { std::pair<std::string, UseLocalDatabase>("fetch-history", false),             perform<fetch_history_handler> },
     { std::pair<std::string, UseLocalDatabase>("status", false),                    perform<status_handler> },
-    
+    { std::pair<std::string, UseLocalDatabase>("fetch-transaction", false),         perform<fetch_transaction_handler> },
+
     { std::pair<std::string, UseLocalDatabase>("generate", true),                   perform<generate_handler> },
     { std::pair<std::string, UseLocalDatabase>("create-tx", true),                  perform<create_tx_handler> },
     { std::pair<std::string, UseLocalDatabase>("fetch-balance", true),              perform<fetch_balance_handler_sync> }, // +
@@ -52,7 +54,8 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_hand
     { std::pair<std::string, UseLocalDatabase>("get-tx", true),                     perform<get_tx_handler_sync> }, // +
     { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-hash", true),     perform<get_dump_block_by_hash_handler_sync> }, // +
     { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-number", true),   perform<get_dump_block_by_number_handler_sync> }, // +
-    { std::pair<std::string, UseLocalDatabase>("status", true),                     perform<status_handler> }
+    { std::pair<std::string, UseLocalDatabase>("status", true),                     perform<status_handler> },
+    { std::pair<std::string, UseLocalDatabase>("fetch-transaction", true),          perform<fetch_transaction_handler> }
 };
 
 const std::map<std::string_view, handler_func> get_handlers = {
