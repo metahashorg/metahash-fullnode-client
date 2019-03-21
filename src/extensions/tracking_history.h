@@ -18,7 +18,7 @@ class tracking_history
 {
     struct addr_info {
         std::string address;
-        size_t beginTx = {0};
+        std::string last_known;
     };
 
 public:
@@ -36,7 +36,7 @@ protected:
 
     void update_list();
 
-    bool put_history(const std::string& address, rapidjson::Value& data);
+    bool put_history(const std::string& address, const rapidjson::Value& data);
     void routine();
 
 protected:

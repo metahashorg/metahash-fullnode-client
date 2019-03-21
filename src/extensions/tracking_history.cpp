@@ -48,7 +48,7 @@ bool tracking_history::init()
                 EXT_ERR("Could not open addresses file " << m_file << " : " << strerror(errno));
                 return false;
             }
-            fs << "{\"list\":[{\"address\":\"\",\"begin_tx\":0}]}";
+            fs << "{\"list\":[{\"address\":\"\",\"last_known\":\"\"}]}";
             fs.flush();
             fs.close();
             fs.open(m_file.c_str());
@@ -116,12 +116,12 @@ bool tracking_history::init()
                 continue;
             }
 
-            it = info.FindMember("begin_tx");
+            it = info.FindMember("last_known");
             if (it == info.MemberEnd()) {
-                EXT_WRN("Could not find 'begin_tx' field");
+                EXT_WRN("Could not find 'last_known' field");
                 continue;
             }
-            ai.beginTx = it->value.GetUint64();
+            ai.last_known = it->value.GetString();
             m_list_addr.push_back(ai);
         }
         EXT_INF("Address list size: " << m_list_addr.size());
@@ -152,7 +152,7 @@ void tracking_history::update_list()
         for (const auto& v: m_list_addr){
             rapidjson::Value obj(rapidjson::kObjectType);
             obj.AddMember("address", v.address, doc.GetAllocator());
-            obj.AddMember("begin_tx", v.beginTx, doc.GetAllocator());
+            obj.AddMember("last_known", v.last_known, doc.GetAllocator());
             arr.PushBack(obj, doc.GetAllocator());
         }
         doc.AddMember("list", arr, doc.GetAllocator());
@@ -212,7 +212,7 @@ leveldb::Status tracking_history::get_history(const std::string& address, std::s
     EXT_END(leveldb::Status::Corruption("failed on getting history"))
 }
 
-bool tracking_history::put_history(const std::string& address, rapidjson::Value& data)
+bool tracking_history::put_history(const std::string& address, const rapidjson::Value& data)
 {
     EXT_BGN
     {
@@ -248,7 +248,9 @@ bool tracking_history::put_history(const std::string& address, rapidjson::Value&
                 }
             }
 
-            doc.PushBack(data, doc.GetAllocator());
+            rapidjson::Value val;
+            val.CopyFrom(data, doc.GetAllocator());
+            doc.PushBack(val, doc.GetAllocator());
             rapidjson::StringBuffer buf;
             rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
             doc.Accept(writer);
@@ -283,7 +285,7 @@ void tracking_history::routine()
         json_rpc_reader reader;
         handler_result res;
         rapidjson::Value *tmp = nullptr;
-        rapidjson::Value::MemberIterator it;
+        rapidjson::Value::ConstMemberIterator it, trnz;
         bool need_update = false;
 
         while (m_run) {
@@ -294,62 +296,88 @@ void tracking_history::routine()
             }
 
             for (auto& info: m_list_addr) {
-                std::string json = string_utils::str_concat(
-                    "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-history\", \"params\":{\"address\":\"", info.address, "\", \"beginTx\":", std::to_string(info.beginTx), ", \"countTxs\":10}}");
-                res = perform<fetch_history_handler>(nullptr, json);
 
-                if (res.message.empty()) {
-                    EXT_ERR("Empty response (" << info.address << ")");
-                    continue;
-                }
-                if (!reader.parse(res.message)) {
-                    EXT_ERR("Parse response error " << reader.get_parse_error().Code() << " (" << info.address << ")");
-                    continue;
-                }
-                tmp = reader.get_error();
-                if (tmp) {
-                    EXT_ERR("Response error (" << info.address << ") : " << reader.stringify(tmp));
-                    continue;
-                }
-                tmp = reader.get_result();
-                if (!tmp) {
-                    EXT_ERR("Response without result (" << info.address << ")");
-                    continue;
-                }
-                if (!tmp->IsArray()) {
-                    continue;
-                }
-                EXT_INF(info.address << " transaction count " << tmp->Size());
-                for (auto& item: tmp->GetArray()) {
+                uint64_t begin_tx = 0;
+                bool cancel = false;
+                while (!cancel) {
 
-                    it = item.FindMember("data");
-                    if (it == item.MemberEnd()) {
-                        EXT_WRN("Data field not found (" << info.address << ")");
-                        continue;
-                    }
-                    if (!it->value.IsString()) {
-                        EXT_WRN("Data field has not string type (" << info.address << ")");
-                        continue;
-                    }
-                    if (it->value.GetStringLength() == 0) {
-                        // skip empty data
-                        continue;
-                    }
+                    std::string json = string_utils::str_concat(
+                        "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-history\", \"params\":{\"address\":\"", info.address, "\", \"beginTx\":", std::to_string(begin_tx),",\"countTxs\":10}}");
+                    res = perform<fetch_history_handler>(nullptr, json);
 
-                    // TODO save transaction
-
-                    it = item.FindMember("transaction");
-                    if (!put_history(info.address, item)) {
-                        EXT_ERR("Could not save transaction " << it->value.GetString() << " from address " << info.address);
-                        tmp->Clear();
+                    if (res.message.empty()) {
+                        EXT_ERR("Empty response (" << info.address << ")");
                         break;
                     }
-//                    EXT_INF("Saved transaction " << it->value.GetString() << " from address " << info.address);
-                }
 
-                info.beginTx += tmp->Size();
-                if (tmp->Size() > 0) {
-                    need_update = true;
+                    if (!reader.parse(res.message)) {
+                        EXT_ERR("Parse response error " << reader.get_parse_error().Code() << " (" << info.address << ")");
+                        break;
+                    }
+
+                    tmp = reader.get_error();
+                    if (tmp) {
+                        EXT_ERR("Response error (" << info.address << ") : " << reader.stringify(tmp));
+                        break;
+                    }
+
+                    tmp = reader.get_result();
+                    if (!tmp) {
+                        EXT_ERR("Response without result (" << info.address << ")");
+                        break;
+                    }
+
+                    if (!tmp->IsArray() || tmp->Size() == 0) {
+                        break;
+                    }
+
+                    for (const auto& item: tmp->GetArray()) {
+
+                        trnz = item.FindMember("transaction");
+                        if (info.last_known.compare(trnz->value.GetString()) == 0) {
+                            cancel = true;
+                            break;
+                        }
+
+                        it = item.FindMember("data");
+                        if (it == item.MemberEnd()) {
+                            EXT_WRN("Data field not found (" << info.address << ")");
+                            continue;
+                        }
+
+                        if (!it->value.IsString()) {
+                            EXT_WRN("Data field has not string type (" << info.address << ")");
+                            continue;
+                        }
+
+                        if (it->value.GetStringLength() == 0) {
+                            // skip empty data
+                            continue;
+                        }
+
+                        // TODO save transaction
+
+                        if (!put_history(info.address, item)) {
+                            EXT_ERR("Could not save transaction " << it->value.GetString() << " from address " << info.address);
+                            // TODO break
+                            continue;
+                        }
+    //                    EXT_INF("Saved transaction " << it->value.GetString() << " from address " << info.address);
+                    }
+
+                    if (begin_tx == 0 && tmp->Size() > 0) {
+                        trnz = tmp->GetArray().Begin()->FindMember("transaction");
+                        if (info.last_known.compare(trnz->value.GetString()) != 0) {
+                            info.last_known = trnz->value.GetString();
+                            need_update = true;
+                        }
+                    }
+
+                    if (cancel) {
+                        break;
+                    }
+
+                    begin_tx += tmp->Size();
                 }
             }
             if (need_update) {
