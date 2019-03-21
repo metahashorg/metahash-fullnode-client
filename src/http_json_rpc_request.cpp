@@ -16,6 +16,7 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
     m_socket(m_io_ctx),
     m_resolver(m_io_ctx),
     m_duration(false, "json-rpc"),
+    m_callback(nullptr),
     m_host(host),
     m_ssl_ctx(ssl::context::sslv23),
     m_ssl_socket(m_io_ctx, m_ssl_ctx),

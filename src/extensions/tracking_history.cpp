@@ -255,7 +255,8 @@ bool tracking_history::put_history(const std::string& address, rapidjson::Value&
 
             leveldb::WriteOptions opt;
             status = m_db->Put(opt, address, leveldb::Slice(buf.GetString(), buf.GetLength()));
-            if (status.ok()){
+            if (status.ok()) {
+                EXT_INF("Saved transaction " << tr1.data() << " from address " << address);
                 return true;
             }
             EXT_ERR("Could not save transaction for " << address << " : " << status.ToString());
@@ -296,6 +297,7 @@ void tracking_history::routine()
                 std::string json = string_utils::str_concat(
                     "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-history\", \"params\":{\"address\":\"", info.address, "\", \"beginTx\":", std::to_string(info.beginTx), ", \"countTxs\":10}}");
                 res = perform<fetch_history_handler>(nullptr, json);
+
                 if (res.message.empty()) {
                     EXT_ERR("Empty response (" << info.address << ")");
                     continue;
@@ -314,7 +316,12 @@ void tracking_history::routine()
                     EXT_ERR("Response without result (" << info.address << ")");
                     continue;
                 }
+                if (!tmp->IsArray()) {
+                    continue;
+                }
+                EXT_INF(info.address << " transaction count " << tmp->Size());
                 for (auto& item: tmp->GetArray()) {
+
                     it = item.FindMember("data");
                     if (it == item.MemberEnd()) {
                         EXT_WRN("Data field not found (" << info.address << ")");
@@ -337,14 +344,14 @@ void tracking_history::routine()
                         tmp->Clear();
                         break;
                     }
-                    EXT_INF("Saved transaction " << it->value.GetString() << " from address " << info.address);
+//                    EXT_INF("Saved transaction " << it->value.GetString() << " from address " << info.address);
                 }
+
                 info.beginTx += tmp->Size();
                 if (tmp->Size() > 0) {
                     need_update = true;
                 }
             }
-
             if (need_update) {
                 need_update = false;
                 update_list();

@@ -29,6 +29,8 @@ namespace bs = boost::system;
 std::unique_ptr<http_server> g_server;
 ext::tracking_history g_track_his;
 
+void signal_catcher(int sig);
+
 void runServer() {
     try {
         common::sleep(1s);
@@ -47,6 +49,25 @@ void runServer() {
 
 int main(int argc, char* argv[])
 {
+    {
+        // Termination Signals
+        signal(SIGTERM, signal_catcher);
+        signal(SIGINT, signal_catcher);
+        signal(SIGQUIT, signal_catcher);
+        signal(SIGKILL, signal_catcher);
+        signal(SIGHUP, signal_catcher);
+
+        // Program Error Signals
+        signal(SIGFPE, signal_catcher);
+        signal(SIGILL, signal_catcher);
+        signal(SIGSEGV, signal_catcher);
+        signal(SIGBUS, signal_catcher);
+        signal(SIGABRT, signal_catcher);
+        signal(SIGIOT, signal_catcher);
+        signal(SIGTRAP, signal_catcher);
+        signal(SIGSYS, signal_catcher);
+    }
+
     common::initializeStopProgram();
     common::configureLog("./log/", true, false, false);
     try {
@@ -137,4 +158,31 @@ int main(int argc, char* argv[])
         LOGERR << e;
         return EXIT_FAILURE;
     }
+}
+
+#include <signal.h>
+#include <execinfo.h>
+void signal_catcher(int sig)
+{
+    std::string out;
+    out.reserve(512);
+    out.append("Caught signal \"");
+    out.append(std::to_string(sig));
+    out.append("\" : ");
+    out.append(strsignal(sig));
+
+    void* addrlist[40];
+    int size = backtrace(addrlist, sizeof(addrlist)/sizeof(void*));
+
+    if (size != 0) {
+        out.append("\nStack trace:\n");
+        char** symbollist = backtrace_symbols(addrlist, size);
+        for (int i = 0; i < size; ++i) {
+            out.append("  ");
+            out.append(symbollist[i]);
+            out.append("\n");
+        }
+        free(symbollist);
+    }
+    LOGERR << out.c_str();
 }
