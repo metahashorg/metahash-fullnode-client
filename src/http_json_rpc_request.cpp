@@ -101,11 +101,7 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
         m_socket.shutdown(tcp::socket::shutdown_both, ec);
         m_socket.close(ec);
     }
-    if (m_ssl_socket.lowest_layer().is_open()) {
-//        m_ssl_socket.shutdown(ec);
-        m_ssl_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
-        m_ssl_socket.lowest_layer().close(ec);
-    }
+    m_ssl_socket.shutdown(ec);
 
     //if (e != asio::error::operation_aborted)
     {
@@ -163,11 +159,7 @@ void http_json_rpc_request::on_request_timeout()
         m_socket.shutdown(tcp::socket::shutdown_both, ec);
         m_socket.close(ec);
     }
-    if (m_ssl_socket.lowest_layer().is_open()) {
-//        m_ssl_socket.shutdown(ec);
-        m_ssl_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
-        m_ssl_socket.lowest_layer().close(ec);
-    }
+    m_ssl_socket.shutdown(ec);
 
     m_duration.stop();
 
@@ -209,11 +201,7 @@ void http_json_rpc_request::on_connect_timeout()
         m_socket.shutdown(tcp::socket::shutdown_both, ec);
         m_socket.close(ec);
     }
-    if (m_ssl_socket.lowest_layer().is_open()) {
-//        m_ssl_socket.shutdown(ec);
-        m_ssl_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
-        m_ssl_socket.lowest_layer().close(ec);
-    }
+    m_ssl_socket.shutdown(ec);
 
     m_duration.stop();
 
