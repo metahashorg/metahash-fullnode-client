@@ -11,6 +11,8 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/beast/http/parser.hpp>
+#include <boost/exception/diagnostic_information.hpp>
+#include <boost/exception_ptr.hpp>
 
 #include <mutex>
 
@@ -79,5 +81,19 @@ private:
     bool                                m_canceled;
     std::mutex                          m_locker;
 };
+
+#define JRPC_BGN try
+
+#define JRPC_END(ret) \
+    catch (boost::exception& ex) { \
+        LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex); \
+        return ret;\
+    } catch (std::exception& ex) { \
+        LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what(); \
+        return ret;\
+    } catch (...) { \
+        LOGERR << __PRETTY_FUNCTION__ << " unhandled exception"; \
+        return ret;\
+    }
 
 #endif // __HTTP_JSON_RPC_REQUEST_H__

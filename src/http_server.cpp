@@ -2,6 +2,7 @@
 #include "http_server.h"
 #include "http_session.h"
 #include "settings/settings.h"
+#include <boost/exception/all.hpp>
 
 #include "log.h"
 
@@ -48,14 +49,14 @@ void http_server::run()
     std::vector<std::unique_ptr<std::thread> > threads;
     for (int i = 0; i < m_thread_count; ++i)
     {
-        threads.emplace_back(new std::thread(boost::bind(&boost::asio::io_context::run, &m_io_ctx)));
+//        threads.emplace_back(new std::thread(boost::bind(&boost::asio::io_context::run, &m_io_ctx)));
+        threads.emplace_back(new std::thread(worker_proc, this));
     }
 
     m_run = true;
     LOGINFO << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port();
 
-    for (std::size_t i = 0; i < threads.size(); ++i)
-    {
+    for (std::size_t i = 0; i < threads.size(); ++i) {
         threads[i]->join();
     }
 
@@ -108,4 +109,26 @@ bool http_server::check_access(const tcp::endpoint& ep)
     }
 
     return false;
+}
+
+void http_server::worker_proc(http_server* param)
+{
+    param->routine();
+}
+
+void http_server::routine()
+{
+    try {
+        boost::system::error_code ec;
+        m_io_ctx.run(ec);
+        if (ec) {
+            LOGERR << __PRETTY_FUNCTION__ << " error (" << ec.value() << "): " << ec.message();
+        }
+    } catch (boost::exception& ex) {
+        LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);
+    } catch (std::exception& ex) {
+        LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what();
+    } catch (...) {
+        LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";
+    }
 }

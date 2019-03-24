@@ -50,8 +50,12 @@ std::string genTransactionNotFoundResponse(const RequestId& requestId, const std
     rapidjson::Value errorJson(rapidjson::kObjectType);
     errorJson.AddMember("code", -32603, allocator);
     errorJson.AddMember("message", strToJson("Transaction " + transaction + " not found", allocator), allocator);
-    errorJson.AddMember("countBlocks", countBlocks, allocator);
-    errorJson.AddMember("knownBlock", knownBlock, allocator);
+
+    rapidjson::Value errorData(rapidjson::kObjectType);
+    errorData.AddMember("countBlocks", countBlocks, allocator);
+    errorData.AddMember("knownBlock", knownBlock, allocator);
+    errorJson.AddMember("data", errorData, allocator);
+
     jsonDoc.AddMember("error", errorJson, allocator);
     return jsonToString(jsonDoc, false);
 }
