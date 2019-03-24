@@ -143,12 +143,12 @@ void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::
     m_connect_timer.start(std::chrono::milliseconds(settings::system::jrpc_conn_timeout),
                           boost::bind(&http_json_rpc_request::on_connect_timeout, shared_from_this()));
 
-    asio::socket_base::reuse_address reuseaddr(true);
-    if (is_ssl()) {
-        m_ssl_socket.lowest_layer().set_option(reuseaddr);
-    } else {
-        m_socket.set_option(reuseaddr);
-    }
+//    asio::socket_base::reuse_address reuseaddr(true);
+//    if (is_ssl()) {
+//        m_ssl_socket.lowest_layer().set_option(reuseaddr);
+//    } else {
+//        m_socket.set_option(reuseaddr);
+//    }
 
     asio::async_connect(is_ssl() ? m_ssl_socket.lowest_layer() : m_socket, eps,
             boost::bind(&http_json_rpc_request::on_connect, shared_from_this(), asio::placeholders::error, asio::placeholders::endpoint));
