@@ -101,7 +101,7 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
 
         //if (e != asio::error::operation_aborted)
         {
-            m_result.set_error(e.value(), string_utils::str_concat("Request error: ", e.message()));
+            m_result.set_error(-32603, string_utils::str_concat("Json-rpc ", from, " error ", std::to_string(e.value()), " : ", e.message()));
             perform_callback();
         }
 
@@ -163,7 +163,8 @@ void http_json_rpc_request::on_request_timeout()
         m_connect_timer.stop();
         m_timer.set_callback(nullptr);
         m_duration.stop();
-        m_result.set_error(32001, "Request timeout " + std::to_string(settings::system::jrpc_timeout) + " ms");
+        m_result.set_error(-32603,
+            string_utils::str_concat("Json-rpc timeout ", std::to_string(settings::system::jrpc_timeout), " ms"));
         perform_callback();
     }
     JRPC_END()
@@ -182,12 +183,12 @@ void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::
             self->on_connect_timeout();
         });
 
-        asio::socket_base::reuse_address reuseaddr(true);
-        if (is_ssl()) {
-            m_ssl_socket.lowest_layer().set_option(reuseaddr);
-        } else {
-            m_socket.set_option(reuseaddr);
-        }
+//        asio::socket_base::reuse_address reuseaddr(true);
+//        if (is_ssl()) {
+//            m_ssl_socket.lowest_layer().set_option(reuseaddr);
+//        } else {
+//            m_socket.set_option(reuseaddr);
+//        }
 
         asio::async_connect(is_ssl() ? m_ssl_socket.lowest_layer() : m_socket, eps,
             [self](const boost::system::error_code& e, const tcp::endpoint& ep){ self->on_connect(e, ep); });
@@ -212,7 +213,8 @@ void http_json_rpc_request::on_connect_timeout()
         m_timer.stop();
         m_connect_timer.set_callback(nullptr);
         m_duration.stop();
-        m_result.set_error(32002, "Connection timeout " + std::to_string(settings::system::jrpc_conn_timeout) + " ms " + m_host);
+        m_result.set_error(-32603,
+            string_utils::str_concat("Json-rpc connection timeout ", std::to_string(settings::system::jrpc_conn_timeout), " ms ", m_host));
         perform_callback();
     }
     JRPC_END()
@@ -310,8 +312,8 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t s
         if (!succ) {
             LOGERR << "json-rpc[" << m_id << "] Response json parse error: " << m_result.getDoc().GetParseError();
             if (status != http::status::ok) {
-                m_result.set_error(32002,
-                    string_utils::str_concat("Incorrect response http status: ", std::to_string(static_cast<unsigned>(status))).c_str());
+                m_result.set_error(-32603,
+                    string_utils::str_concat("Incorrect response http status: ", std::to_string(static_cast<unsigned>(status))));
             }
         }
 

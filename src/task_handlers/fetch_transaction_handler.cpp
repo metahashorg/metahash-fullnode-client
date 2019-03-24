@@ -47,7 +47,7 @@ void fetch_transaction_handler::execute()
             rapidjson::Document doc;
             doc.Parse(result.c_str(), result.size());
             if (doc.GetParseError() != rapidjson::ParseErrorCode::kParseErrorNone) {
-                m_writer.set_error(37621, string_utils::str_concat("parse history error: ", std::to_string(doc.GetParseError())));
+                m_writer.set_error(-32300, string_utils::str_concat("parse history error: ", std::to_string(doc.GetParseError())));
                 return;
             }
 
@@ -68,7 +68,7 @@ void fetch_transaction_handler::execute()
             }
             m_writer.set_result(arr);
         } else {
-            m_writer.set_error(37621, string_utils::str_concat("geting history error: ", status.ToString()));
+            m_writer.set_error(-32301, string_utils::str_concat("geting history error: ", status.ToString()));
         }
     }
     END_TRY_RET();

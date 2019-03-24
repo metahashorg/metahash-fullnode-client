@@ -84,13 +84,25 @@ private:
 
 #define JRPC_END(ret) \
     catch (boost::exception& ex) { \
-        LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex); \
+        LOGERR << __PRETTY_FUNCTION__ << "Json-rpc boost exception: " << boost::diagnostic_information(ex) << " at line " << __LINE__; \
+        std::lock_guard<std::mutex> lock(m_locker);\
+        m_result.set_error(-32603, "Json-rpc boost exception. Check log for extra information.");\
+        close();\
+        m_canceled = true;\
         return ret;\
     } catch (std::exception& ex) { \
-        LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what(); \
+        LOGERR << __PRETTY_FUNCTION__ << "Json-rpc std exception: " << ex.what() << " at line " << __LINE__; \
+        std::lock_guard<std::mutex> lock(m_locker);\
+        m_result.set_error(-32603, "Json-rpc std exception. Check log for extra information.");\
+        close();\
+        m_canceled = true;\
         return ret;\
     } catch (...) { \
-        LOGERR << __PRETTY_FUNCTION__ << " unhandled exception"; \
+        LOGERR << __PRETTY_FUNCTION__ << "Json-rpc unhandled exception at line " << __LINE__; \
+        std::lock_guard<std::mutex> lock(m_locker);\
+        m_result.set_error(-32603, "Json-rpc unhandled exception. Check log for extra information.");\
+        close();\
+        m_canceled = true;\
         return ret;\
     }
 

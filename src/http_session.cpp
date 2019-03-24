@@ -82,8 +82,8 @@ void http_session::send_response(http::response<http::string_body>& response)
     response.version(10);
     response.set(http::field::server, "metahash.service");
     response.set(http::field::content_length, response.body().size());
-    response.set(http::field::keep_alive, false);
-    response.keep_alive(false);
+    response.set(http::field::keep_alive, true);
+    response.keep_alive(true);
     http::write(m_socket, response);
 }
 
@@ -115,7 +115,7 @@ void http_session::process_post_request()
         }
     } else {
         LOGERR << "Incorrect json " << reader.get_parse_error().Code() << ": " << m_req.body();
-        writer.set_error(reader.get_parse_error().Code(), "Parse error");
+        writer.set_error(-32700, string_utils::str_concat("Parse error: ", std::to_string(reader.get_parse_error().Code())));
         json = writer.stringify();
     }
 
@@ -145,7 +145,7 @@ void http_session::process_get_request()
     if (it == get_handlers.end()) {
         LOGWARN << "Incorrect service method " << method;
         writer.set_id(1);
-        writer.set_error(-32602, string_utils::str_concat("Method '", method, "' not found"));
+        writer.set_error(-32601, string_utils::str_concat("Method '", method, "' not found"));
         json = writer.stringify();
     } else {
         writer.set_id(1);
