@@ -8,6 +8,10 @@
 #include <boost/bind.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/beast/http/parser.hpp>
+
+#include <mutex>
 
 #include "json_rpc.h"
 #include "task_handlers/time_duration.h"
@@ -62,7 +66,7 @@ private:
     utils::Timer                        m_connect_timer;
     utils::time_duration                m_duration;
     http::request<http::dynamic_body>   m_req { http::verb::post, "/", 11 };
-    http::response<http::string_body>   m_response;
+    http::response_parser<http::string_body>   m_response;
     boost::beast::flat_buffer           m_buf { 8192 };
     json_rpc_writer                     m_result;
     http_json_rpc_execute_callback      m_callback;
