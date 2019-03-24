@@ -97,12 +97,7 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
 
         LOGERR << "json-rpc[" << m_id << "] Request error (" << from << "): " << e.value() << " " << e.message();
 
-        boost::system::error_code ec;
-        if (m_socket.is_open()) {
-            m_socket.shutdown(tcp::socket::shutdown_both, ec);
-            m_socket.close(ec);
-        }
-        m_ssl_socket.shutdown(ec);
+        close();
 
         //if (e != asio::error::operation_aborted)
         {
