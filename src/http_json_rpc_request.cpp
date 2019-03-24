@@ -44,12 +44,7 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
 
 http_json_rpc_request::~http_json_rpc_request()
 {
-    boost::system::error_code ec;
-    if (m_socket.is_open()) {
-        m_socket.shutdown(tcp::socket::shutdown_both, ec);
-        m_socket.close(ec);
-    }
-    m_ssl_socket.shutdown(ec);
+    close();
 }
 
 void http_json_rpc_request::set_path(const std::string& path)
@@ -165,22 +160,14 @@ void http_json_rpc_request::on_request_timeout()
         if (m_canceled) {
             return;
         }
+        m_canceled = true;
 
         LOGERR << "json-rpc[" << m_id << "] Request timeout " << settings::system::jrpc_timeout << " ms";
 
-        m_canceled = true;
+        close();
         m_connect_timer.stop();
         m_timer.set_callback(nullptr);
-
-        boost::system::error_code ec;
-        if (m_socket.is_open()) {
-            m_socket.shutdown(tcp::socket::shutdown_both, ec);
-            m_socket.close(ec);
-        }
-        m_ssl_socket.shutdown(ec);
-
         m_duration.stop();
-
         m_result.set_error(32001, "Request timeout " + std::to_string(settings::system::jrpc_timeout) + " ms");
         perform_callback();
     }
@@ -200,6 +187,13 @@ void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::
             self->on_connect_timeout();
         });
 
+        asio::socket_base::reuse_address reuseaddr(true);
+        if (is_ssl()) {
+            m_ssl_socket.lowest_layer().set_option(reuseaddr);
+        } else {
+            m_socket.set_option(reuseaddr);
+        }
+
         asio::async_connect(is_ssl() ? m_ssl_socket.lowest_layer() : m_socket, eps,
             [self](const boost::system::error_code& e, const tcp::endpoint& ep){ self->on_connect(e, ep); });
     }
@@ -215,22 +209,14 @@ void http_json_rpc_request::on_connect_timeout()
         if (m_canceled) {
             return;
         }
+        m_canceled = true;
 
         LOGDEBUG << "json-rpc[" << m_id << "] Connection timeout " << settings::system::jrpc_conn_timeout << " ms to " << m_host;
 
-        m_canceled = true;
+        close();
         m_timer.stop();
         m_connect_timer.set_callback(nullptr);
-
-        boost::system::error_code ec;
-        if (m_socket.is_open()) {
-            m_socket.shutdown(tcp::socket::shutdown_both, ec);
-            m_socket.close(ec);
-        }
-        m_ssl_socket.shutdown(ec);
-
         m_duration.stop();
-
         m_result.set_error(32002, "Connection timeout " + std::to_string(settings::system::jrpc_conn_timeout) + " ms " + m_host);
         perform_callback();
     }
@@ -318,6 +304,7 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t s
         }
 
         m_timer.stop();
+        close();
 
         http::status status = m_response.get().result();
         if (status != http::status::ok) {
@@ -370,4 +357,18 @@ std::string http_json_rpc_request::get_result()
 bool http_json_rpc_request::verify_certificate(bool, ssl::verify_context&)
 {
     return true;
+}
+
+void http_json_rpc_request::close()
+{
+    JRPC_BGN
+    {
+        boost::system::error_code ec;
+        if (m_socket.is_open()) {
+            m_socket.shutdown(tcp::socket::shutdown_both, ec);
+            m_socket.close(ec);
+        }
+        m_ssl_socket.shutdown(ec);
+    }
+    JRPC_END()
 }
