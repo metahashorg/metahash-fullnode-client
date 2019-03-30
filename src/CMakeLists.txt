@@ -118,7 +118,7 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
     set (CMAKE_CXX_FLAGS "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -Ofast -Wall -Wextra -Werror -Wno-unused-parameter")
 endif()
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set (CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -Wno-unused-parameter -pthread")
+    set (CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter -Werror -pthread")
 endif()
 
 #set (CMAKE_CXX_FLAGS "-g -rdynamic")

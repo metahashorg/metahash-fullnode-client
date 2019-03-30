@@ -4,6 +4,7 @@
 #include "json_rpc.h"
 #include "settings/settings.h"
 #include "common/filesystem_utils.h"
+#include "rapidjson/document.h"
 #include "rapidjson/istreamwrapper.h"
 #include "rapidjson/prettywriter.h"
 #include "http_server.h"

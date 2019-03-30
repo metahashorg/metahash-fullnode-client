@@ -26,11 +26,11 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
 {
     std::string addr, path, port;
     utils::parse_address(m_host, addr, port, path, m_use_ssl);
+    m_req.version(11);
     m_req.set(http::field::host, addr);
     m_req.set(http::field::user_agent, "metahash.service");
     m_req.set(http::field::content_type, "application/json");
-    m_req.set(http::field::keep_alive, false);
-    m_req.keep_alive(false);
+    m_req.set(http::field::connection, "close");
 
     set_path(path);
 
@@ -220,7 +220,7 @@ void http_json_rpc_request::on_connect_timeout()
     JRPC_END()
 }
 
-void http_json_rpc_request::on_connect(const boost::system::error_code& e, const tcp::endpoint& ep)
+void http_json_rpc_request::on_connect(const boost::system::error_code& e, const tcp::endpoint&)
 {
     JRPC_BGN
     {
@@ -292,7 +292,7 @@ void http_json_rpc_request::on_write(const boost::system::error_code& e)
     JRPC_END()
 }
 
-void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t sz)
+void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
 {
     JRPC_BGN
     {

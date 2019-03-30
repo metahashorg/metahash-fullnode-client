@@ -7,15 +7,14 @@
 #include "common/log.h"
 
 http_session::http_session(tcp::socket&& socket) :
-    m_socket(std::move(socket))
+    m_socket(std::move(socket)),
+    m_keep_alive(false)
 {
 }
 
 http_session::~http_session()
 {
-    boost::system::error_code ec;
-    m_socket.shutdown(m_socket.shutdown_both, ec);
-    m_socket.close(ec);
+    close();
 }
 
 void http_session::run()
@@ -44,6 +43,20 @@ void http_session::process_request()
 {
     LOGDEBUG << "HTTP Session " << m_socket.remote_endpoint().address().to_string() << " >>> " << m_req.body();
 
+    for (;;) {
+        auto field = m_req.find(http::field::connection);
+        if (field != m_req.end() && field->value() == "close") {
+            m_keep_alive = false;
+            break;
+        }
+        if (m_req.version() == 11) {
+            m_keep_alive = true;
+            break;
+        }
+        m_keep_alive = m_req.keep_alive();
+        break;
+    }
+
     switch(m_req.method()) {
     case http::verb::post:
         process_post_request();
@@ -61,7 +74,11 @@ void http_session::send_bad_request(const char* error)
 {
     http::response<http::string_body> response;
     response.result(http::status::bad_request);
+
+    std::locale loc;
+    loc.name();
     response.set(http::field::content_type, "text/plain");
+
     response.body().assign(error);
     send_response(response);
 }
@@ -70,7 +87,12 @@ void http_session::send_json(const std::string& data)
 {
     http::response<http::string_body> response;
     response.result(http::status::ok);
+
+    std::locale loc;
+    loc.name();
     response.set(http::field::content_type, "application/json");
+
+    // TODO convertation into UTF-8
     response.body().assign(data);
     send_response(response);
 }
@@ -79,12 +101,21 @@ void http_session::send_response(http::response<http::string_body>& response)
 {
     LOGDEBUG << "HTTP Session " << m_socket.remote_endpoint().address().to_string() << " <<< " << response.body().c_str();
 
-    response.version(10);
+    response.version(11);
+
+    time_t dt = time(nullptr);
+    struct tm tm = *gmtime(&dt);
+    char buf[32] = {0};
+    strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S %Z", &tm);
+
+    response.set(http::field::date, buf);
     response.set(http::field::server, "metahash.service");
     response.set(http::field::content_length, response.body().size());
-    response.set(http::field::keep_alive, true);
-    response.keep_alive(true);
+    response.set(http::field::connection, m_keep_alive ? "Keep-Alive" : "close");
     http::write(m_socket, response);
+    if (!m_keep_alive) {
+        close();
+    }
 }
 
 void http_session::process_post_request()
@@ -159,4 +190,11 @@ void http_session::process_get_request()
         json.append(res.message);
     }
     send_json(json);
+}
+
+void http_session::close()
+{
+    boost::system::error_code ec;
+    m_socket.shutdown(m_socket.shutdown_both, ec);
+    m_socket.close(ec);
 }
