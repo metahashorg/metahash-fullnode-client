@@ -41,5 +41,6 @@ private:
         tcp::socket                      m_socket;
         beast::flat_buffer               m_buf{ 8192 };
         http::request<http::string_body> m_req;
-        bool                             m_keep_alive;
+        unsigned                         m_http_ver;
+        bool                             m_http_keep_alive;
 };

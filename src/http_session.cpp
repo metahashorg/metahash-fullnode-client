@@ -8,7 +8,8 @@
 
 http_session::http_session(tcp::socket&& socket) :
     m_socket(std::move(socket)),
-    m_keep_alive(false)
+    m_http_ver(11),
+    m_http_keep_alive(false)
 {
 }
 
@@ -44,16 +45,17 @@ void http_session::process_request()
     LOGDEBUG << "HTTP Session " << m_socket.remote_endpoint().address().to_string() << " >>> " << m_req.body();
 
     for (;;) {
+        m_http_ver = m_req.version();
         auto field = m_req.find(http::field::connection);
         if (field != m_req.end() && field->value() == "close") {
-            m_keep_alive = false;
+            m_http_keep_alive = false;
             break;
         }
-        if (m_req.version() == 11) {
-            m_keep_alive = true;
+        if (m_http_ver == 11) {
+            m_http_keep_alive = true;
             break;
         }
-        m_keep_alive = m_req.keep_alive();
+        m_http_keep_alive = m_req.keep_alive();
         break;
     }
 
@@ -74,11 +76,8 @@ void http_session::send_bad_request(const char* error)
 {
     http::response<http::string_body> response;
     response.result(http::status::bad_request);
-
-    std::locale loc;
-    loc.name();
     response.set(http::field::content_type, "text/plain");
-
+    // TODO convertation into UTF-8
     response.body().assign(error);
     send_response(response);
 }
@@ -87,11 +86,7 @@ void http_session::send_json(const std::string& data)
 {
     http::response<http::string_body> response;
     response.result(http::status::ok);
-
-    std::locale loc;
-    loc.name();
     response.set(http::field::content_type, "application/json");
-
     // TODO convertation into UTF-8
     response.body().assign(data);
     send_response(response);
@@ -111,9 +106,13 @@ void http_session::send_response(http::response<http::string_body>& response)
     response.set(http::field::date, buf);
     response.set(http::field::server, "metahash.service");
     response.set(http::field::content_length, response.body().size());
-    response.set(http::field::connection, m_keep_alive ? "Keep-Alive" : "close");
+    if (m_http_ver == 10) {
+        response.set(http::field::connection, m_http_keep_alive ? "Keep-Alive" : "close");
+    } else if (!m_http_keep_alive){
+        response.set(http::field::connection, "close");
+    }
     http::write(m_socket, response);
-    if (!m_keep_alive) {
+    if (!m_http_keep_alive) {
         close();
     }
 }
