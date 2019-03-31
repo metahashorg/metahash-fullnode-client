@@ -30,7 +30,9 @@ void http_session::run()
         if (!ec && bytes_transferred > 0)
         {
             self->process_request();
-            self->run();
+            if (self->m_http_keep_alive) {
+                self->run();
+            }
         }
     });
 }
