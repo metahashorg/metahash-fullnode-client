@@ -17,6 +17,7 @@ namespace settings
         static unsigned short port;
         static int threads;
         static std::vector<std::string> access;
+        static bool keep_alive;
     };
 
     struct server

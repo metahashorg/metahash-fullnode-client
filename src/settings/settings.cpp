@@ -22,6 +22,7 @@ namespace settings
     bool service::any_conns = {false};
     unsigned short service::port = {9999};
     int service::threads = {4};
+    bool service::keep_alive = {false};
     std::vector<std::string> service::access;
     std::string system::leveldbFolder = "leveldb/";
     std::string system::blocksFolder = "blocks/";
@@ -62,6 +63,7 @@ namespace settings
 
         service::port = tree.get<unsigned short>("service.port", 9999);
         service::threads = tree.get<int>("service.threads", 4);
+        service::keep_alive = tree.get<bool>("service.keep_alive", false);
 
         asio::io_context ctx;
         tcp::resolver resolver(ctx);

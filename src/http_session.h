@@ -36,6 +36,7 @@ protected:
         void send_bad_request(const char* error);
 
         void close();
+        bool keep_alive();
 
 private:
         tcp::socket                      m_socket;

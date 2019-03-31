@@ -30,7 +30,7 @@ void http_session::run()
         if (!ec && bytes_transferred > 0)
         {
             self->process_request();
-            if (self->m_http_keep_alive) {
+            if (self->keep_alive()) {
                 self->run();
             }
         }
@@ -108,13 +108,17 @@ void http_session::send_response(http::response<http::string_body>& response)
     response.set(http::field::date, buf);
     response.set(http::field::server, "metahash.service");
     response.set(http::field::content_length, response.body().size());
-    if (m_http_ver == 10) {
-        response.set(http::field::connection, m_http_keep_alive ? "Keep-Alive" : "close");
-    } else if (!m_http_keep_alive){
+    if (settings::service::keep_alive) {
+        if (m_http_ver == 10) {
+            response.set(http::field::connection, m_http_keep_alive ? "Keep-Alive" : "close");
+        } else if (!m_http_keep_alive){
+            response.set(http::field::connection, "close");
+        }
+    } else {
         response.set(http::field::connection, "close");
     }
     http::write(m_socket, response);
-    if (!m_http_keep_alive) {
+    if (!keep_alive()) {
         close();
     }
 }
@@ -198,4 +202,12 @@ void http_session::close()
     boost::system::error_code ec;
     m_socket.shutdown(m_socket.shutdown_both, ec);
     m_socket.close(ec);
+}
+
+bool http_session::keep_alive()
+{
+    if (settings::service::keep_alive) {
+        return m_http_keep_alive;
+    }
+    return false;
 }
