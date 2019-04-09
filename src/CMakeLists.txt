@@ -109,9 +109,9 @@ target_link_libraries(${PROJECT_NAME} stdc++fs.a curl resolv)
 find_library(LIB_CRYPTO NAMES libcrypto.so HINTS ../3rdParty/ssl/lib/)
 find_library(LIB_SSL NAMES libssl.so HINTS ../3rdParty/ssl/lib/)
 
-find_package(OpenSSL REQUIRED)
+#find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
-include_directories(${OPENSSL_INCLUDE_DIR})
+#include_directories(${OPENSSL_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} ${LIB_CRYPTO} ${LIB_SSL})
 
 if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
