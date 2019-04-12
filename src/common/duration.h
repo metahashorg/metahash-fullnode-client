@@ -44,11 +44,6 @@ inline size_t getDayNumber(const size_t millisecond) {
     return getHourNumber(millisecond) / 24;
 }
 
-inline size_t getTimestampForDay(size_t dayNumber) {
-    const hours hour(dayNumber * 24);
-    return milliseconds(hour).count();
-}
-
 class Timer {
 public:
     

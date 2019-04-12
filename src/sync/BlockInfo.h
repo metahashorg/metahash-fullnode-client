@@ -6,7 +6,6 @@
 #include <optional>
 #include <variant>
 #include <set>
-#include <map>
 #include <unordered_map>
 
 #include "duration.h"
@@ -530,6 +529,13 @@ struct V8Code {
 struct ForgingSums {
     std::unordered_map<uint64_t, size_t> sums;
     size_t blockNumber = 0;
+    
+    std::string serialize() const;
+    
+    static ForgingSums deserialize(const std::string &raw);
+    
+    ForgingSums& operator +=(const ForgingSums &second);
+    
 };
 
 struct NodeTestType {
@@ -556,14 +562,18 @@ struct NodeTestResult {
     size_t timestamp = 0;
     NodeTestType type;
     std::string ip;
+    size_t day = 0;
+    
+    uint64_t avgRps = 0;
     
     NodeTestResult() = default;
     
-    NodeTestResult(const std::string &result, size_t timestamp, NodeTestType type, const std::string &ip)
+    NodeTestResult(const std::string &result, size_t timestamp, NodeTestType type, const std::string &ip, size_t day)
         : result(result)
         , timestamp(timestamp)
         , type(type)
         , ip(ip)
+        , day(day)
     {}
     
     std::string serialize() const;
@@ -572,24 +582,54 @@ struct NodeTestResult {
 
 };
 
+struct NodeTestTrust {
+    std::string trustJson;
+       
+    size_t timestamp = 0;
+    
+    int trust = 1; // default
+    
+    NodeTestTrust() = default;
+    
+    NodeTestTrust(size_t blockNumber, const std::vector<unsigned char> &trustJson, int trust)
+        : trustJson(trustJson.begin(), trustJson.end())
+        , timestamp(blockNumber)
+        , trust(trust)
+    {}
+    
+    std::string serialize() const;
+    
+    static NodeTestTrust deserialize(const std::string &raw);
+    
+};
+
 struct NodeTestCount {
     
-    size_t count = 0;
+    size_t countAll = 0;
+    
+    size_t countFailure = 0;
     
     size_t day = 0;
-       
+
+    std::set<Address> testers;
+    
     NodeTestCount() = default;
     
-    NodeTestCount(size_t count, size_t day)
-        : count(count)
-        , day(day)
+    NodeTestCount(size_t day)
+        : day(day)
     {}
+    
+    size_t countSuccess() const;
     
     std::string serialize() const;
     
     static NodeTestCount deserialize(const std::string &raw);
     
+    NodeTestCount& operator+=(const NodeTestCount &second);
+    
 };
+
+NodeTestCount operator+(const NodeTestCount &first, const NodeTestCount &second);
 
 struct NodeTestExtendedStat {
     
@@ -606,6 +646,15 @@ struct NodeTestExtendedStat {
         , type(type)
         , ip(ip)
     {}
+    
+};
+
+struct NodeTestDayNumber {
+    size_t dayNumber = 0;
+    
+    std::string serialize() const;
+    
+    static NodeTestDayNumber deserialize(const std::string &raw);
     
 };
 
@@ -635,77 +684,6 @@ struct NodeRps {
     
     static NodeRps deserialize(const std::string &raw);
     
-};
-
-struct BalanceInfoWalletStats {
-    
-    size_t received = 0;
-    size_t spent = 0;
-
-    size_t firstReceived = 0;
-    
-    std::map<uint64_t, size_t> forgingSums;
-    
-    BalanceInfoWalletStats() = default;
-
-    void plus(const TransactionInfo &tx, const Address &address, bool changeBalance, bool isForging);
-
-};
-
-struct NonForgingTxsBalance {
-    size_t received = 0;
-    size_t fees = 0;
-    size_t count = 0;
-    
-    void plus(const TransactionInfo &tx);
-};
-
-struct NodeInfoForging {
-    size_t receivedDelegate = 0;
-    size_t spendDelegate = 0;
-    
-    size_t forged = 0;
-    
-    void plus(const TransactionInfo &tx, size_t valueUndelegate, bool isForging, bool isOkStatus) {
-        if (isForging) {
-            forged += tx.value;
-            return;
-        }
-        if (!isOkStatus) {
-            return;
-        }
-        if (tx.delegate.has_value()) {
-            if (tx.delegate->isDelegate) {
-                receivedDelegate += tx.delegate->value;
-            } else {
-                spendDelegate += valueUndelegate;
-            }
-        }
-    }
-};
-
-struct NodesInfoForging {
-    NodeInfoForging ourNode;
-    NodeInfoForging enemyNode;
-    
-    void plus(const TransactionInfo &tx, size_t valueUndelegate, bool isOur, bool isForging, bool isOkStatus) {
-        if (isOur) {
-            ourNode.plus(tx, valueUndelegate, isForging, isOkStatus);
-        } else {
-            enemyNode.plus(tx, valueUndelegate, isForging, isOkStatus);
-        }
-    }
-};
-
-struct NodesInfoForgingForDays {
-    std::map<uint64_t, NodesInfoForging> days;
-    
-    NodesInfoForging all;
-    
-    void plus(size_t day, const TransactionInfo &tx, size_t valueUndelegate, bool isOur, bool isForging, bool isOkStatus) {
-        days[day].plus(tx, valueUndelegate, isOur, isForging, isOkStatus);
-        all.plus(tx, valueUndelegate, isOur, isForging, isOkStatus);
-    }
 };
 
 size_t getMaxBlockNumber(const std::vector<TransactionInfo> &infos);

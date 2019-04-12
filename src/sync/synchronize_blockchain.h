@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <map>
 #include <set>
 #include <unordered_map>
 
@@ -26,11 +25,9 @@ struct CommonBalance;
 struct V8Code;
 struct ForgingSums;
 struct NodeTestResult;
+struct NodeTestTrust;
 struct NodeTestCount;
 struct NodeTestExtendedStat;
-struct BalanceInfoWalletStats;
-struct NonForgingTxsBalance;
-struct NodesInfoForgingForDays;
 
 class P2P;
 
@@ -65,6 +62,8 @@ public:
     
 public:
     
+    bool isVirtualMachine() const;
+    
     void synchronize(int countThreads, bool isSync);
 
     void addUsers(const std::set<Address> &addresses);
@@ -95,7 +94,11 @@ public:
     
     ForgingSums getForgingSumForLastBlock(size_t blockIndent) const;
     
+    ForgingSums getForgingSumAll() const;
+    
     std::pair<size_t, NodeTestResult> getLastNodeTestResult(const std::string &address) const;
+    
+    std::pair<size_t, NodeTestTrust> getLastNodeTestTrust(const std::string &address) const;
     
     NodeTestCount getLastDayNodeTestCount(const std::string &address) const;
     
@@ -106,12 +109,6 @@ public:
     std::pair<int, size_t> calcNodeRaiting(const std::string &address, size_t countTests) const;
     
     size_t getLastBlockDay() const;
-    
-    std::unordered_map<std::string, BalanceInfoWalletStats> filterBalances(size_t minBalanceFilter) const;
-    
-    std::map<size_t, NonForgingTxsBalance> getNonForgingStat(size_t fromTimestamp, size_t toTimestamp) const;
-    
-    NodesInfoForgingForDays getForgingStat(size_t fromTimestamp, size_t toTimestamp) const;
     
 private:
     
