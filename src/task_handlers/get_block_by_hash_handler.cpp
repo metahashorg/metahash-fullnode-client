@@ -6,7 +6,7 @@
 #include "../sync/BlockChainReadInterface.h"
 
 get_block_by_hash_handler::get_block_by_hash_handler(http_session_ptr session)
-    : base_network_handler(settings::server::tor, session)
+    : base_network_handler(settings::server::get_tor(), session)
     , m_type(0)
     , m_countTxs(0)
     , m_beginTx(0)

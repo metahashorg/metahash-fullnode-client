@@ -6,7 +6,7 @@
 #include "../sync/BlockChainReadInterface.h"
 
 fetch_history_handler::fetch_history_handler(http_session_ptr session)
-    : base_network_handler(settings::server::tor, session)
+    : base_network_handler(settings::server::get_tor(), session)
     , m_countTxs(0)
     , m_beginTx(0)
 {

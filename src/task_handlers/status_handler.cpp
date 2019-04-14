@@ -39,8 +39,8 @@ void status_handler::execute()
             m_writer.add_result("git_hash", g_GIT_SHA1);
             m_writer.add_result("network_tor_name", settings::server::torName);
             m_writer.add_result("network_proxy_name", settings::server::proxyName);
-            m_writer.add_result("network_tor", settings::server::tor);
-            m_writer.add_result("network_proxy", settings::server::proxy);
+            m_writer.add_result("network_tor", settings::server::get_tor());
+            m_writer.add_result("network_proxy", settings::server::get_proxy());
             m_writer.add_result("use_local_database", settings::system::useLocalDatabase);
             m_writer.add_result("allow_state_blocks", settings::system::allowStateBlocks);
             m_writer.add_result("jrpc_timeout", settings::system::jrpc_timeout);
@@ -51,7 +51,7 @@ void status_handler::execute()
                 m_writer.add_result("last_block", sync.getKnownBlock());
             } else {
                 asio::io_context io;
-                auto request = std::make_shared<http_json_rpc_request>(settings::server::tor, io);
+                auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), io);
                 request->set_path("get-count-blocks");
                 request->set_body("{\"id\":1}");
                 request->execute();

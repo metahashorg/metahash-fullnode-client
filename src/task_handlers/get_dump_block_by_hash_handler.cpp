@@ -7,7 +7,7 @@
 #include "check.h"
 
 get_dump_block_by_hash::get_dump_block_by_hash(http_session_ptr session)
-    : base_network_handler(settings::server::tor, session)
+    : base_network_handler(settings::server::get_tor(), session)
     , m_fromByte(0)
     , m_toByte(std::numeric_limits<size_t>::max())
     , m_isHex(true)

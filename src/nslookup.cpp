@@ -1,7 +1,5 @@
 #include "nslookup.h"
-
 #include "check.h"
-
 #include <curl/curl.h>
 
 #include <array>
@@ -18,6 +16,9 @@
 #include <netdb.h>
 #include <string.h>
 #include <arpa/inet.h>
+
+#include "settings/settings.h"
+#include "log.h"
 
 static std::string parse_record(unsigned char *buffer, size_t r, ns_sect s, int idx, ns_msg *m) {
     ns_rr rr;
@@ -195,4 +196,46 @@ std::string getBestIp(const std::string &address) {
     });
     CHECK(found != pr.end(), "Servers empty");
     return found->server;
+}
+
+void lookup_best_ip(bool stop)
+{
+    try {
+        static bool _stop = stop;
+        if (_stop) {
+            return;
+        }
+        std::string tor = settings::server::get_tor();
+        std::string proxy = settings::server::get_proxy();
+        std::string _tor, _proxy;
+        std::chrono::system_clock::time_point tp;
+
+        pthread_t pt = pthread_self();
+        struct sched_param params;
+        params.sched_priority = sched_get_priority_min(SCHED_OTHER);
+        pthread_setschedparam(pt, SCHED_OTHER, &params);
+
+        while (!_stop) {
+            tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(60);
+
+            _tor = getBestIp(settings::server::torName);
+            if (_tor != tor) {
+                tor = _tor;
+                settings::server::set_tor(tor);
+            }
+            _proxy = getBestIp(settings::server::proxyName);
+            if (_proxy != proxy) {
+                proxy = _proxy;
+                settings::server::set_proxy(proxy);
+            }
+
+            std::this_thread::sleep_until(tp);
+        }
+    } catch (const common::exception &e) {
+        LOGERR << __func__ << " error: " << e;
+    } catch (const std::exception &e) {
+        LOGERR << __func__ << " error: " << e.what();
+    } catch (...) {
+        LOGERR << __func__ << " Unknown error";
+    }
 }

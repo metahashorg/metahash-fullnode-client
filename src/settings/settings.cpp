@@ -24,13 +24,7 @@ namespace settings
     int service::threads = {4};
     bool service::keep_alive = {false};
     std::vector<std::string> service::access;
-    std::string system::leveldbFolder = "leveldb/";
-    std::string system::blocksFolder = "blocks/";
-    bool system::validateBlocks = false;
-    bool system::useLocalDatabase = true;
-    bool system::allowStateBlocks = false;
-    unsigned int system::jrpc_conn_timeout = 1000;
-    unsigned int system::jrpc_timeout = 60000;
+
     std::string statistic::statisticNetwork;
     std::string statistic::statisticGroup;
     std::string statistic::statisticServer;
@@ -39,11 +33,18 @@ namespace settings
     // server
     std::string server::torName     = {"tor.net-dev.metahash.org:5795"};
     std::string server::proxyName   = {"proxy.net-dev.metahash.org:9999"};
-    std::string server::tor;
-    std::string server::proxy;
+    ATOMIC_PROP_IMPL(std::string, tor);
+    ATOMIC_PROP_IMPL(std::string, proxy);
     
     // system
     std::string system::wallet_stotage = { "./wallet" };
+    std::string system::leveldbFolder = "leveldb/";
+    std::string system::blocksFolder = "blocks/";
+    bool system::validateBlocks = false;
+    bool system::useLocalDatabase = true;
+    bool system::allowStateBlocks = false;
+    unsigned int system::jrpc_conn_timeout = 1000;
+    unsigned int system::jrpc_timeout = 60000;
 
     // extensions
     bool extensions::use_tracking_history = {false};

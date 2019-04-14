@@ -2,7 +2,7 @@
 #include "settings/settings.h"
 
 get_last_txs_handler::get_last_txs_handler(http_session_ptr session)
-    : base_network_handler(settings::server::tor, session) {
+    : base_network_handler(settings::server::get_tor(), session) {
     m_duration.set_message(__func__);
 }
 

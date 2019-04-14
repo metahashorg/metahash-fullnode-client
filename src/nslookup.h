@@ -5,4 +5,6 @@
 
 std::string getBestIp(const std::string &address);
 
+void lookup_best_ip(bool stop);
+
 #endif // NS_LOOKUP_H_

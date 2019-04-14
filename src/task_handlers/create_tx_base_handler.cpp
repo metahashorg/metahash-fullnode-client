@@ -4,7 +4,7 @@
 #include "common/convertStrings.h"
 
 create_tx_base_handler::create_tx_base_handler(http_session_ptr session)
-    : base_network_handler(settings::server::proxy, session)
+    : base_network_handler(settings::server::get_proxy(), session)
     , m_fee(0)
     , m_value(0)
     , m_nonce(0)

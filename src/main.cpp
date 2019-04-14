@@ -99,10 +99,10 @@ int main(int argc, char* argv[])
         settings::read(configPath);
 
         const std::string bestTorrentIp = getBestIp(settings::server::torName);
-        settings::server::tor = bestTorrentIp;
+        settings::server::set_tor(bestTorrentIp);
         
         const std::string bestProxyIp = getBestIp(settings::server::proxyName);
-        settings::server::proxy = bestProxyIp;
+        settings::server::set_proxy(bestProxyIp);
         
         const bool isStartStatistic = !settings::statistic::statisticNetwork.empty();
         
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
             torrent_node_lib::setStatistics(std::move(statistics));
         }
                 
-        const std::vector<std::string> serverIps = {settings::server::tor};
+        const std::vector<std::string> serverIps = {settings::server::get_tor()};
         std::unique_ptr<torrent_node_lib::P2P> p2p = std::make_unique<torrent_node_lib::P2P_Ips>(serverIps, 2);
         
         if (settings::system::useLocalDatabase) {
@@ -142,9 +142,13 @@ int main(int argc, char* argv[])
             }
         }
 
+        common::Thread ip_lookup(lookup_best_ip, false);
+
         runServerThread.join();
 
+        lookup_best_ip(true);
         g_track_his.stop();
+        ip_lookup.join();
 
         if (isStartStatistic) {
             torrent_node_lib::joinStatistics();
