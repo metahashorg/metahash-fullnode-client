@@ -7,62 +7,62 @@
 class invalid_param
 {
 public:
-    invalid_param(std::string message): m_msg(message)
-    {
-        std::stringstream ss;
-        ss << __PRETTY_FUNCTION__ << " in file " << __FILE__ << " at line " << __LINE__;
-        m_where = ss.str();
-    }
-
+    invalid_param(std::string message): m_msg(message) {}
     ~invalid_param() {};
 
-    std::string what() { return m_msg; };
-    std::string where() { return m_where; };
+    const char* what() { return m_msg.c_str(); };
 
 protected:
     std::string m_msg;
-    std::string m_where;
 };
+
+class parse_error: public invalid_param
+{
+public:
+    parse_error(std::string message): invalid_param(message) {}
+
+    const char* what() { return m_msg.c_str(); };
+};
+
+#define CHK_PARSE(condition, message) \
+    if (!(condition)) {\
+        throw parse_error(message); }
 
 #define CHK_PRM(condition, message) \
     if (!(condition)) {\
-        std::ostringstream stream;\
-        stream << message;\
-        stream.flush();\
-        throw invalid_param(stream.str()); }
+        throw invalid_param(message); }
 
 #define BGN_TRY try
 
 #define END_TRY_RET_PARAM(ret, param) \
-    catch (invalid_param& ex)\
-    {\
-        LOGERR << "Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__;\
+    catch (parse_error& ex) {\
+        LOGERR << "ParseError Exception: \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
-        this->m_writer.set_error(-32666, ex.what());\
+        this->m_writer.set_error(-32700, ex.what());\
         param;\
         return ret;\
-    }\
-    catch (const std::string& ex)\
-    {\
-        LOGERR << "Exception \"" << ex << "\" in func " << __PRETTY_FUNCTION__;\
+    } catch (invalid_param& ex) {\
+        LOGERR << "InvalidParam Exception: \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
-        this->m_writer.set_error(-32666, ex);\
+        this->m_writer.set_error(-32602, ex.what());\
         param;\
         return ret;\
-    }\
-    catch (std::exception& ex)\
-    {\
-        LOGERR << "Exception \"" << ex.what() << "\" in func " << __PRETTY_FUNCTION__;\
+    } catch (const std::string& ex) {\
+        LOGERR << "String Exception: \"" << ex << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
-        this->m_writer.set_error(-32666, ex.what());\
+        this->m_writer.set_error(-32602, ex);\
         param;\
         return ret;\
-    }\
-    catch(...)\
-    {\
-        LOGERR << "Unhandled exception in func " << __PRETTY_FUNCTION__;\
+    } catch (std::exception& ex) {\
+        LOGERR << "STD Exception: \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
         this->m_writer.reset();\
-        this->m_writer.set_error(-32666, "Unhandled exception");\
+        this->m_writer.set_error(-32602, ex.what());\
+        param;\
+        return ret;\
+    } catch(...) {\
+        LOGERR << "Unknown exception: (" << __FILE__ << " : " << __LINE__ << ")";\
+        this->m_writer.reset();\
+        this->m_writer.set_error(-32602, "Unknown exception");\
         param;\
         return ret;\
     }

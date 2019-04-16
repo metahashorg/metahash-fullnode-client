@@ -20,5 +20,10 @@
   "jrpc_conn_timeout": 1000,
   "jrpc_timeout": 60000,
   "allow_state_blocks": false
+ },
+ "extensions":
+ {
+  "use_tracking_history": false,
+  "tracking_history_folder": "./tracking_history"
  }
 }

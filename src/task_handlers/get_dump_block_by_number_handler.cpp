@@ -1,4 +1,20 @@
-#include "get_dump_block_by_number.h"
+#include "get_dump_block_by_number_handler.h"
+#include "settings/settings.h"
+#include "../SyncSingleton.h"
+#include "../generate_json.h"
+#include "../sync/BlockInfo.h"
+#include "../sync/BlockChainReadInterface.h"
+#include "check.h"
+
+get_dump_block_by_number::get_dump_block_by_number(http_session_ptr session)
+    : base_network_handler(settings::server::get_tor(), session)
+    , m_number(0)
+    , m_fromByte(0)
+    , m_toByte(std::numeric_limits<size_t>::max())
+    , m_isHex(true)
+{
+    m_duration.set_message(__func__);
+}
 
 bool get_dump_block_by_number::prepare_params()
 {
@@ -9,15 +25,49 @@ bool get_dump_block_by_number::prepare_params()
         auto params = m_reader.get_params();
         CHK_PRM(params, "params field not found")
 
-        mh_count_t number(0);
-        auto &jsonParams = *params;
-        CHK_PRM(jsonParams.HasMember("number") && jsonParams["number"].IsInt64(), "number field not found")
-        number = jsonParams["number"].GetInt64();
-        m_writer.add_param("number", number);
+        CHK_PRM(m_reader.get_value(*params, "number", m_number), "number field not found")
+        m_reader.get_value(*params, "fromByte", m_fromByte);
+        m_reader.get_value(*params, "toByte", m_toByte);
 
-        m_writer.add_param("isHex", true);
-        
+        if (!settings::system::useLocalDatabase) {
+            m_writer.add_param("number", m_number);
+            m_writer.add_param("isHex", m_isHex);
+        }
+
         return true;
     }
     END_TRY_RET(false)
+}
+
+void get_dump_block_by_number::execute()
+{
+    BGN_TRY
+    {
+        if (settings::system::useLocalDatabase) {
+            CHK_PRM(syncSingleton() != nullptr, "Sync not set");
+            const torrent_node_lib::Sync &sync = *syncSingleton();
+
+            try {
+                const torrent_node_lib::BlockHeader bh = sync.getBlockchain().getBlock(m_number);
+                CHECK(bh.blockNumber.has_value(), "block " + std::to_string(m_number) + " has not found");
+                const std::string res = sync.getBlockDump(bh, m_fromByte, m_toByte, m_isHex);
+
+                CHECK(!res.empty(), "block " + std::to_string(m_number) + " not found");
+                if (m_isHex) {
+                    genBlockDumpJson(res, false, m_writer.getDoc());
+                } else {
+                    //return res;
+                }
+            } catch (const common::exception &e) {
+                genErrorResponse(-32603, e, m_writer.getDoc());
+            } catch (const std::exception &e) {
+                genErrorResponse(-32603, e.what(), m_writer.getDoc());
+            } catch (...) {
+                genErrorResponse(-32603, "Unknown error", m_writer.getDoc());
+            }
+        } else {
+            base_network_handler::execute();
+        }
+    }
+    END_TRY_RET()
 }

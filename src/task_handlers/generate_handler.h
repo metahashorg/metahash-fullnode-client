@@ -1,21 +1,22 @@
-#ifndef GENERATE_HANDLER_H_
-#define GENERATE_HANDLER_H_
+#ifndef __GENERATE_HANDLER_H__
+#define __GENERATE_HANDLER_H__
 
 #include "base_handler.h"
 
-class generate_handler : public base_handler, public Perform<generate_handler> {
+class generate_handler : public base_handler
+{
 public:
-    generate_handler(http_session_ptr session): base_handler(session) {
-        std::stringstream ss;
-        ss << __FUNCTION__;
-        m_duration.set_message(ss.str());
+    generate_handler(http_session_ptr session)
+        : base_handler(session) {
+        m_duration.set_message(__func__);
     }
     
     virtual ~generate_handler() override {}
-    
-    virtual bool prepare_params() override;
-    
+
     virtual void execute() override;
+
+protected:
+    virtual bool prepare_params() override;
 };
 
-#endif // GENERATE_HANDLER_H_
+#endif // __GENERATE_HANDLER_H__

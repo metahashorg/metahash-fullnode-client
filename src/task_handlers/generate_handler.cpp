@@ -28,11 +28,7 @@ void generate_handler::execute()
         keys.prv_key = bin2hex(wallet.private_key_buf);
 
         std::string address = "0x" + bin2hex(wallet.mh_address_buf);
-        if (!storage::keys::store(address, keys))
-        {
-            m_writer.set_error(-32604, "Failed on store");
-            return;
-        }
+        CHK_PRM(storage::keys::store(address, keys), "Failed on store keys")
 
         m_writer.add_result("address", address);
 

@@ -24,9 +24,9 @@ enum class JsonVersion {
 
 void genErrorResponse(int code, const std::string &error, rapidjson::Document &doc);
 
-std::string genTransactionNotFoundResponse(const RequestId &requestId, const std::string &transaction, size_t countBlocks, size_t knwonBlock);
+std::string genTransactionNotFoundResponse(const RequestId &requestId, const std::string &transaction, size_t countBlocks, size_t knownBlock);
 
-void transactionToJson(const torrent_node_lib::TransactionInfo &info, const torrent_node_lib::BlockChainReadInterface &blockchain, size_t countBlocks, size_t knwonBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
+void transactionToJson(const torrent_node_lib::TransactionInfo &info, const torrent_node_lib::BlockChainReadInterface &blockchain, size_t countBlocks, size_t knownBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
 std::string transactionsToJson(const RequestId &requestId, const std::vector<torrent_node_lib::TransactionInfo> &infos, const torrent_node_lib::BlockChainReadInterface &blockchain, bool isFormat, const JsonVersion &version);
 

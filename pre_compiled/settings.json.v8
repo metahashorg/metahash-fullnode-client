@@ -17,5 +17,10 @@
   "leveldb_folder": "./leveldb/",
   "validate_blocks": false,
   "use_local_database": false
+ },
+ "extensions":
+ {
+  "use_tracking_history": false,
+  "tracking_history_folder": "./tracking_history"
  }
 }

@@ -42,7 +42,7 @@ void genErrorResponse(int code, const std::string &error, rapidjson::Document &d
     doc.AddMember("error", errorJson, allocator);
 }
 
-std::string genTransactionNotFoundResponse(const RequestId& requestId, const std::string& transaction, size_t countBlocks, size_t knwonBlock) {
+std::string genTransactionNotFoundResponse(const RequestId& requestId, const std::string& transaction, size_t countBlocks, size_t knownBlock) {
     rapidjson::Document jsonDoc(rapidjson::kObjectType);
     auto &allocator = jsonDoc.GetAllocator();
     addIdToResponse(requestId, jsonDoc, allocator);
@@ -50,8 +50,12 @@ std::string genTransactionNotFoundResponse(const RequestId& requestId, const std
     rapidjson::Value errorJson(rapidjson::kObjectType);
     errorJson.AddMember("code", -32603, allocator);
     errorJson.AddMember("message", strToJson("Transaction " + transaction + " not found", allocator), allocator);
-    errorJson.AddMember("countBlocks", countBlocks, allocator);
-    errorJson.AddMember("knwonBlock", knwonBlock, allocator);
+
+    rapidjson::Value errorData(rapidjson::kObjectType);
+    errorData.AddMember("countBlocks", countBlocks, allocator);
+    errorData.AddMember("knownBlock", knownBlock, allocator);
+    errorJson.AddMember("data", errorData, allocator);
+
     jsonDoc.AddMember("error", errorJson, allocator);
     return jsonToString(jsonDoc, false);
 }
@@ -127,13 +131,13 @@ static rapidjson::Value transactionInfoToJson(const TransactionInfo &info, const
     }
 }
 
-void transactionToJson(const TransactionInfo &info, const BlockChainReadInterface &blockchain, size_t countBlocks, size_t knwonBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
+void transactionToJson(const TransactionInfo &info, const BlockChainReadInterface &blockchain, size_t countBlocks, size_t knownBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     auto &allocator = doc.GetAllocator();
     rapidjson::Value resultValue(rapidjson::kObjectType);
     const BlockHeader &bh = blockchain.getBlock(info.blockNumber);
     resultValue.AddMember("transaction", transactionInfoToJson(info, bh, 0, allocator, 2, version), allocator);
     resultValue.AddMember("countBlocks", countBlocks, allocator);
-    resultValue.AddMember("knownBlocks", knwonBlock, allocator);
+    resultValue.AddMember("knownBlocks", knownBlock, allocator);
     doc.AddMember("result", resultValue, allocator);
 }
 

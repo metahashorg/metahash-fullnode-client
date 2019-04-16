@@ -50,12 +50,62 @@ You don't need to enter the password in this version.
 
 #### Create transaction 
 ```
-{"id":decimal, "version":"2.0","method":"create-tx", "params":{"address":"hexstr", "password":"str", "to":"hexstr", "value":"decimal/all", "fee":"decimal", "nonce":"decimal", "data": "dataHex"}}
+{"id":decimal, "version":"2.0","method":"create-tx", "params":{"address":"hexstr", "password":"str", "to":"hexstr", "value":"decimal/all", "fee":"decimal", "nonce":"decimal", "data": "str"}}
 ```
+You don't need to enter the password in this version. 
 
 #### Send transaction 
 ```
-{"id":decimal, "version":"2.0","method":"send-tx", "params":{"address":"hexstr", "password":"str", "to":"hexstr", "value":"decimal/all", "fee":"decimal", "nonce":"decimal", "data": "dataHex"}}
+{"id":decimal, "version":"2.0","method":"send-tx", "params":{"address":"hexstr", "password":"str", "to":"hexstr", "value":"decimal/all", "fee":"decimal", "nonce":"decimal", "data": "str"}}
 ```
 You may not provide nonce, in this case it will be calculated automatically.
+You don't need to enter the password in this version. 
 
+#### Geting blocks count
+```
+{"id":1, "version":"2.0", "method":"get-count-blocks"}
+```
+
+#### Geting last transactions
+```
+{"id":1, "version":"2.0", "method":"get-last-txs"}
+```
+
+#### Geting block by block hash
+```
+{"id":1, "version":"2.0", "method":"get-block-by-hash", "params":{"hash":"str"}}
+```
+If the block is state-block then probably it will rejected
+
+#### Geting block by block number
+```
+{"id":1, "version":"2.0", "method":"get-block-by-number", "params":{"number":decimal}}
+```
+If the block is state-block then probably it will rejected
+
+#### Geting blocks
+```
+{"id":1, "version":"2.0", "method":"get-blocks", "params":{"countBlocks":decimal, "beginBlock":decimal}}
+```
+
+#### Geting block dump by block number
+```
+{"id":1, "version":"2.0", "method":"get-dump-block-by-number", "params":{"number":decimal}}
+```
+
+#### Geting block dump by block hash
+```
+{"id":1, "version":"2.0", "method":"get-dump-block-by-hash", "params":{"hash":"str"}}
+```
+
+#### Geting transaction
+```
+{"id":1, "version":"2.0", "method":"get-tx", "params":{"hash":"str"}}
+```
+
+#### Geting status
+```
+{"id":1, "version":"2.0", "method":"status", "params":{"cmd":"str"}}
+```
+Params are optional.
+Also you can get it by GET request.

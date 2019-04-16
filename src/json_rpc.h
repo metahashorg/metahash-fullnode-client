@@ -15,6 +15,7 @@ using json_rpc_id = uint32_t;
 namespace json_utils
 {
     bool val2str(rapidjson::Value* value, std::string& resut);
+    void to_json(const std::string_view& param_list, rapidjson::Value& out, rapidjson::Document::AllocatorType& allocator);
 }
 
 class json_rpc_reader
@@ -49,8 +50,8 @@ public:
             return true;
         }
         return false;
-    } 
-
+    }
+    bool get_value(rapidjson::Value& root, const char* name, std::string_view& value) const;
     rapidjson::Document& get_doc();
 
 protected:
@@ -108,7 +109,7 @@ public:
     rapidjson::Document::AllocatorType& get_allocator() { return m_doc.GetAllocator(); };
 
     void set_error(rapidjson::Value& value);
-    void set_error(int code, std::string message);
+    void set_error(int code, const std::string& message);
     void set_id(json_rpc_id value);
 
     bool is_error() const;

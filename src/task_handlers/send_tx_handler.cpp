@@ -1,42 +1,50 @@
 #include "send_tx_handler.h"
 
+#include "../SyncSingleton.h"
+#include "../sync/BlockInfo.h"
 #include "settings/settings.h"
 #include "http_session.h"
 #include "http_json_rpc_request.h"
+#include "common/string_utils.h"
 
 bool send_tx_handler::prepare_params()
 {
     BGN_TRY
     {
-        if (!this->check_params())
+        if (!check_params())
             return false;
 
-        auto params = this->m_reader.get_params();
-        auto jValue = this->m_reader.get("nonce", *params);
+        auto params = m_reader.get_params();
+        auto jValue = m_reader.get("nonce", *params);
         if (jValue)
         {
             std::string tmp;
-            CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field incorrect format")
-            this->m_nonce = std::stoull(tmp);
+            CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field has incorrect format")
+            m_nonce = std::stoull(tmp);
         }
-        else
-        {
-            this->m_result.pending = true;
+        else if (settings::system::useLocalDatabase) {
+            CHK_PRM(syncSingleton() != nullptr, "Sync not set");
+            const torrent_node_lib::Sync &sync = *syncSingleton();
+            const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(m_address));
+            m_nonce = balance.countSpent + 1;
+        } else {
+            m_result.pending = true;
 
-            json_rpc_id id = 1;
             json_rpc_writer writer;
-            writer.set_id(id);
-            writer.add_param("address", this->m_address);
+            writer.set_id(1);
+            writer.add_param("address", m_address);
 
-            auto request = std::make_shared<http_json_rpc_request>(settings::server::tor, this->m_session->get_io_context());
+            auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), m_session->get_io_context());
             request->set_path("fetch-balance");
             request->set_body(writer.stringify());
-            request->execute_async(boost::bind(&send_tx_handler::on_get_balance, this, request, id, shared_from_this()));
+
+            auto self = shared_from(this);
+            request->execute_async([self, request](){ self->on_get_balance(request); });
 
             return false;
         }
 
-        if (!this->build_request())
+        if (!build_request())
             return false;
 
         return true;
@@ -44,76 +52,50 @@ bool send_tx_handler::prepare_params()
     END_TRY_RET(false)
 }
 
-void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id, std::shared_ptr<base_network_handler> tmp)
+void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request)
 {
-    json_rpc_writer writer;
     BGN_TRY
     {
         json_rpc_reader reader;
-        writer.set_id(id);
 
-        CHK_PRM(reader.parse(request->get_result()), "Invalid response json")
-
-        std::cout << reader.stringify();
-
-        //json_rpc_id _id = reader.get_id();
-        //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
+        CHK_PRM(reader.parse(request->get_result()),
+                string_utils::str_concat("fetch-balane response parse error: ", std::to_string(reader.get_parse_error().Code())).c_str())
 
         auto err = reader.get_error();
         auto res = reader.get_result();
 
         CHK_PRM(err || res, "No occur result or error")
 
-        bool success = false;
-        if (err)
-        {
-            writer.set_error(*err);
-        }
-        else if (res)
-        {
-            mh_count_t count_spent(0);
-            if (reader.get_value(*res, "count_spent", count_spent))
-            {
-                success = true;
-                this->m_nonce = count_spent + 1;
-            }
-            else
-            {
-                writer.set_error(-32605, "field spent count not found");
-            }
+        if (err) {
+            m_writer.reset();
+            m_writer.set_error(*err);
+            send_response();
+            return;
         }
 
-        if (success)
-        {
-            success = this->build_request();
-        }
+        mh_count_t count_spent(0);
+        CHK_PRM(reader.get_value(*res, "count_spent", count_spent), "fetch-balane response: field spent count not found")
+        m_nonce = count_spent + 1;
 
-        if (success)
-        {
-            boost::asio::post(boost::bind(&send_tx_handler::execute, shared_from_this()));
-        }
-        else
-        {
-            boost::asio::post(boost::bind(&http_session::send_json, this->m_session, writer.stringify()));
+        if (!build_request()) {
+            send_response();
+        } else {
+            send_tx_handler::execute();
         }
     }
-    END_TRY_PARAM(boost::asio::post(boost::bind(&http_session::send_json, this->m_session, writer.stringify())))
+    END_TRY_PARAM(send_response())
 }
 
-void send_tx_handler::processResponse(json_rpc_id id, json_rpc_reader &reader) {    
-    //json_rpc_id _id = reader.get_id();
-    //CHK_PRM(_id != 0 && _id == id, "Returned id doesn't match")
-    
+void send_tx_handler::process_response(json_rpc_reader &reader)
+{
     auto err = reader.get_error();
-    auto res = reader.get_result();
     auto params = reader.get_params();
-    
-    CHK_PRM(err || res, "No occur result or error")
-    
+
     if (err) {
-        this->m_writer.set_error(*err);
+        m_writer.set_error(*err);
     } else {
-        CHK_PRM(params->IsString(), "params field not found");
-        this->m_writer.set_result(*params);
+        CHK_PRM(params, "send-tx response: params field not found")
+        CHK_PRM(params->IsString(), "send-tx response: params field has incorrect format");
+        m_writer.set_result(*params);
     }
 }

@@ -2,6 +2,8 @@
 
 #include <string>
 #include <vector>
+#include <atomic>
+#include <mutex>
 
 namespace boost {
 namespace program_options {
@@ -9,26 +11,40 @@ class variables_map;
 }
 }
 
+#define ATOMIC_PROP(type, name) \
+  public: \
+    static void set_##name(const type& value) {\
+        std::lock_guard<std::mutex> lock(_locker_##name);\
+        _##name = value; }\
+    static type get_##name() {\
+        std::lock_guard<std::mutex> lock(_locker_##name);\
+        return _##name; }\
+  private: \
+    static type _##name; \
+    static std::mutex _locker_##name;
+
+#define ATOMIC_PROP_IMPL(type, name) \
+    type server::_##name;\
+    std::mutex server::_locker_##name;
+
 namespace settings
 {
-    struct service
-    {
+    struct service {
         static bool any_conns;
         static unsigned short port;
         static int threads;
         static std::vector<std::string> access;
+        static bool keep_alive;
     };
 
-    struct server
-    {
-        static std::string tor;
+    struct server {
         static std::string torName;
-        static std::string proxy;
         static std::string proxyName;
+        ATOMIC_PROP(std::string, tor);
+        ATOMIC_PROP(std::string, proxy);
     };
 
-    struct system
-    {
+    struct system {
         static std::string wallet_stotage;
         static unsigned int jrpc_conn_timeout;
         static unsigned int jrpc_timeout;
@@ -45,7 +61,12 @@ namespace settings
         static std::string statisticServer;
         static std::string latencyFile;
     };
-    
+
+    struct extensions {
+        static bool use_tracking_history;
+        static std::string tracking_history_folder;
+    };
+
     void read(const std::string &pathToConfig);
     
     std::string getConfigPath(boost::program_options::variables_map& vm);

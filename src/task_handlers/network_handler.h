@@ -1,29 +1,40 @@
-#pragma once
+#ifndef __NETWORK_HANDLER_H__
+#define __NETWORK_HANDLER_H__
 
 #include <string>
-
 #include "base_handler.h"
 #include "http_json_rpc_request_ptr.h"
 
-class base_network_handler : public base_handler, public std::enable_shared_from_this<base_network_handler>
+namespace boost {
+namespace asio {
+class io_context;
+}
+}
+
+class base_network_handler : public base_handler
 {
 public:
     base_network_handler(const std::string& host, http_session_ptr session);
-    
-    virtual ~base_network_handler() override { }
+    virtual ~base_network_handler() override;
 
     virtual void execute() override;
 
-protected:
+    inline void set_async(bool value) {
+        m_async_execute = value;
+    }
 
+protected:
     // async callback
-    void on_complete(json_rpc_id id, http_json_rpc_request_ptr req, http_session_ptr session);
+    void on_complete();
 
 protected:
-    
-    virtual void processResponse(json_rpc_id id, json_rpc_reader &reader);
-    
+    virtual void process_response(json_rpc_reader &reader);
+    void send_response();
+
 protected:
-    bool                        m_async_execute = {true};
-    http_json_rpc_request_ptr   m_request;
+    bool m_async_execute = {true};
+    http_json_rpc_request_ptr m_request;
+    std::unique_ptr<boost::asio::io_context> m_ioctx;
 };
+
+#endif // __NETWORK_HANDLER_H__

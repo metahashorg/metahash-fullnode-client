@@ -1,20 +1,22 @@
-#pragma once
+#ifndef __SEND_TX_HANDLER_H__
+#define __SEND_TX_HANDLER_H__
+
 #include "create_tx_base_handler.h"
 
-class send_tx_handler : public create_tx_base_handler, public Perform<send_tx_handler>/*, std::enable_shared_from_this<send_tx_handler>*/
+class send_tx_handler : public create_tx_base_handler
 {
 public:
-
-    send_tx_handler(http_session_ptr session): create_tx_base_handler(session) {}
+    send_tx_handler(http_session_ptr session)
+        : create_tx_base_handler(session) {}
     virtual ~send_tx_handler() override {}
 
+protected:
     virtual bool prepare_params() override;
-    
+
+    void on_get_balance(http_json_rpc_request_ptr request);
+
 protected:
-    
-    void on_get_balance(http_json_rpc_request_ptr request, json_rpc_id id, std::shared_ptr<base_network_handler> tmp);
-    
-protected:
-    
-    void processResponse(json_rpc_id id, json_rpc_reader &reader) override;
+    void process_response(json_rpc_reader &reader) override;
 };
+
+#endif // __SEND_TX_HANDLER_H__
