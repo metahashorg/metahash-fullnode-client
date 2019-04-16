@@ -142,13 +142,13 @@ int main(int argc, char* argv[])
             }
         }
 
-        common::Thread ip_lookup(lookup_best_ip, false);
+//        common::Thread ip_lookup(lookup_best_ip, false);
 
         runServerThread.join();
 
-        lookup_best_ip(true);
+//        lookup_best_ip(true);
         g_track_his.stop();
-        ip_lookup.join();
+//        ip_lookup.join();
 
         if (isStartStatistic) {
             torrent_node_lib::joinStatistics();
