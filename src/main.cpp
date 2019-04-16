@@ -19,6 +19,7 @@
 #include "common/network_utils.h"
 #include "StatisticsServer.h"
 #include "extensions/tracking_history.h"
+#include "cmake_modules/GitSHA1.h"
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/program_options.hpp>
@@ -71,6 +72,8 @@ int main(int argc, char* argv[])
     common::initializeStopProgram();
     common::configureLog("./log/", true, false, false, true);
     try {
+        LOGINFO << "Revision: " << g_GIT_SHA1;
+
         torrent_node_lib::initBlockchainUtils(torrent_node_lib::BlockVersion::V2);
         std::set<std::string> modulesStrs = {
             torrent_node_lib::MODULE_BLOCK_STR,
