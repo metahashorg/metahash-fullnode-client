@@ -66,8 +66,8 @@ void http_server::run()
 
 void http_server::stop()
 {
-    m_io_ctx.stop();
     m_run = false;
+    m_io_ctx.stop();
 }
 
 void http_server::accept(tcp::acceptor& acceptor)
@@ -118,14 +118,14 @@ void http_server::worker_proc(http_server* param)
 
 void http_server::routine()
 {
-    while (m_run) {
+//    while (m_run) {
         try {
             boost::system::error_code ec;
             m_io_ctx.run(ec);
             if (ec) {
                 LOGERR << __PRETTY_FUNCTION__ << " error (" << ec.value() << "): " << ec.message();
             }
-            break;
+//            break;
         } catch (boost::exception& ex) {
             LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);
         } catch (std::exception& ex) {
@@ -133,5 +133,5 @@ void http_server::routine()
         } catch (...) {
             LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";
         }
-    }
+//    }
 }

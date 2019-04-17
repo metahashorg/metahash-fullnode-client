@@ -20,6 +20,8 @@
 #include "settings/settings.h"
 #include "log.h"
 
+#include "common/stopProgram.h"
+
 static std::string parse_record(unsigned char *buffer, size_t r, ns_sect s, int idx, ns_msg *m) {
     ns_rr rr;
     const int k = ns_parserr (m, s, idx, &rr);
@@ -198,13 +200,9 @@ std::string getBestIp(const std::string &address) {
     return found->server;
 }
 
-void lookup_best_ip(bool stop)
+void lookup_best_ip()
 {
     try {
-        static bool _stop = stop;
-        if (_stop) {
-            return;
-        }
         std::string tor = settings::server::get_tor();
         std::string proxy = settings::server::get_proxy();
         std::string _tor, _proxy;
@@ -215,26 +213,33 @@ void lookup_best_ip(bool stop)
         params.sched_priority = sched_get_priority_min(SCHED_OTHER);
         pthread_setschedparam(pt, SCHED_OTHER, &params);
 
-        while (!_stop) {
+        while (true) {
             tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(60);
+
+            common::checkStopSignal();
 
             _tor = getBestIp(settings::server::torName);
             if (_tor != tor) {
                 tor = _tor;
                 settings::server::set_tor(tor);
             }
+
+            common::checkStopSignal();
+
             _proxy = getBestIp(settings::server::proxyName);
             if (_proxy != proxy) {
                 proxy = _proxy;
                 settings::server::set_proxy(proxy);
             }
 
+            common::checkStopSignal();
             std::this_thread::sleep_until(tp);
         }
     } catch (const common::exception &e) {
         LOGERR << __func__ << " error: " << e;
     } catch (const std::exception &e) {
         LOGERR << __func__ << " error: " << e.what();
+    } catch (const common::StopException &e) {
     } catch (...) {
         LOGERR << __func__ << " Unknown error";
     }

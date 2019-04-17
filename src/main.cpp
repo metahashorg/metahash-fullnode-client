@@ -50,29 +50,30 @@ void runServer() {
 
 int main(int argc, char* argv[])
 {
-    {
-        // Termination Signals
-        signal(SIGTERM, signal_catcher);
-        signal(SIGINT, signal_catcher);
-        signal(SIGQUIT, signal_catcher);
-        signal(SIGKILL, signal_catcher);
-        signal(SIGHUP, signal_catcher);
+//    {
+//        // Termination Signals
+//        signal(SIGTERM, signal_catcher);
+//        signal(SIGINT, signal_catcher);
+//        signal(SIGQUIT, signal_catcher);
+//        signal(SIGKILL, signal_catcher);
+//        signal(SIGHUP, signal_catcher);
 
-        // Program Error Signals
-        signal(SIGFPE, signal_catcher);
-        signal(SIGILL, signal_catcher);
-        signal(SIGSEGV, signal_catcher);
-        signal(SIGBUS, signal_catcher);
-        signal(SIGABRT, signal_catcher);
-        signal(SIGIOT, signal_catcher);
-        signal(SIGTRAP, signal_catcher);
-        signal(SIGSYS, signal_catcher);
-    }
+//        // Program Error Signals
+//        signal(SIGFPE, signal_catcher);
+//        signal(SIGILL, signal_catcher);
+//        signal(SIGSEGV, signal_catcher);
+//        signal(SIGBUS, signal_catcher);
+//        signal(SIGABRT, signal_catcher);
+//        signal(SIGIOT, signal_catcher);
+//        signal(SIGTRAP, signal_catcher);
+//        signal(SIGSYS, signal_catcher);
+//    }
 
     common::initializeStopProgram();
     common::configureLog("./log/", true, false, false, true);
     try {
         LOGINFO << "Revision: " << g_GIT_SHA1;
+        LOGINFO << "Build DateTime: " << g_GIT_DATE;
 
         torrent_node_lib::initBlockchainUtils(torrent_node_lib::BlockVersion::V2);
         std::set<std::string> modulesStrs = {
@@ -145,13 +146,12 @@ int main(int argc, char* argv[])
             }
         }
 
-//        common::Thread ip_lookup(lookup_best_ip, false);
+        common::Thread ip_lookup(lookup_best_ip);
 
         runServerThread.join();
 
-//        lookup_best_ip(true);
         g_track_his.stop();
-//        ip_lookup.join();
+        ip_lookup.join();
 
         if (isStartStatistic) {
             torrent_node_lib::joinStatistics();
