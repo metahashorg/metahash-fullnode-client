@@ -118,17 +118,20 @@ void http_server::worker_proc(http_server* param)
 
 void http_server::routine()
 {
-    try {
-        boost::system::error_code ec;
-        m_io_ctx.run(ec);
-        if (ec) {
-            LOGERR << __PRETTY_FUNCTION__ << " error (" << ec.value() << "): " << ec.message();
+    while (m_run) {
+        try {
+            boost::system::error_code ec;
+            m_io_ctx.run(ec);
+            if (ec) {
+                LOGERR << __PRETTY_FUNCTION__ << " error (" << ec.value() << "): " << ec.message();
+            }
+            break;
+        } catch (boost::exception& ex) {
+            LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);
+        } catch (std::exception& ex) {
+            LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what();
+        } catch (...) {
+            LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";
         }
-    } catch (boost::exception& ex) {
-        LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);
-    } catch (std::exception& ex) {
-        LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what();
-    } catch (...) {
-        LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";
     }
 }
