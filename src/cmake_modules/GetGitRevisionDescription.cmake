@@ -137,7 +137,7 @@ endfunction()
 
 function(git_get_commit_datetime _var)
 	execute_process(COMMAND
-	  	"${GIT_EXECUTABLE}" log -1 --format=%ad
+	  	"${GIT_EXECUTABLE}" log -1 --format=%aD
 	  	WORKING_DIRECTORY
 		"${CMAKE_SOURCE_DIR}"
 	  	OUTPUT_VARIABLE 
