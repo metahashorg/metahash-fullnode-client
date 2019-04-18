@@ -74,6 +74,8 @@ int main(int argc, char* argv[])
     common::initializeStopProgram();
     common::configureLog("./log/", true, false, false, true);
     try {
+        std::cout << "Version: " << get_version() << std::endl;
+        std::cout << "Revision: " << g_GIT_SHA1 << std::endl;
         LOGINFO << "Version: " << get_version();
         LOGINFO << "Revision: " << g_GIT_SHA1;
         LOGINFO << "Build DateTime: " << g_GIT_DATE;
