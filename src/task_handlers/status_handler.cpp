@@ -12,6 +12,8 @@
 #include "http_session.h"
 #include "http_json_rpc_request.h"
 
+#include "version.h"
+
 bool status_handler::prepare_params()
 {
     BGN_TRY
@@ -35,7 +37,7 @@ void status_handler::execute()
     {
         switch (m_cmd) {
             case cmd::general:
-            m_writer.add_result("version", "v0");
+            m_writer.add_result("version", get_version());
             m_writer.add_result("git_hash", g_GIT_SHA1);
             m_writer.add_result("git_date", g_GIT_DATE);
             m_writer.add_result("network_tor_name", settings::server::torName);

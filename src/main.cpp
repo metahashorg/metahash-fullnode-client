@@ -16,6 +16,8 @@
 
 #include "nslookup.h"
 
+#include "version.h"
+
 #include "common/network_utils.h"
 #include "StatisticsServer.h"
 #include "extensions/tracking_history.h"
@@ -72,6 +74,7 @@ int main(int argc, char* argv[])
     common::initializeStopProgram();
     common::configureLog("./log/", true, false, false, true);
     try {
+        LOGINFO << "Version: " << get_version();
         LOGINFO << "Revision: " << g_GIT_SHA1;
         LOGINFO << "Build DateTime: " << g_GIT_DATE;
 
