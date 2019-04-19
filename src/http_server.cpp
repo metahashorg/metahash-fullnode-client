@@ -75,17 +75,25 @@ void http_server::accept(tcp::acceptor& acceptor)
     acceptor.async_accept([&](boost::system::error_code ec, tcp::socket socket)
     {
         if (ec) {
-            LOGINFO << "Failed on accept: " << ec.message();
+            LOGERR << "Failed on accept: " << ec.message();
         }
         else {
-            const tcp::endpoint& ep = socket.remote_endpoint();
-            if (check_access(ep)) {
-                std::make_shared<http_session>(std::move(socket))->run();
-            } else {
+            boost::system::error_code error;
+            const tcp::endpoint& ep = socket.remote_endpoint(error);
+            if (error) {
+                LOGERR << __PRETTY_FUNCTION__ << " Could not resolve remote endpoint (" << error.value() << "): " << error.message();
                 boost::system::error_code er;
                 socket.shutdown(tcp::socket::shutdown_both, er);
                 socket.close(er);
-                LOGINFO << "Reject connection " << ep.address().to_string() << ":" << ep.port();
+            } else {
+                if (check_access(ep)) {
+                    std::make_shared<http_session>(std::move(socket))->run();
+                } else {
+                    boost::system::error_code er;
+                    socket.shutdown(tcp::socket::shutdown_both, er);
+                    socket.close(er);
+                    LOGINFO << "Reject connection " << ep.address().to_string() << ":" << ep.port();
+                }
             }
         }
         accept(acceptor);
