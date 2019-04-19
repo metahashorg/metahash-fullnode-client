@@ -78,21 +78,20 @@ void http_server::accept(tcp::acceptor& acceptor)
             LOGERR << "Failed on accept: " << ec.message();
         }
         else {
-            boost::system::error_code error;
-            const tcp::endpoint& ep = socket.remote_endpoint(error);
-            if (error) {
-                LOGERR << __PRETTY_FUNCTION__ << " Could not resolve remote endpoint (" << error.value() << "): " << error.message();
-                boost::system::error_code er;
+            boost::system::error_code er;
+            const tcp::endpoint& ep = socket.remote_endpoint(er);
+            if (er) {
+                LOGERR << __PRETTY_FUNCTION__ << " Could not resolve remote endpoint (" << er.value() << "): " << er.message();
+                er.clear();
                 socket.shutdown(tcp::socket::shutdown_both, er);
                 socket.close(er);
             } else {
                 if (check_access(ep)) {
                     std::make_shared<http_session>(std::move(socket))->run();
                 } else {
-                    boost::system::error_code er;
+                    LOGINFO << "Reject connection " << ep.address().to_string() << ":" << ep.port();
                     socket.shutdown(tcp::socket::shutdown_both, er);
                     socket.close(er);
-                    LOGINFO << "Reject connection " << ep.address().to_string() << ":" << ep.port();
                 }
             }
         }
@@ -131,9 +130,9 @@ void http_server::routine()
             boost::system::error_code ec;
             m_io_ctx.run(ec);
             if (ec) {
-                LOGERR << __PRETTY_FUNCTION__ << " error (" << ec.value() << "): " << ec.message();
+                LOGERR << __PRETTY_FUNCTION__ << " IO context error (" << ec.value() << "): " << ec.message();
             }
-            LOGINFO << "Break";
+            LOGINFO << __PRETTY_FUNCTION__ << " Break";
             break;
         } catch (boost::exception& ex) {
             LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);
@@ -142,6 +141,6 @@ void http_server::routine()
         } catch (...) {
             LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";
         }
-        LOGINFO << "Continue";
+        LOGINFO << __PRETTY_FUNCTION__ << " Continue";
     }
 }
