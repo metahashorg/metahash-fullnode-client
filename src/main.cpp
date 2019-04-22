@@ -50,6 +50,8 @@ void runServer() {
     }
 };
 
+#include <list>
+
 int main(int argc, char* argv[])
 {
 //    {
@@ -76,6 +78,8 @@ int main(int argc, char* argv[])
     try {
         std::cout << "Version: " << get_version() << std::endl;
         std::cout << "Revision: " << g_GIT_SHA1 << std::endl;
+        std::cout << "Build Date: " << g_GIT_DATE << std::endl;
+
         LOGINFO << "Version: " << get_version();
         LOGINFO << "Revision: " << g_GIT_SHA1;
         LOGINFO << "Build DateTime: " << g_GIT_DATE;
@@ -107,10 +111,10 @@ int main(int argc, char* argv[])
         const std::string configPath = settings::getConfigPath(vm);
         settings::read(configPath);
 
-        const std::string bestTorrentIp = getBestIp(settings::server::torName);
+        const std::string bestTorrentIp = getBestIp(settings::server::torName, "Torrent addresses:");
         settings::server::set_tor(bestTorrentIp);
         
-        const std::string bestProxyIp = getBestIp(settings::server::proxyName);
+        const std::string bestProxyIp = getBestIp(settings::server::proxyName, "Proxy addresses:");
         settings::server::set_proxy(bestProxyIp);
         
         const bool isStartStatistic = !settings::statistic::statisticNetwork.empty();

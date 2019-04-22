@@ -19,6 +19,7 @@
 #include "json_rpc.h"
 #include "task_handlers/time_duration.h"
 #include "task_handlers/utils.h"
+#include "connection_pool.h"
 
 namespace   asio    = boost::asio;
 namespace   ssl     = boost::asio::ssl;
@@ -26,6 +27,9 @@ namespace   ip      = boost::asio::ip;
 using       tcp     = boost::asio::ip::tcp;
 namespace   beast   = boost::beast;
 namespace   http    = boost::beast::http;
+
+class socket_pool;
+extern std::unique_ptr<socket_pool> g_conn_pool;
 
 using http_json_rpc_execute_callback = std::function<void()>;
 
@@ -78,6 +82,7 @@ private:
     bool                                m_use_ssl;
     bool                                m_canceled;
     std::mutex                          m_locker;
+    pool_object                         m_pool_obj;
 };
 
 #define JRPC_BGN try

@@ -1,7 +1,7 @@
 #include "http_json_rpc_request.h"
 #include "settings/settings.h"
 #include "common/string_utils.h"
-
+#include "connection_pool.h"
 #include "log.h"
 
 #include <boost/asio/placeholders.hpp>
@@ -30,7 +30,6 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
     m_req.set(http::field::host, addr);
     m_req.set(http::field::user_agent, "metahash.service");
     m_req.set(http::field::content_type, "application/json");
-    m_req.set(http::field::connection, "close");
 
     set_path(path);
 
@@ -135,13 +134,53 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
         if (callback) {
             m_callback = callback;
         }
-        std::string addr, path, port;
-        utils::parse_address(m_host, addr, port, path, m_use_ssl);
 
         auto self = shared_from_this();
-        m_resolver.async_resolve(addr, port, [self](const boost::system::error_code& e, tcp::resolver::results_type eps) {
-            self->on_resolve(e, eps);
-        });
+        bool need_connect = true;
+
+        if (g_conn_pool->enable()) {
+            m_pool_obj = g_conn_pool->checkout(m_host);
+            if (!g_conn_pool->valid(m_pool_obj)) {
+                m_req.set(http::field::connection, "close");
+            } else if (m_pool_obj->socket.native_handle() != -1) {
+                boost::system::error_code ec;
+                tcp::endpoint ep;
+                if (is_ssl()) {
+                    m_ssl_socket.lowest_layer().assign(tcp::v4(), m_pool_obj->socket.release(ec));
+                    ep = m_ssl_socket.lowest_layer().remote_endpoint(ec);
+                } else {
+                    m_socket.assign(tcp::v4(), m_pool_obj->socket.release(ec));
+                    ep = m_socket.remote_endpoint(ec);
+                }
+
+                if (!ec) {
+                    need_connect = false;
+                    if (is_ssl()) {
+                        http::async_write(m_ssl_socket, m_req, [self](const boost::system::error_code& e, std::size_t){
+                            self->on_write(e);
+                        });
+                    } else {
+                        http::async_write(m_socket, m_req, [self](const boost::system::error_code& e, std::size_t){
+                            self->on_write(e);
+                        });
+                    }
+                } else {
+                    m_socket.close(ec);
+                    m_ssl_socket.lowest_layer().close(ec);
+                }
+            }
+        } else {
+            m_req.set(http::field::connection, "close");
+        }
+
+        if (need_connect) {
+            std::string addr, path, port;
+            utils::parse_address(m_host, addr, port, path, m_use_ssl);
+
+            m_resolver.async_resolve(addr, port, [self](const boost::system::error_code& e, tcp::resolver::results_type eps) {
+                self->on_resolve(e, eps);
+            });
+        }
     }
     JRPC_END()
 }
@@ -361,11 +400,27 @@ void http_json_rpc_request::close()
     JRPC_BGN
     {
         boost::system::error_code ec;
-        if (m_socket.is_open()) {
+        if (g_conn_pool->enable() && g_conn_pool->valid(m_pool_obj)) {
+            if (is_ssl()) {
+                m_pool_obj->socket.assign(tcp::v4(), m_ssl_socket.lowest_layer().release(ec));
+                if (ec) {
+                    LOGERR << "json-rpc[" << m_id << "] release socket error: " << ec.message();
+                }
+                g_conn_pool->checkin(m_pool_obj);
+                m_socket.shutdown(tcp::socket::shutdown_both, ec);
+            } else {
+                m_pool_obj->socket.assign(tcp::v4(), m_socket.release(ec));
+                if (ec) {
+                    LOGERR << "json-rpc[" << m_id << "] release socket error: " << ec.message();
+                }
+                g_conn_pool->checkin(m_pool_obj);
+                m_ssl_socket.shutdown(ec);
+            }
+        } else {
             m_socket.shutdown(tcp::socket::shutdown_both, ec);
             m_socket.close(ec);
+            m_ssl_socket.shutdown(ec);
         }
-        m_ssl_socket.shutdown(ec);
     }
     JRPC_END()
 }

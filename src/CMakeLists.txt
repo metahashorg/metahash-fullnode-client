@@ -24,6 +24,7 @@ add_executable(${PROJECT_NAME}
     common/filesystem_utils.cpp
     exception/except.cpp
     settings/settings.cpp
+    connection_pool.cpp
     http_server.cpp
     http_json_rpc_request.cpp
     json_rpc.cpp
@@ -122,7 +123,7 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
     set (CMAKE_CXX_FLAGS "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -Ofast -Wall -Wextra -Werror -Wno-unused-parameter")
 endif()
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set (CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter -Werror -pthread")
+    set (CMAKE_CXX_FLAGS "-Werror -pthread")
 endif()
 
 #set (CMAKE_CXX_FLAGS "-g -rdynamic")

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HTTP_SERVER_H
+#define HTTP_SERVER_H
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/asio/ip/tcp.hpp>
@@ -39,3 +40,5 @@ private:
     
     boost::asio::system_timer checkTimeoutTimer;
 };
+
+#endif // HTTP_SERVER_H

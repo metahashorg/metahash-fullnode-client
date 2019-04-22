@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <iomanip>
 
 #include <duration.h>
 
@@ -156,7 +157,7 @@ static bool validateIpAddress(const std::string &ipAddress) {
     return result != 0;
 }
 
-std::string getBestIp(const std::string &address) {
+std::string getBestIp(const std::string &address, const char* print) {
     std::string server = address;
     const auto foundScheme = server.find("://");
     std::string scheme;
@@ -189,13 +190,25 @@ std::string getBestIp(const std::string &address) {
             tt.stop();
             pr.emplace_back(serv, tt.countMs());
         } catch (const common::exception &e) {
-            pr.emplace_back(serv, milliseconds(10s).count());
+            pr.emplace_back(serv, milliseconds(999s).count());
+        }
+    }
+
+    std::sort(pr.begin(), pr.end(), [](const NsResult &first, const NsResult &second) {
+        return first.timeout < second.timeout;
+    });
+
+    if (print) {
+        std::cout << print << std::endl;
+        LOGINFO << print;
+        for (const auto& i: pr) {
+            std::cout << std::left << std::setfill(' ') << std::setw(25) << i.server << i.timeout << " ms" << std::endl;
+            LOGINFO << i.server << " " << i.timeout << " ms";
         }
     }
     
-    const auto found = std::min_element(pr.begin(), pr.end(), [](const NsResult &first, const NsResult &second) {
-        return first.timeout < second.timeout;
-    });
+    const auto found = pr.begin();
+
     CHECK(found != pr.end(), "Servers empty");
     return found->server;
 }
@@ -222,6 +235,7 @@ void lookup_best_ip()
             if (_tor != tor) {
                 tor = _tor;
                 settings::server::set_tor(tor);
+                LOGINFO << "Changed torrent address: " << tor;
             }
 
             common::checkStopSignal();
@@ -230,6 +244,7 @@ void lookup_best_ip()
             if (_proxy != proxy) {
                 proxy = _proxy;
                 settings::server::set_proxy(proxy);
+                LOGINFO << "Changed proxy address: " << proxy;
             }
 
             common::checkStopSignal();

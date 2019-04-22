@@ -3,12 +3,11 @@
 #include "http_session.h"
 #include "settings/settings.h"
 #include <boost/exception/all.hpp>
-
 #include "log.h"
-
-#include <iostream>
-
 #include "common/stopProgram.h"
+#include "connection_pool.h"
+
+std::unique_ptr<socket_pool> g_conn_pool;
 
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
     : m_thread_count(thread_count)
@@ -29,7 +28,7 @@ void http_server::checkTimeout() {
         common::checkStopSignal();
         checkTimeoutTimer.expires_after(seconds(1));
         checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
-    } catch (const common::StopException &e) {
+    } catch (const common::StopException&) {
         stop();
     }
 }
@@ -42,19 +41,32 @@ bool http_server::runnig()
 void http_server::run()
 {
     tcp::acceptor acceptor(m_io_ctx, m_ep, true);
+
+    // Implements a custom socket option that determines whether or not an accept operation is permitted
+    // to fail with boost::asio::error::connection_aborted. By default the option is false.
+    // TODO check this
+    //boost::asio::socket_base::enable_connection_aborted option(true);
+    //acceptor.set_option(option);
+
     accept(acceptor);
 
     checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
     
+    g_conn_pool = std::make_unique<socket_pool>(m_io_ctx);
+
+    m_run = true;
     std::vector<std::unique_ptr<std::thread> > threads;
     for (int i = 0; i < m_thread_count; ++i)
     {
-//        threads.emplace_back(new std::thread(boost::bind(&boost::asio::io_context::run, &m_io_ctx)));
         threads.emplace_back(new std::thread(worker_proc, this));
     }
 
-    m_run = true;
     LOGINFO << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port();
+
+    std::cout << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port() << std::endl;
+
+    g_conn_pool->enable(settings::system::conn_pool_enable);
+    g_conn_pool->run_monitor();
 
     for (std::size_t i = 0; i < threads.size(); ++i) {
         threads[i]->join();
@@ -62,6 +74,8 @@ void http_server::run()
 
     m_run = false;
     LOGINFO << "Service stoped";
+
+    g_conn_pool->stop_monitor();
 }
 
 void http_server::stop()

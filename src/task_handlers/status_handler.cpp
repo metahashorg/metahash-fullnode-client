@@ -48,6 +48,9 @@ void status_handler::execute()
             m_writer.add_result("allow_state_blocks", settings::system::allowStateBlocks);
             m_writer.add_result("jrpc_timeout", settings::system::jrpc_timeout);
             m_writer.add_result("jrpc_conn_timeout", settings::system::jrpc_conn_timeout);
+            m_writer.add_result("conn_pool_enable", settings::system::conn_pool_enable);
+            m_writer.add_result("conn_pool_ttl", settings::system::conn_pool_ttl);
+            m_writer.add_result("conn_pool_capacity", settings::system::conn_pool_capacity);
             if (syncSingleton() != nullptr) {
                 const torrent_node_lib::Sync &sync = *syncSingleton();
                 m_writer.add_result("blocks_count", sync.getBlockchain().countBlocks());

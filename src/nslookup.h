@@ -3,7 +3,7 @@
 
 #include <string>
 
-std::string getBestIp(const std::string &address);
+std::string getBestIp(const std::string &address, const char* print = nullptr);
 
 void lookup_best_ip();
 

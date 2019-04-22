@@ -243,7 +243,7 @@ void http_session::close()
     HTTP_SESS_BGN
     {
         boost::system::error_code ec;
-        m_socket.shutdown(m_socket.shutdown_both, ec);
+        m_socket.shutdown(tcp::socket::shutdown_both, ec);
         m_socket.close(ec);
     }
     HTTP_SESS_END
