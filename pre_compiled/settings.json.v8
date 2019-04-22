@@ -18,7 +18,10 @@
   "validate_blocks": false,
   "use_local_database": false,
   "jrpc_conn_timeout": 1000,
-  "jrpc_timeout": 60000
+  "jrpc_timeout": 60000,
+  "conn_pool_enable": true,
+  "conn_pool_ttl": 60,
+  "conn_pool_capacity": 100
  },
  "extensions":
  {

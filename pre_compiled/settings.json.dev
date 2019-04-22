@@ -19,7 +19,10 @@
   "use_local_database": false,
   "jrpc_conn_timeout": 1000,
   "jrpc_timeout": 60000,
-  "allow_state_blocks": false
+  "allow_state_blocks": false,
+  "conn_pool_enable": true,
+  "conn_pool_ttl": 60,
+  "conn_pool_capacity": 100
  },
  "extensions":
  {
