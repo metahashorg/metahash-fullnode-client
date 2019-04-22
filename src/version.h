@@ -4,7 +4,7 @@
 #include <string>
 
 inline std::string get_version() {
-    return "1.14.1";
+    return "1.15.0";
 }
 
 #endif //NODE_VERSION_H_
