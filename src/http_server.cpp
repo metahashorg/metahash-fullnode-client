@@ -6,8 +6,11 @@
 #include "log.h"
 #include "common/stopProgram.h"
 #include "connection_pool.h"
+#include "cache/auto_cache.h"
 
 std::unique_ptr<socket_pool> g_conn_pool;
+std::unique_ptr<auto_cache> g_cache;
+
 
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
     : m_thread_count(thread_count)
@@ -53,6 +56,7 @@ void http_server::run()
     checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
     
     g_conn_pool = std::make_unique<socket_pool>();
+    g_cache = std::make_unique<auto_cache>();
 
     m_run = true;
     std::vector<std::unique_ptr<std::thread> > threads;
@@ -68,6 +72,8 @@ void http_server::run()
     g_conn_pool->enable(settings::system::conn_pool_enable);
     g_conn_pool->run_monitor();
 
+//    g_cache->start();
+
     for (std::size_t i = 0; i < threads.size(); ++i) {
         threads[i]->join();
     }
@@ -75,6 +81,7 @@ void http_server::run()
     m_run = false;
     LOGINFO << "Service stoped";
 
+    g_cache->stop();
     g_conn_pool->stop_monitor();
 }
 

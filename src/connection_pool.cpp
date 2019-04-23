@@ -121,7 +121,7 @@ void socket_pool::checkin(pool_object& value)
 
 bool socket_pool::valid(const pool_object& value)
 {
-     return value._M_node != 0 && value != m_busy.end();
+    return value._M_node != 0 && value != m_busy.end();
 }
 
 void socket_pool::run_monitor()
