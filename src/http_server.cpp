@@ -52,7 +52,7 @@ void http_server::run()
 
     checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
     
-    g_conn_pool = std::make_unique<socket_pool>(m_io_ctx);
+    g_conn_pool = std::make_unique<socket_pool>();
 
     m_run = true;
     std::vector<std::unique_ptr<std::thread> > threads;

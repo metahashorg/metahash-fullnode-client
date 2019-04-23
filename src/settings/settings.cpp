@@ -45,7 +45,7 @@ namespace settings
     bool system::allowStateBlocks = false;
     unsigned int system::jrpc_conn_timeout = 1000;
     unsigned int system::jrpc_timeout = 60000;
-    bool system::conn_pool_enable = true;
+    bool system::conn_pool_enable = false;
     unsigned int system::conn_pool_ttl = 60; // SECONDS!
     unsigned int system::conn_pool_capacity = 100;
 
@@ -96,7 +96,7 @@ namespace settings
         system::validateBlocks = tree.get<bool>("system.validate_blocks");
         system::useLocalDatabase = tree.get<bool>("system.use_local_database");
         system::allowStateBlocks = tree.get<bool>("system.allow_state_blocks", false);
-        system::conn_pool_enable = tree.get<bool>("system.conn_pool_enable", true);
+        system::conn_pool_enable = tree.get<bool>("system.conn_pool_enable", false);
         system::conn_pool_ttl = tree.get<unsigned int>("system.conn_pool_ttl", 60);
         system::conn_pool_capacity = tree.get<unsigned int>("system.conn_pool_capacity", 100);
         

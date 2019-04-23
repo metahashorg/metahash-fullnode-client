@@ -58,7 +58,7 @@ protected:
     bool error_handler(const boost::system::error_code& e, const char* from);
     void perform_callback();
     bool verify_certificate(bool preverified, ssl::verify_context& ctx);
-    void close();
+    void close(bool force = false);
 
     inline bool is_ssl() const { return m_use_ssl; }
 

@@ -21,9 +21,8 @@
     }
 
 // socket_pool
-socket_pool::socket_pool(asio::io_context& ctx)
-    : m_ctx(ctx)
-    , m_capacity(settings::system::conn_pool_capacity)
+socket_pool::socket_pool()
+    : m_capacity(settings::system::conn_pool_capacity)
     , m_enable(true)
 {
 }
@@ -31,15 +30,31 @@ socket_pool::socket_pool(asio::io_context& ctx)
 socket_pool::~socket_pool()
 {
     boost::system::error_code ec;
+    asio::io_context ctx;
+    tcp::socket sock(ctx);
+
     for (auto& it: m_busy){
+        if (it.socket == -1) {
+            continue;
+        }
         ec.clear();
-        it.socket.shutdown(tcp::socket::shutdown_both, ec);
-        it.socket.close(ec);
+        sock.assign(tcp::v4(), it.socket, ec);
+        if (!ec) {
+            sock.shutdown(tcp::socket::shutdown_both, ec);
+            sock.close(ec);
+        }
     }
     for (auto& it: m_ready){
+        if (it.socket == -1) {
+            continue;
+        }
         ec.clear();
-        it.socket.shutdown(tcp::socket::shutdown_both, ec);
-        it.socket.close(ec);
+        ec.clear();
+        sock.assign(tcp::v4(), it.socket, ec);
+        if (!ec) {
+            sock.shutdown(tcp::socket::shutdown_both, ec);
+            sock.close(ec);
+        }
     }
 }
 
@@ -74,7 +89,7 @@ pool_object socket_pool::checkout(const std::string& host)
             }
         }
         if (it == m_ready.end() && m_capacity > (m_busy.size() + m_ready.size())) {
-            m_busy.insert(m_busy.begin(), {host.c_str(), m_ctx});
+            m_busy.insert(m_busy.begin(), {host.c_str()});
             return m_busy.begin();
         }
         return m_busy.end();
@@ -90,8 +105,12 @@ void socket_pool::checkin(pool_object& value)
         std::list<ep_descr>::iterator it = m_busy.begin();
         for (; it != m_busy.end(); ++it) {
             if (it == value) {
-                it->ttl = std::chrono::high_resolution_clock::now() + std::chrono::seconds(settings::system::conn_pool_ttl);
-                m_ready.splice(m_ready.cbegin(), m_busy, it);
+                if (value->socket == -1) {
+                    m_busy.erase(it);
+                } else {
+                    it->ttl = std::chrono::high_resolution_clock::now() + std::chrono::seconds(settings::system::conn_pool_ttl);
+                    m_ready.splice(m_ready.cbegin(), m_busy, it);
+                }
                 break;
             }
         }
@@ -129,6 +148,8 @@ void socket_pool::routine()
 {
     POOL_BGN
     {
+        asio::io_context ctx;
+        tcp::socket sock(ctx);
         std::chrono::system_clock::time_point tp;
         std::chrono::system_clock::time_point now;
         while (enable())
@@ -140,17 +161,23 @@ void socket_pool::routine()
                 std::vector<std::list<ep_descr>::iterator> del;
                 std::list<ep_descr>::iterator it = m_ready.begin();
                 for (; it != m_ready.end(); ++it) {
-                    if (now > it->ttl) {
-                        boost::system::error_code ec;
-                        it->socket.shutdown(tcp::socket::shutdown_both, ec);
-                        LOGINFO << "Connection pool monitor. Shutdown socket " << it->ep << ". Error (" << ec.value() << ") " << ec.message();
-
-                        ec.clear();
-                        it->socket.close(ec);
-                        LOGINFO << "Connection pool monitor. Close socket " << it->ep << ". Error (" << ec.value() << ") " << ec.message();
-
-                        del.push_back(it);
+                    if (now < it->ttl) {
+                        continue;
                     }
+                    if (it->socket != -1) {
+                        boost::system::error_code ec;
+                        sock.assign(tcp::v4(), it->socket, ec);
+                        if (!ec) {
+                            sock.shutdown(tcp::socket::shutdown_both, ec);
+                            LOGINFO << "Connection pool monitor. Shutdown socket " << it->ep << ". Error (" << ec.value() << ") " << ec.message();
+                            ec.clear();
+                            sock.close(ec);
+                            LOGINFO << "Connection pool monitor. Close socket " << it->ep << ". Error (" << ec.value() << ") " << ec.message();
+                        } else {
+                            LOGINFO << "Connection pool monitor. Assign socket " << it->ep << ". Error (" << ec.value() << ") " << ec.message();
+                        }
+                    }
+                    del.push_back(it);
                 }
                 for (auto& it: del) {
                     m_ready.erase(it);

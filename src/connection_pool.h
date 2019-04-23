@@ -15,13 +15,13 @@ using       tcp     = boost::asio::ip::tcp;
 
 struct ep_descr
 {
-    ep_descr(const char* host, asio::io_context& ctx)
+    ep_descr(const char* host)
         : ep(host)
-        , socket(ctx)
+        , socket(-1)
     {
     }
     std::string ep;
-    tcp::socket socket;
+    tcp::socket::native_handle_type socket;
     std::chrono::system_clock::time_point ttl;
 };
 
@@ -30,7 +30,7 @@ using pool_object = std::list<ep_descr>::iterator;
 class socket_pool
 {
 public:
-    socket_pool(asio::io_context& ctx);
+    socket_pool();
     ~socket_pool();
 
     bool enable() const;
@@ -51,7 +51,6 @@ protected:
     void routine();
 
 private:
-    asio::io_context&   m_ctx;
     std::list<ep_descr> m_ready;
     std::list<ep_descr> m_busy;
     std::mutex          m_lock;

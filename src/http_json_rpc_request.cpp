@@ -142,15 +142,22 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
             m_pool_obj = g_conn_pool->checkout(m_host);
             if (!g_conn_pool->valid(m_pool_obj)) {
                 m_req.set(http::field::connection, "close");
-            } else if (m_pool_obj->socket.native_handle() != -1) {
+            } else if (m_pool_obj->socket != -1) {
                 boost::system::error_code ec;
                 tcp::endpoint ep;
-                if (is_ssl()) {
-                    m_ssl_socket.lowest_layer().assign(tcp::v4(), m_pool_obj->socket.release(ec));
-                    ep = m_ssl_socket.lowest_layer().remote_endpoint(ec);
-                } else {
-                    m_socket.assign(tcp::v4(), m_pool_obj->socket.release(ec));
-                    ep = m_socket.remote_endpoint(ec);
+                for (;;) {
+                    if (is_ssl()) {
+                        m_ssl_socket.lowest_layer().assign(tcp::v4(), m_pool_obj->socket, ec);
+                        if (ec) break;
+                        ep = m_ssl_socket.lowest_layer().remote_endpoint(ec);
+                        if (ec) break;
+                    } else {
+                        m_socket.assign(tcp::v4(), m_pool_obj->socket, ec);
+                        if (ec) break;
+                        ep = m_socket.remote_endpoint(ec);
+                        if (ec) break;
+                    }
+                    break;
                 }
 
                 if (!ec) {
@@ -165,6 +172,7 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
                         });
                     }
                 } else {
+                    LOGWARN << "json-rpc[" << m_id << "] Assign socket error " << ec.message();
                     m_socket.close(ec);
                     m_ssl_socket.lowest_layer().close(ec);
                 }
@@ -248,7 +256,7 @@ void http_json_rpc_request::on_connect_timeout()
 
         LOGDEBUG << "json-rpc[" << m_id << "] Connection timeout " << settings::system::jrpc_conn_timeout << " ms to " << m_host;
 
-        close();
+        close(true);
         m_timer.stop();
         m_connect_timer.set_callback(nullptr);
         m_duration.stop();
@@ -395,23 +403,38 @@ bool http_json_rpc_request::verify_certificate(bool, ssl::verify_context&)
     return true;
 }
 
-void http_json_rpc_request::close()
+void http_json_rpc_request::close(bool force)
 {
     JRPC_BGN
     {
         boost::system::error_code ec;
         if (g_conn_pool->enable() && g_conn_pool->valid(m_pool_obj)) {
+            if (force) {
+                m_socket.shutdown(tcp::socket::shutdown_both, ec);
+                m_socket.close(ec);
+                m_ssl_socket.shutdown(ec);
+                ec.clear();
+            }
             if (is_ssl()) {
-                m_pool_obj->socket.assign(tcp::v4(), m_ssl_socket.lowest_layer().release(ec));
-                if (ec) {
-                    LOGERR << "json-rpc[" << m_id << "] release socket error: " << ec.message();
+                if (m_ssl_socket.lowest_layer().native_handle() != -1) {
+                    m_pool_obj->socket = m_ssl_socket.lowest_layer().release(ec);
+                    if (ec) {
+                        LOGERR << "json-rpc[" << m_id << "] release socket error: " << ec.message();
+                    }
+                } else {
+                    m_pool_obj->socket = -1;
                 }
                 g_conn_pool->checkin(m_pool_obj);
                 m_socket.shutdown(tcp::socket::shutdown_both, ec);
+                m_socket.close(ec);
             } else {
-                m_pool_obj->socket.assign(tcp::v4(), m_socket.release(ec));
-                if (ec) {
-                    LOGERR << "json-rpc[" << m_id << "] release socket error: " << ec.message();
+                if (m_socket.native_handle() != -1) {
+                    m_pool_obj->socket = m_socket.release(ec);
+                    if (ec) {
+                        LOGERR << "json-rpc[" << m_id << "] release socket error: " << ec.message();
+                    }
+                } else {
+                    m_pool_obj->socket = -1;
                 }
                 g_conn_pool->checkin(m_pool_obj);
                 m_ssl_socket.shutdown(ec);
