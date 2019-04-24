@@ -13,7 +13,7 @@ sudo apt install rapidjson-dev libgmp-dev libcurl4-gnutls-dev
 
 cd /tmp/
 git clone https://github.com/metahashorg/metahash-fullnode-client
-cd metahash_client/
+cd metahash-fullnode-client/
 mkdir build
 cd build
 cmake ..
