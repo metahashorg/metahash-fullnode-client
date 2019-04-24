@@ -37,4 +37,4 @@ then
 fi
 
 
-docker run -it -p 9999:9999 -d -v $workdir/wallet.$net:/opt/mhservice/wallet -v $workdir/settings.json.$net:/opt/mhservice/settings.json -v $workdir/leveldb.$net:/opt/mhservice/leveldb.$net -v $workdir/blocks.$net:/opt/mhservice/blocks $docker_image
+docker run -it -p 9999:9999 -d -v $workdir/wallet.$net:/opt/mhservice/wallet -v $workdir/settings.json.$net:/opt/mhservice/settings.json -v $workdir/leveldb.$net:/opt/mhservice/leveldb -v $workdir/blocks.$net:/opt/mhservice/blocks $docker_image
