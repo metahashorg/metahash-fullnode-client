@@ -6,10 +6,10 @@
 #include "log.h"
 #include "common/stopProgram.h"
 #include "connection_pool.h"
-#include "cache/auto_cache.h"
+#include "cache/blocks_cache.h"
 
 std::unique_ptr<socket_pool> g_conn_pool;
-std::unique_ptr<auto_cache> g_cache;
+std::unique_ptr<blocks_cache> g_cache;
 
 
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
@@ -56,7 +56,7 @@ void http_server::run()
     checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
     
     g_conn_pool = std::make_unique<socket_pool>();
-    g_cache = std::make_unique<auto_cache>();
+    g_cache = std::make_unique<blocks_cache>();
 
     m_run = true;
     std::vector<std::unique_ptr<std::thread> > threads;
@@ -72,7 +72,9 @@ void http_server::run()
     g_conn_pool->enable(settings::system::conn_pool_enable);
     g_conn_pool->run_monitor();
 
-//    g_cache->start();
+    if (settings::system::blocks_cache_enable) {
+        g_cache->start();
+    }
 
     for (std::size_t i = 0; i < threads.size(); ++i) {
         threads[i]->join();
@@ -96,13 +98,13 @@ void http_server::accept(tcp::acceptor& acceptor)
     acceptor.async_accept([&](boost::system::error_code ec, tcp::socket socket)
     {
         if (ec) {
-            LOGERR << "Failed on accept: " << ec.message();
+            LOGERR << __func__ << " Failed on accept: " << ec.message();
         }
         else {
             boost::system::error_code er;
             const tcp::endpoint& ep = socket.remote_endpoint(er);
             if (er) {
-                LOGERR << __PRETTY_FUNCTION__ << " Could not resolve remote endpoint (" << er.value() << "): " << er.message();
+                LOGERR << __func__ << " Could not get remote endpoint: " << er.message();
                 er.clear();
                 socket.shutdown(tcp::socket::shutdown_both, er);
                 socket.close(er);
@@ -110,7 +112,7 @@ void http_server::accept(tcp::acceptor& acceptor)
                 if (check_access(ep)) {
                     std::make_shared<http_session>(std::move(socket))->run();
                 } else {
-                    LOGINFO << "Reject connection " << ep.address().to_string() << ":" << ep.port();
+                    LOGINFO << __func__ << " Reject connection " << ep.address().to_string() << ":" << ep.port();
                     socket.shutdown(tcp::socket::shutdown_both, er);
                     socket.close(er);
                 }

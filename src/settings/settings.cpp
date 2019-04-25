@@ -48,6 +48,7 @@ namespace settings
     bool system::conn_pool_enable = false;
     unsigned int system::conn_pool_ttl = 60; // SECONDS!
     unsigned int system::conn_pool_capacity = 100;
+    bool system::blocks_cache_enable = false;
 
     // extensions
     bool extensions::use_tracking_history = {false};
@@ -99,6 +100,7 @@ namespace settings
         system::conn_pool_enable = tree.get<bool>("system.conn_pool_enable", false);
         system::conn_pool_ttl = tree.get<unsigned int>("system.conn_pool_ttl", 60);
         system::conn_pool_capacity = tree.get<unsigned int>("system.conn_pool_capacity", 100);
+        system::blocks_cache_enable = tree.get<bool>("system.blocks_cache_enable", false);
         
         if (tree.find("statistic") != tree.not_found()) {
             statistic::statisticNetwork = tree.get<std::string>("statistic.network");

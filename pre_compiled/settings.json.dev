@@ -22,7 +22,8 @@
   "allow_state_blocks": false,
   "conn_pool_enable": true,
   "conn_pool_ttl": 60,
-  "conn_pool_capacity": 100
+  "conn_pool_capacity": 100,
+  "blocks_cache_enable": true
  },
  "extensions":
  {

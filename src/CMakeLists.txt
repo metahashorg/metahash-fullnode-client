@@ -24,7 +24,7 @@ add_executable(${PROJECT_NAME}
     common/filesystem_utils.cpp
     exception/except.cpp
     settings/settings.cpp
-    cache/auto_cache.cpp
+    cache/blocks_cache.cpp
     connection_pool.cpp
     http_server.cpp
     http_json_rpc_request.cpp

@@ -63,8 +63,6 @@ void http_session::process_request()
 {
     HTTP_SESS_BGN
     {
-        LOGDEBUG << "HTTP Session " << m_socket.remote_endpoint().address().to_string() << " >>> " << m_req.body();
-
         for (;;) {
             m_http_ver = m_req.version();
             auto field = m_req.find(http::field::connection);
@@ -127,8 +125,6 @@ void http_session::send_response(http::response<http::string_body>& response)
 {
     HTTP_SESS_BGN
     {
-        LOGDEBUG << "HTTP Session " << m_socket.remote_endpoint().address().to_string() << " <<< " << response.body().c_str();
-
         response.version(11);
 
         time_t dt = time(nullptr);
@@ -148,7 +144,11 @@ void http_session::send_response(http::response<http::string_body>& response)
         } else {
             response.set(http::field::connection, "close");
         }
-        http::write(m_socket, response);
+        boost::system::error_code ec;
+        http::write(m_socket, response, ec);
+        if (ec) {
+            LOGERR << __PRETTY_FUNCTION__ << " Error: " << ec.message();
+        }
         if (!keep_alive()) {
             close();
         }

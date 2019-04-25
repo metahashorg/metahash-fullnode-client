@@ -26,6 +26,7 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
 {
     std::string addr, path, port;
     utils::parse_address(m_host, addr, port, path, m_use_ssl);
+
     m_req.version(11);
     m_req.set(http::field::host, addr);
     m_req.set(http::field::user_agent, "metahash.service");
@@ -71,6 +72,18 @@ void http_json_rpc_request::set_body(const std::string& body)
         if (reader.parse(body)) {
             m_result.set_id(reader.get_id());
         }
+    }
+    JRPC_END()
+}
+
+void http_json_rpc_request::set_host(const std::string& host)
+{
+    JRPC_BGN
+    {
+        m_host = host;
+        std::string addr, path, port;
+        utils::parse_address(m_host, addr, port, path, m_use_ssl);
+        m_req.set(http::field::host, addr);
     }
     JRPC_END()
 }
@@ -134,6 +147,11 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
         if (callback) {
             m_callback = callback;
         }
+
+        m_result.reset();
+        m_response.reset(new json_response_type());
+        m_response->body_limit((std::numeric_limits<std::uint64_t>::max)());
+        m_req.erase(http::field::connection);
 
         auto self = shared_from_this();
         bool need_connect = true;
@@ -323,15 +341,13 @@ void http_json_rpc_request::on_write(const boost::system::error_code& e)
             return;
         }
 
-        m_response.body_limit((std::numeric_limits<std::uint64_t>::max)());
-
         auto self = shared_from_this();
         if (is_ssl()) {
-            http::async_read(m_ssl_socket, m_buf, m_response, [self](const boost::system::error_code& e, size_t sz){
+            http::async_read(m_ssl_socket, m_buf, *m_response, [self](const boost::system::error_code& e, size_t sz){
                 self->on_read(e, sz);
             });
         } else {
-            http::async_read(m_socket, m_buf, m_response, [self](const boost::system::error_code& e, size_t sz){
+            http::async_read(m_socket, m_buf, *m_response, [self](const boost::system::error_code& e, size_t sz){
                 self->on_read(e, sz);
             });
         }
@@ -348,26 +364,23 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
         }
 
         m_timer.stop();
+        m_duration.stop();
         close();
 
-        http::status status = m_response.get().result();
+        http::status status = m_response->get().result();
         if (status != http::status::ok) {
             LOGWARN << "json-rpc[" << m_id << "] Incorrect response http status: " << status;
         }
 
-        const bool succ = m_result.parse(m_response.get().body());
+        const bool succ = m_result.parse(m_response->get().body());
         if (!succ) {
-            LOGERR << "json-rpc[" << m_id << "] Response json parse error: " << m_result.getDoc().GetParseError();
+//            LOGERR << "json-rpc[" << m_id << "] Response json parse error: " << m_result.getDoc().GetParseError();
             if (status != http::status::ok) {
                 m_result.set_error(-32603,
                     string_utils::str_concat("Incorrect response http status: ", std::to_string(static_cast<unsigned>(status))));
             }
+            LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " >>> " << m_result.stringify();
         }
-
-        LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " >>> " << m_result.stringify();
-
-        m_duration.stop();
-
         perform_callback();
 
         if (!m_async && !m_io_ctx.stopped()) {
@@ -446,4 +459,9 @@ void http_json_rpc_request::close(bool force)
         }
     }
     JRPC_END()
+}
+
+json_response_type* http_json_rpc_request::get_response()
+{
+    return m_response.get();
 }

@@ -11,8 +11,11 @@
 #include "../sync/BlockChainReadInterface.h"
 #include "http_session.h"
 #include "http_json_rpc_request.h"
+#include "cache/blocks_cache.h"
 
 #include "version.h"
+
+extern std::unique_ptr<blocks_cache> g_cache;
 
 bool status_handler::prepare_params()
 {
@@ -51,6 +54,8 @@ void status_handler::execute()
             m_writer.add_result("conn_pool_enable", settings::system::conn_pool_enable);
             m_writer.add_result("conn_pool_ttl", settings::system::conn_pool_ttl);
             m_writer.add_result("conn_pool_capacity", settings::system::conn_pool_capacity);
+            m_writer.add_result("blocks_cache_enable", g_cache->runing());
+            m_writer.add_result("blocks_cache_next_block", g_cache->next_block());
             if (syncSingleton() != nullptr) {
                 const torrent_node_lib::Sync &sync = *syncSingleton();
                 m_writer.add_result("blocks_count", sync.getBlockchain().countBlocks());

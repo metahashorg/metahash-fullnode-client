@@ -32,20 +32,24 @@ class socket_pool;
 extern std::unique_ptr<socket_pool> g_conn_pool;
 
 using http_json_rpc_execute_callback = std::function<void()>;
+using json_response_type = http::response_parser<http::string_body>;
+using json_request_type = http::request<http::string_body>;
 
 class http_json_rpc_request: public std::enable_shared_from_this<http_json_rpc_request>
 {
 public:
     http_json_rpc_request(const std::string& host, asio::io_context& execute_context);
-    ~http_json_rpc_request();
+    virtual ~http_json_rpc_request();
 
     void set_path(const std::string& path);
     void set_body(const std::string& body);
+    void set_host(const std::string& host);
 
     void execute();
     void execute_async(http_json_rpc_execute_callback callback);
 
     std::string get_result();
+    json_response_type* get_response();
 
 protected:
     void on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps);
@@ -62,15 +66,15 @@ protected:
 
     inline bool is_ssl() const { return m_use_ssl; }
 
-private:
+protected:
     asio::io_context&                   m_io_ctx;
     tcp::socket                         m_socket;
     tcp::resolver                       m_resolver;
     utils::Timer                        m_timer;
     utils::Timer                        m_connect_timer;
     utils::time_duration                m_duration;
-    http::request<http::string_body>    m_req { http::verb::post, "/", 11 };
-    http::response_parser<http::string_body>   m_response;
+    json_request_type                   m_req { http::verb::post, "/", 11 };
+    std::unique_ptr<json_response_type> m_response;
     boost::beast::flat_buffer           m_buf { 8192 };
     json_rpc_writer                     m_result;
     http_json_rpc_execute_callback      m_callback;
