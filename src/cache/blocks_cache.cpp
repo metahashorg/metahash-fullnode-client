@@ -12,9 +12,6 @@
 #include "task_handlers/get_count_blocks_handler.h"
 #include "task_handlers/get_dump_block_by_number_handler.h"
 
-#include "sync/synchronize_blockchain.h"
-#include "sync/BlockInfo.h"
-
 #define CACHE_BGN try
 
 #define CACHE_END(ret) \
@@ -216,7 +213,7 @@ bool blocks_cache::save_block(unsigned int number, const std::string& dump)
         leveldb::WriteOptions opt;
         leveldb::Status status = m_db->Put(opt, std::to_string(number), leveldb::Slice(dump.c_str(), dump.size()));
         if (status.ok()) {
-            LOGINFO << "Cache. Block " << number << " has been saved";
+            LOGINFO << "Cache. Block " << number << " has been saved. " << dump.size() << " bytes";
         } else {
             LOGERR << "Cache. Could not save block " << number;
             return false;

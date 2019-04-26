@@ -4,7 +4,12 @@
 #include "../generate_json.h"
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
+#include "../sync/synchronize_blockchain.h"
 #include "check.h"
+#include "cache/blocks_cache.h"
+#include "string_utils.h"
+
+extern std::unique_ptr<blocks_cache> g_cache;
 
 get_dump_block_by_number::get_dump_block_by_number(http_session_ptr session)
     : base_network_handler(settings::server::get_tor(), session)
@@ -12,6 +17,7 @@ get_dump_block_by_number::get_dump_block_by_number(http_session_ptr session)
     , m_fromByte(0)
     , m_toByte(std::numeric_limits<size_t>::max())
     , m_isHex(true)
+    , m_from_cache(false)
 {
     m_duration.set_message(__func__);
 }
@@ -29,6 +35,18 @@ bool get_dump_block_by_number::prepare_params()
         m_reader.get_value(*params, "fromByte", m_fromByte);
         m_reader.get_value(*params, "toByte", m_toByte);
 
+        if (g_cache && g_cache->runing()) {
+            std::string dump;
+            if (g_cache->get_block(static_cast<unsigned int>(m_number), dump)) {
+                 m_from_cache = true;
+                 char hexdump[dump.size() * 2 + 1];
+                 memset(hexdump, 0, dump.size() * 2 + 1);
+                 string_utils::bin2hex((const unsigned char*)dump.c_str(), dump.size(), hexdump);
+                 genBlockDumpJson(hexdump, false, m_writer.getDoc());
+                 return true;
+            }
+        }
+
         if (!settings::system::useLocalDatabase) {
             m_writer.add_param("number", m_number);
             m_writer.add_param("isHex", m_isHex);
@@ -43,6 +61,9 @@ void get_dump_block_by_number::execute()
 {
     BGN_TRY
     {
+        if (m_from_cache) {
+            return;
+        }
         if (settings::system::useLocalDatabase) {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();
