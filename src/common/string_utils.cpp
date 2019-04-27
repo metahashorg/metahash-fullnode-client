@@ -6,8 +6,7 @@ size_t get_size(const char*  val) noexcept {
     return strlen(val);
 }
 
-void bin2hex(const unsigned char* buf, size_t size, char* res) noexcept
-{
+namespace {
     static const char hex[] = {
     "000102030405060708090a0b0c0d0e0f"
     "101112131415161718191a1b1c1d1e1f"
@@ -26,12 +25,24 @@ void bin2hex(const unsigned char* buf, size_t size, char* res) noexcept
     "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
     "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"
     };
+}
 
-    for (size_t i = 0; i < size; i++)
-    {
+void bin2hex(const unsigned char* buf, size_t size, char* res) noexcept
+{
+    for (size_t i = 0; i < size; i++) {
         const char* c = hex + (*(buf+i))*2;
         res[i*2] = *c;
         res[i*2+1] = *(c+1);
+    }
+}
+
+void bin2hex(const std::string& buf, std::string& res) noexcept
+{
+    res.reserve(buf.size() * 2);
+    for (size_t i = 0, size = buf.size(); i < size; i++) {
+        const char* c = hex + static_cast<unsigned char>(buf[i])*2;
+        res.push_back(*c);
+        res.push_back(*(c+1));
     }
 }
 

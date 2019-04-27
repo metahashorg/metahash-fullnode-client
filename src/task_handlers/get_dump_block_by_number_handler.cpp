@@ -4,7 +4,6 @@
 #include "../generate_json.h"
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
-#include "../sync/synchronize_blockchain.h"
 #include "check.h"
 #include "cache/blocks_cache.h"
 #include "string_utils.h"
@@ -38,11 +37,10 @@ bool get_dump_block_by_number::prepare_params()
         if (g_cache && g_cache->runing()) {
             std::string dump;
             if (g_cache->get_block(static_cast<unsigned int>(m_number), dump)) {
-                 m_from_cache = true;
-                 char hexdump[dump.size() * 2 + 1];
-                 memset(hexdump, 0, dump.size() * 2 + 1);
-                 string_utils::bin2hex((const unsigned char*)dump.c_str(), dump.size(), hexdump);
+                 std::string hexdump;
+                 string_utils::bin2hex(dump, hexdump);
                  genBlockDumpJson(hexdump, false, m_writer.getDoc());
+                 m_from_cache = true;
                  return true;
             }
         }

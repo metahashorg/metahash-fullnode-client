@@ -4,9 +4,20 @@
 #include "../generate_json.h"
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
+#include "../sync/synchronize_blockchain.h"
+#include "cache/blocks_cache.h"
+#include "string_utils.h"
+
+extern std::unique_ptr<blocks_cache> g_cache;
 
 get_block_by_number_handler::get_block_by_number_handler(http_session_ptr session)
-    : base_network_handler(settings::server::get_tor(), session) {
+    : base_network_handler(settings::server::get_tor(), session)
+    , m_number(0)
+    , m_type(0)
+    , m_countTxs(0)
+    , m_beginTx(0)
+    , m_from_cache(false)
+{
     m_duration.set_message(__func__);
 }
 
@@ -35,6 +46,29 @@ bool get_block_by_number_handler::prepare_params()
 
         if (m_reader.get_value(*params, "beginTx", m_beginTx) && !settings::system::useLocalDatabase) {
             m_writer.add_param("beginTx", m_beginTx);
+        }
+
+        if (g_cache && g_cache->runing()) {
+            std::string dump;
+            if (g_cache->get_block(static_cast<unsigned int>(m_number), dump)) {
+                m_writer.reset();
+                torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(dump, false);
+                if (!settings::system::allowStateBlocks && bi.header.isStateBlock()) {
+                    genErrorResponse(-32603, "block " + std::to_string(m_number) + " is a state block and was ignored", m_writer.getDoc());
+                    return false;
+                }
+                switch (m_type) {
+                case 0:
+                case 4:
+                    blockHeaderToJson(bi.header, std::nullopt, false, JsonVersion::V1, m_writer.getDoc());
+                    break;
+                default:
+                    blockInfoToJson(bi, std::nullopt, m_type, false, JsonVersion::V1, m_writer.getDoc());
+                    break;
+                }
+                m_from_cache = true;
+                return true;
+            }
         }
 
 //        auto &jsonParams = *params;
@@ -69,6 +103,9 @@ void get_block_by_number_handler::execute()
 {
     BGN_TRY
     {
+        if (m_from_cache) {
+            return;
+        }
         if (settings::system::useLocalDatabase) {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();
