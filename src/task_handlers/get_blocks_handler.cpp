@@ -16,14 +16,25 @@ bool get_blocks_handler::prepare_params()
         CHK_PRM(params, "params field not found")
 
         mh_count_t countBlocks(0);
-        if (m_reader.get_value(*params, "countBlocks", countBlocks)) {
-            m_writer.add_param("countBlocks", countBlocks);
-        }
+        CHK_PRM(m_reader.get_value(*params, "countBlocks", countBlocks), "'countBlocks' field not found")
+        m_writer.add_param("countBlocks", countBlocks);
 
         mh_count_t beginBlock(0);
-        if (m_reader.get_value(*params, "beginBlock", beginBlock)) {
-            m_writer.add_param("beginBlock", beginBlock);
+        CHK_PRM(m_reader.get_value(*params, "beginBlock", beginBlock), "'beginBlock' field not found")
+        m_writer.add_param("beginBlock", beginBlock);
+
+        std::string type;
+        if (m_reader.get_value(*params, "type", type)) {
+            m_writer.add_param("type", type);
         }
+        std::string direction;
+        if (m_reader.get_value(*params, "direction", direction)) {
+            m_writer.add_param("direction", direction);
+        }
+//        bool pretty(false);
+//        if (m_reader.get_value(m_reader.get_doc(), "pretty", pretty) && pretty) {
+//            m_writer.add("pretty", pretty);
+//        }
 
         return true;
     }
