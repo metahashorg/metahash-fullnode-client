@@ -50,6 +50,8 @@ protected:
     static void thread_proc(socket_pool* param);
     void routine();
 
+    void cleanup();
+
 private:
     std::list<ep_descr> m_ready;
     std::list<ep_descr> m_busy;

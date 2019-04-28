@@ -69,8 +69,9 @@ void http_server::run()
 
     std::cout << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port() << std::endl;
 
-    g_conn_pool->enable(settings::system::conn_pool_enable);
-    g_conn_pool->run_monitor();
+    if (settings::system::conn_pool_enable) {
+        g_conn_pool->run_monitor();
+    }
 
     if (settings::system::blocks_cache_enable) {
         g_cache->start();

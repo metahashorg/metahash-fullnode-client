@@ -17,16 +17,16 @@
 
 #define CACHE_END(ret) \
     catch (const common::StopException&) {\
-        return ret;\
+        ret;\
     } catch (boost::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);\
-        return ret;\
+        ret;\
     } catch (std::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what();\
-        return ret;\
+        ret;\
     } catch (...) {\
         LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";\
-        return ret;\
+        ret;\
     }
 
 blocks_cache::blocks_cache()
@@ -84,7 +84,7 @@ bool blocks_cache::start()
         m_worker = std::make_unique<std::thread>(worker_proc, this);
         return true;
     }
-    CACHE_END(false)
+    CACHE_END(return false)
 }
 
 void blocks_cache::stop()
@@ -451,7 +451,7 @@ bool blocks_cache::save_block(unsigned int number, const std::string_view& hash,
         }
         return true;
     }
-    CACHE_END(false)
+    CACHE_END(return false)
 }
 
 bool blocks_cache::update_number(unsigned int number)
@@ -466,7 +466,7 @@ bool blocks_cache::update_number(unsigned int number)
         }
         return true;
     }
-    CACHE_END(false)
+    CACHE_END(return false)
 }
 
 bool blocks_cache::get_block_by_num(unsigned int number, std::string& result)
@@ -477,7 +477,7 @@ bool blocks_cache::get_block_by_num(unsigned int number, std::string& result)
         leveldb::Status status = m_db->Get(opt, std::to_string(number), &result);
         return status.ok();
     }
-    CACHE_END(false)
+    CACHE_END(return false)
 }
 
 bool blocks_cache::get_block_by_num(std::string& number, std::string& result)
@@ -488,7 +488,7 @@ bool blocks_cache::get_block_by_num(std::string& number, std::string& result)
         leveldb::Status status = m_db->Get(opt, number, &result);
         return status.ok();
     }
-    CACHE_END(false)
+    CACHE_END(return false)
 }
 
 bool blocks_cache::get_block_by_hash(std::string& hash, std::string& num, std::string& result)
@@ -502,5 +502,5 @@ bool blocks_cache::get_block_by_hash(std::string& hash, std::string& num, std::s
         }
         return false;
     }
-    CACHE_END(false)
+    CACHE_END(return false)
 }

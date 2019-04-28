@@ -8,54 +8,28 @@
 
 #define POOL_END(ret) \
     catch (const common::StopException&) {\
-        return ret;\
+        ret;\
     } catch (boost::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);\
-        return ret;\
+        ret;\
     } catch (std::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what();\
-        return ret;\
+        ret;\
     } catch (...) {\
         LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";\
-        return ret;\
+        ret;\
     }
 
 // socket_pool
 socket_pool::socket_pool()
     : m_capacity(settings::system::conn_pool_capacity)
-    , m_enable(true)
+    , m_enable(false)
 {
 }
 
 socket_pool::~socket_pool()
 {
-    boost::system::error_code ec;
-    asio::io_context ctx;
-    tcp::socket sock(ctx);
-
-    for (auto& it: m_busy){
-        if (it.socket == -1) {
-            continue;
-        }
-        ec.clear();
-        sock.assign(tcp::v4(), it.socket, ec);
-        if (!ec) {
-            sock.shutdown(tcp::socket::shutdown_both, ec);
-            sock.close(ec);
-        }
-    }
-    for (auto& it: m_ready){
-        if (it.socket == -1) {
-            continue;
-        }
-        ec.clear();
-        ec.clear();
-        sock.assign(tcp::v4(), it.socket, ec);
-        if (!ec) {
-            sock.shutdown(tcp::socket::shutdown_both, ec);
-            sock.close(ec);
-        }
-    }
+    cleanup();
 }
 
 bool socket_pool::enable() const
@@ -94,7 +68,7 @@ pool_object socket_pool::checkout(const std::string& host)
         }
         return m_busy.end();
     }
-    POOL_END(m_busy.end())
+    POOL_END(return m_busy.end())
 }
 
 void socket_pool::checkin(pool_object& value)
@@ -126,6 +100,7 @@ bool socket_pool::valid(const pool_object& value)
 
 void socket_pool::run_monitor()
 {
+    enable(true);
     m_thr = std::thread(thread_proc, this);
 }
 
@@ -148,6 +123,7 @@ void socket_pool::routine()
 {
     POOL_BGN
     {
+        LOGINFO << "Connection pool monitor. Started";
         asio::io_context ctx;
         tcp::socket sock(ctx);
         std::chrono::system_clock::time_point tp;
@@ -155,7 +131,7 @@ void socket_pool::routine()
         while (enable())
         {
             now = std::chrono::high_resolution_clock::now();
-            tp = now + std::chrono::seconds(60);
+            tp = now + std::chrono::seconds(30);
             {
                 std::lock_guard<std::mutex> lock(m_lock);
                 std::vector<std::list<ep_descr>::iterator> del;
@@ -187,6 +163,45 @@ void socket_pool::routine()
             common::checkStopSignal();
             std::this_thread::sleep_until(tp);
         }
+    }
+    POOL_END()
+    cleanup();
+    LOGINFO << "Connection pool monitor. Stoped";
+}
+
+void socket_pool::cleanup()
+{
+    POOL_BGN
+    {
+        boost::system::error_code ec;
+        asio::io_context ctx;
+        tcp::socket sock(ctx);
+
+        for (auto& it: m_busy){
+            if (it.socket == -1) {
+                continue;
+            }
+            ec.clear();
+            sock.assign(tcp::v4(), it.socket, ec);
+            if (!ec) {
+                sock.shutdown(tcp::socket::shutdown_both, ec);
+                sock.close(ec);
+            }
+        }
+        m_busy.clear();
+        for (auto& it: m_ready){
+            if (it.socket == -1) {
+                continue;
+            }
+            ec.clear();
+            ec.clear();
+            sock.assign(tcp::v4(), it.socket, ec);
+            if (!ec) {
+                sock.shutdown(tcp::socket::shutdown_both, ec);
+                sock.close(ec);
+            }
+        }
+        m_ready.clear();
     }
     POOL_END()
 }

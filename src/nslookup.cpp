@@ -246,6 +246,7 @@ void lookup_best_ip()
     } catch (const std::exception &e) {
         LOGERR << __func__ << " error: " << e.what();
     } catch (const common::StopException &e) {
+        LOGINFO << __func__ << " Stoped";
     } catch (...) {
         LOGERR << __func__ << " Unknown error";
     }
