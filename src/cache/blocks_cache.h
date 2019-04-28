@@ -19,13 +19,17 @@ public:
     bool runing() const;
     unsigned int next_block() const;
 
-    bool get_block(unsigned int number, std::string& result);
+    bool get_block_by_num(unsigned int number, std::string& result);
+    bool get_block_by_num(std::string& number, std::string& result);
+    bool get_block_by_hash(std::string& hash, std::string& num, std::string& result);
 
 protected:
     static void worker_proc(blocks_cache* param);
 
     void routine();
+    void routine_2();
     bool save_block(unsigned int number, const std::string& dump);
+    bool save_block(unsigned int number, const std::string_view& hash, const std::string_view& dump);
     bool update_number(unsigned int number);
 
 private:

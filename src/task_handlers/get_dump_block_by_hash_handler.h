@@ -19,6 +19,7 @@ private:
     mh_count_t m_fromByte;
     mh_count_t m_toByte;
     bool m_isHex;
+    bool m_from_cache;
 };
 
 #endif // __GET_DUMP_BLOCK_BY_HASH_H__

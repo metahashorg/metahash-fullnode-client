@@ -36,7 +36,7 @@ bool get_dump_block_by_number::prepare_params()
 
         if (g_cache && g_cache->runing()) {
             std::string dump;
-            if (g_cache->get_block(static_cast<unsigned int>(m_number), dump)) {
+            if (g_cache->get_block_by_num(static_cast<unsigned int>(m_number), dump)) {
                  std::string hexdump;
                  string_utils::bin2hex(dump, hexdump);
                  genBlockDumpJson(hexdump, false, m_writer.getDoc());

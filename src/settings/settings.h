@@ -56,7 +56,12 @@ namespace settings
         static bool conn_pool_enable;
         static unsigned int conn_pool_ttl;
         static unsigned int conn_pool_capacity;
+        static unsigned int blocks_cache_ver;
         static bool blocks_cache_enable;
+        static bool blocks_cache_force;
+        static unsigned int blocks_cache_init_count;
+        static unsigned int blocks_cache_recv_data_size;
+        static unsigned int blocks_cache_recv_count;
     };
 
     struct statistic {

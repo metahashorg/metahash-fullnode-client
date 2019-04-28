@@ -5,12 +5,17 @@
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
 #include "check.h"
+#include "cache/blocks_cache.h"
+#include "string_utils.h"
+
+extern std::unique_ptr<blocks_cache> g_cache;
 
 get_dump_block_by_hash::get_dump_block_by_hash(http_session_ptr session)
     : base_network_handler(settings::server::get_tor(), session)
     , m_fromByte(0)
     , m_toByte(std::numeric_limits<size_t>::max())
     , m_isHex(true)
+    , m_from_cache(false)
 {
     m_duration.set_message(__func__);
 }
@@ -30,18 +35,22 @@ bool get_dump_block_by_hash::prepare_params()
         m_reader.get_value(*params, "fromByte", m_fromByte);
         m_reader.get_value(*params, "toByte", m_toByte);
 
+        if (g_cache && g_cache->runing()) {
+            std::string dump;
+            std::string num;
+            if (g_cache->get_block_by_hash(m_hash, num, dump)) {
+                 std::string hexdump;
+                 string_utils::bin2hex(dump, hexdump);
+                 genBlockDumpJson(hexdump, false, m_writer.getDoc());
+                 m_from_cache = true;
+                 return true;
+            }
+        }
+
         if (!settings::system::useLocalDatabase) {
             m_writer.add_param("hash", m_hash);
             m_writer.add_param("isHex", m_isHex);
         }
-
-//        auto &jsonParams = *params;
-//        if (jsonParams.HasMember("fromByte") && jsonParams["fromByte"].IsInt64()) {
-//            fromByte = jsonParams["fromByte"].GetInt64();
-//        }
-//        if (jsonParams.HasMember("toByte") && jsonParams["toByte"].IsInt64()) {
-//            toByte = jsonParams["toByte"].GetInt64();
-//        }
 
         return true;
     }
@@ -52,6 +61,9 @@ void get_dump_block_by_hash::execute()
 {
     BGN_TRY
     {
+        if (m_from_cache) {
+            return;
+        }
         if (settings::system::useLocalDatabase) {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();

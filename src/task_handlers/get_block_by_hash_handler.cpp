@@ -4,12 +4,17 @@
 #include "../generate_json.h"
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
+#include "cache/blocks_cache.h"
+#include "string_utils.h"
+
+extern std::unique_ptr<blocks_cache> g_cache;
 
 get_block_by_hash_handler::get_block_by_hash_handler(http_session_ptr session)
     : base_network_handler(settings::server::get_tor(), session)
     , m_type(0)
     , m_countTxs(0)
     , m_beginTx(0)
+    , m_from_cache(false)
 {
     m_duration.set_message(__func__);
 }
@@ -30,26 +35,6 @@ bool get_block_by_hash_handler::prepare_params()
             m_writer.add_param("hash", m_hash);
         }
 
-//        auto &jsonParams = *params;
-        
-//        int64_t type(0);
-//        if (jsonParams.HasMember("type") && jsonParams["type"].IsInt64()) {
-//            type = jsonParams["type"].GetInt64();
-//            m_writer.add_param("type", type);
-//        }
-
-//        int64_t countTxs(0);
-//        if (jsonParams.HasMember("countTxs") && jsonParams["countTxs"].IsInt64()) {
-//            countTxs = jsonParams["countTxs"].GetInt64();
-//            m_writer.add_param("countTxs", countTxs);
-//        }
-        
-//        int64_t beginTx(0);
-//        if (jsonParams.HasMember("beginTx") && jsonParams["beginTx"].IsInt64()) {
-//            beginTx = jsonParams["beginTx"].GetInt64();
-//            m_writer.add_param("beginTx", beginTx);
-//        }
-
         if (m_reader.get_value(*params, "type", m_type) && !settings::system::useLocalDatabase) {
             m_writer.add_param("type", m_type);
         }
@@ -62,6 +47,32 @@ bool get_block_by_hash_handler::prepare_params()
             m_writer.add_param("beginTx", m_beginTx);
         }
 
+        if (g_cache && g_cache->runing()) {
+            std::string dump;
+            std::string num;
+            if (g_cache->get_block_by_hash(m_hash, num, dump)) {
+                m_writer.reset();
+                torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(dump, false);
+                bi.header.blockNumber = std::stoi(num);
+                bi.header.countTxs = bi.txs.size();
+                if (!settings::system::allowStateBlocks && bi.header.isStateBlock()) {
+                    genErrorResponse(-32603, "block " + m_hash + " is a state block and was ignored", m_writer.getDoc());
+                    return false;
+                }
+                switch (m_type) {
+                case 0:
+                case 4:
+                    blockHeaderToJson(bi.header, std::nullopt, false, JsonVersion::V1, m_writer.getDoc());
+                    break;
+                default:
+                    blockInfoToJson(bi, std::nullopt, m_type, false, JsonVersion::V1, m_writer.getDoc());
+                    break;
+                }
+                m_from_cache = true;
+                return true;
+            }
+        }
+
         return true;
     }
     END_TRY_RET(false)
@@ -71,6 +82,9 @@ void get_block_by_hash_handler::execute()
 {
     BGN_TRY
     {
+        if (m_from_cache) {
+            return;
+        }
         if (settings::system::useLocalDatabase) {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();

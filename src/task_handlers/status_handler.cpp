@@ -49,13 +49,18 @@ void status_handler::execute()
             m_writer.add_result("network_proxy", settings::server::get_proxy());
             m_writer.add_result("use_local_database", settings::system::useLocalDatabase);
             m_writer.add_result("allow_state_blocks", settings::system::allowStateBlocks);
-            m_writer.add_result("jrpc_timeout", settings::system::jrpc_timeout);
-            m_writer.add_result("jrpc_conn_timeout", settings::system::jrpc_conn_timeout);
+            m_writer.add_result("jrpc_timeout (ms)", settings::system::jrpc_timeout);
+            m_writer.add_result("jrpc_conn_timeout (ms)", settings::system::jrpc_conn_timeout);
             m_writer.add_result("conn_pool_enable", settings::system::conn_pool_enable);
-            m_writer.add_result("conn_pool_ttl", settings::system::conn_pool_ttl);
+            m_writer.add_result("conn_pool_ttl (sec)", settings::system::conn_pool_ttl);
             m_writer.add_result("conn_pool_capacity", settings::system::conn_pool_capacity);
+            m_writer.add_result("blocks_cache_ver", settings::system::blocks_cache_ver);
             m_writer.add_result("blocks_cache_enable", g_cache->runing());
             m_writer.add_result("blocks_cache_next_block", g_cache->next_block());
+            m_writer.add_result("blocks_cache_force", settings::system::blocks_cache_force);
+            m_writer.add_result("blocks_cache_init_count (blocks)", settings::system::blocks_cache_init_count);
+            m_writer.add_result("blocks_cache_recv_count (blocks)", settings::system::blocks_cache_recv_count);
+            m_writer.add_result("blocks_cache_recv_data_size (MB)", settings::system::blocks_cache_recv_data_size);
             if (syncSingleton() != nullptr) {
                 const torrent_node_lib::Sync &sync = *syncSingleton();
                 m_writer.add_result("blocks_count", sync.getBlockchain().countBlocks());

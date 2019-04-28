@@ -50,9 +50,11 @@ bool get_block_by_number_handler::prepare_params()
 
         if (g_cache && g_cache->runing()) {
             std::string dump;
-            if (g_cache->get_block(static_cast<unsigned int>(m_number), dump)) {
+            if (g_cache->get_block_by_num(static_cast<unsigned int>(m_number), dump)) {
                 m_writer.reset();
                 torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(dump, false);
+                bi.header.blockNumber = m_number;
+                bi.header.countTxs = bi.txs.size();
                 if (!settings::system::allowStateBlocks && bi.header.isStateBlock()) {
                     genErrorResponse(-32603, "block " + std::to_string(m_number) + " is a state block and was ignored", m_writer.getDoc());
                     return false;

@@ -73,7 +73,11 @@ static rapidjson::Value transactionInfoToJson(const TransactionInfo &info, const
         infoJson.AddMember("data", strToJson(toHex(info.data.begin(), info.data.end()), allocator), allocator);
         infoJson.AddMember("timestamp", intOrString(bh.timestamp, isStringValue, allocator), allocator);
         infoJson.AddMember("type", strToJson(bh.getBlockType(), allocator), allocator);
-        infoJson.AddMember("blockNumber", intOrString(info.blockNumber, isStringValue, allocator), allocator);
+        if (info.blockNumber == 0) {
+            infoJson.AddMember("blockNumber", intOrString(bh.blockNumber.value(), isStringValue, allocator), allocator);
+        } else {
+            infoJson.AddMember("blockNumber", intOrString(info.blockNumber, isStringValue, allocator), allocator);
+        }
         infoJson.AddMember("signature", strToJson(toHex(info.sign.begin(), info.sign.end()), allocator), allocator);
         infoJson.AddMember("publickey", strToJson(toHex(info.pubKey.begin(), info.pubKey.end()), allocator), allocator);
         infoJson.AddMember("fee", intOrString(info.fees, isStringValue, allocator), allocator);
