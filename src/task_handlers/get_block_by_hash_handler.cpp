@@ -83,6 +83,7 @@ void get_block_by_hash_handler::execute()
     BGN_TRY
     {
         if (m_from_cache) {
+            LOGDEBUG << "Get block " << m_hash << " from cache";
             return;
         }
         if (settings::system::useLocalDatabase) {

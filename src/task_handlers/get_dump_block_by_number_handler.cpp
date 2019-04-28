@@ -60,6 +60,7 @@ void get_dump_block_by_number::execute()
     BGN_TRY
     {
         if (m_from_cache) {
+            LOGDEBUG << "Get block #" << m_number << " from cache";
             return;
         }
         if (settings::system::useLocalDatabase) {
