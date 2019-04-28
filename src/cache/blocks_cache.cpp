@@ -111,15 +111,21 @@ unsigned int blocks_cache::next_block() const
 
 void blocks_cache::worker_proc(blocks_cache *param)
 {
-//    param->routine();
-    param->routine_2();
+    switch (settings::system::blocks_cache_ver) {
+    case 2:
+        param->routine_2();
+        break;
+    default:
+        param->routine();
+        break;
+    }
 }
 
 void blocks_cache::routine()
 {
     CACHE_BGN
     {
-        LOGINFO << "Cache. Started";
+        LOGINFO << "Cache. Version 1 Started";
         m_run = true;
         unsigned int count_blocks = 0;
         handler_result res;
@@ -212,7 +218,7 @@ void blocks_cache::routine_2()
 {
     CACHE_BGN
     {
-        LOGINFO << "Cache. Started";
+        LOGINFO << "Cache. Version 2 Started";
         m_run = true;
         handler_result res;
         std::string json;
