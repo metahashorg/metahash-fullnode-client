@@ -83,16 +83,6 @@ static std::vector<std::string> nsLookup(const std::string &server) {
     return result;
 }
 
-struct NsResult {
-    std::string server;
-    unsigned long long timeout;
-    
-    NsResult(const std::string &server, unsigned long long timeout)
-        : server(server)
-        , timeout(timeout)
-    {}
-};
-
 static int writer(char *data, size_t size, size_t nmemb, std::string *buffer) {
     int result = 0;
     if (buffer != NULL) {
@@ -157,7 +147,7 @@ static bool validateIpAddress(const std::string &ipAddress) {
     return result != 0;
 }
 
-std::string getBestIp(const std::string &address, const char* print) {
+NsResult getBestIp(const std::string &address, const char* print) {
     std::string server = address;
     const auto foundScheme = server.find("://");
     std::string scheme;
@@ -176,7 +166,7 @@ std::string getBestIp(const std::string &address, const char* print) {
     }
     
     if (validateIpAddress(server)) {
-        return scheme + server + ((port != 0) ? (":" + std::to_string(port)) : "");
+        return NsResult(scheme + server + ((port != 0) ? (":" + std::to_string(port)) : ""), 0);
     }
     
     const std::vector<std::string> result = nsLookup(server);
@@ -210,7 +200,7 @@ std::string getBestIp(const std::string &address, const char* print) {
     const auto found = pr.begin();
 
     CHECK(found != pr.end(), "Servers empty");
-    return found->server;
+    return *pr.begin();
 }
 
 void lookup_best_ip()
@@ -218,7 +208,6 @@ void lookup_best_ip()
     try {
         std::string tor = settings::server::get_tor();
         std::string proxy = settings::server::get_proxy();
-        std::string _tor, _proxy;
         std::chrono::system_clock::time_point tp;
 
         pthread_t pt = pthread_self();
@@ -226,25 +215,27 @@ void lookup_best_ip()
         params.sched_priority = sched_get_priority_min(SCHED_OTHER);
         pthread_setschedparam(pt, SCHED_OTHER, &params);
 
+        NsResult res;
+
         while (true) {
             tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(60);
 
             common::checkStopSignal();
 
-            _tor = getBestIp(settings::server::torName);
-            if (_tor != tor) {
-                tor = _tor;
+            res = getBestIp(settings::server::torName);
+            if (tor != res.server) {
+                tor = res.server;
                 settings::server::set_tor(tor);
-                LOGINFO << "Changed torrent address: " << tor;
+                LOGINFO << "Changed torrent address: " << res.server << " " << res.timeout << " ms";
             }
 
             common::checkStopSignal();
 
-            _proxy = getBestIp(settings::server::proxyName);
-            if (_proxy != proxy) {
-                proxy = _proxy;
+            res = getBestIp(settings::server::proxyName);
+            if (proxy != res.server) {
+                proxy = res.server;
                 settings::server::set_proxy(proxy);
-                LOGINFO << "Changed proxy address: " << proxy;
+                LOGINFO << "Changed proxy address: " << res.server << " " << res.timeout << " ms";
             }
 
             common::checkStopSignal();

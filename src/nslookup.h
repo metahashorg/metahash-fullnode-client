@@ -3,7 +3,20 @@
 
 #include <string>
 
-std::string getBestIp(const std::string &address, const char* print = nullptr);
+struct NsResult {
+    std::string server;
+    unsigned long long timeout;
+
+    NsResult()
+        : timeout(0)
+    {}
+    NsResult(const std::string &server, unsigned long long timeout)
+        : server(server)
+        , timeout(timeout)
+    {}
+};
+
+NsResult getBestIp(const std::string &address, const char* print = nullptr);
 
 void lookup_best_ip();
 
