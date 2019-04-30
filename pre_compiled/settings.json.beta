@@ -1,0 +1,38 @@
+{
+ "service":
+ {
+  "threads": 4,
+  "port": 9999
+ },
+ "server":
+ {
+  "tor": "tor.net-main.metahashnetwork.com:5795",
+  "proxy": "proxy.net-main.metahashnetwork.com:9999"
+ },
+ "system":
+ {
+  "torrent_server": "tor.net-main.metahashnetwork.com:5795",
+  "wallets-storage": "/opt/mhservice/wallet",
+  "blocks_folder": "./blocks/",
+  "leveldb_folder": "./leveldb/",
+  "validate_blocks": false,
+  "use_local_database": false,
+  "jrpc_conn_timeout": 1000,
+  "jrpc_timeout": 60000,
+  "allow_state_blocks": false,
+  "conn_pool_enable": true,
+  "conn_pool_ttl": 60,
+  "conn_pool_capacity": 100,
+  "blocks_cache_ver": 2,
+  "blocks_cache_enable": true,
+  "blocks_cache_force": true,
+  "blocks_cache_init_count": 50000,
+  "blocks_cache_recv_count": 100,
+  "blocks_cache_recv_data_size": 5
+ },
+ "extensions":
+ {
+  "use_tracking_history": false,
+  "tracking_history_folder": "./tracking_history"
+ }
+}
