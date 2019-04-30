@@ -6,12 +6,12 @@
  },
  "server":
  {
-  "tor": "tor.net-main.metahashnetwork.com:5795",
+  "tor": "52.221.238.117:5795",
   "proxy": "proxy.net-main.metahashnetwork.com:9999"
  },
  "system":
  {
-  "torrent_server": "tor.net-main.metahashnetwork.com:5795",
+  "torrent_server": "52.221.238.117:5795",
   "wallets-storage": "/opt/mhservice/wallet",
   "blocks_folder": "./blocks/",
   "leveldb_folder": "./leveldb/",
