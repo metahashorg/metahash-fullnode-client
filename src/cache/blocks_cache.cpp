@@ -9,6 +9,8 @@
 #include <boost/exception/all.hpp>
 #include <boost/asio/io_context.hpp>
 #include <byteswap.h>
+#include "../sync/BlockInfo.h"
+#include "../sync/synchronize_blockchain.h"
 
 #include "task_handlers/get_count_blocks_handler.h"
 #include "task_handlers/get_dump_block_by_number_handler.h"
@@ -194,11 +196,14 @@ void blocks_cache::routine()
                     if (tmp) {
                         LOGERR << "Cache. get-count-blocks error: " << reader.stringify(tmp);
                     } else {
-                        LOGERR << "Cache. get-count-blocks error: json response occured";
+                        LOGERR << "Cache. get-count-blocks error: json response occured " << reader.stringify();
                     }
                     goto next;
                 }
-                if (save_block(m_nextblock, response->get().body())) {
+
+                torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(response->get().body(), false);
+
+                if (save_block(m_nextblock, bi.header.hash, response->get().body())) {
                     update_number(++m_nextblock);
                 }
                 common::checkStopSignal();
@@ -390,6 +395,16 @@ void blocks_cache::routine_2()
             }
             if (response->get().body().empty()) {
                 LOGERR << "Cache. get-dumps-blocks-by-hash empty response";
+                goto wait;
+            }
+
+            if (reader.parse(response->get().body())) {
+                tmp = reader.get_error();
+                if (tmp) {
+                    LOGERR << "Cache. get-dumps-blocks-by-hash error: " << reader.stringify(tmp);
+                } else {
+                    LOGERR << "Cache. get-dumps-blocks-by-hash: json response occured " << reader.stringify();
+                }
                 goto wait;
             }
 
