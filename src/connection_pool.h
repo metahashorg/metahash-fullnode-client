@@ -46,6 +46,9 @@ public:
     void run_monitor();
     void stop_monitor();
 
+    size_t get_ready_size() const;
+    size_t get_busy_size() const;
+
 protected:
     static void thread_proc(socket_pool* param);
     void routine();
@@ -55,7 +58,7 @@ protected:
 private:
     std::list<ep_descr> m_ready;
     std::list<ep_descr> m_busy;
-    std::mutex          m_lock;
+    mutable std::mutex  m_lock;
     std::thread         m_thr;
     size_t              m_capacity;
     bool                m_enable;

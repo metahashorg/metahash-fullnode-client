@@ -12,9 +12,11 @@
 #include "http_session.h"
 #include "http_json_rpc_request.h"
 #include "cache/blocks_cache.h"
+#include "connection_pool.h"
 
 #include "version.h"
 
+extern std::unique_ptr<socket_pool> g_conn_pool;
 extern std::unique_ptr<blocks_cache> g_cache;
 
 bool status_handler::prepare_params()
@@ -51,9 +53,13 @@ void status_handler::execute()
             m_writer.add_result("allow_state_blocks", settings::system::allowStateBlocks);
             m_writer.add_result("jrpc_timeout (ms)", settings::system::jrpc_timeout);
             m_writer.add_result("jrpc_conn_timeout (ms)", settings::system::jrpc_conn_timeout);
-            m_writer.add_result("conn_pool_enable", settings::system::conn_pool_enable);
+            m_writer.add_result("conn_pool_enable", g_conn_pool && g_conn_pool->enable() ? true : false);
             m_writer.add_result("conn_pool_ttl (sec)", settings::system::conn_pool_ttl);
             m_writer.add_result("conn_pool_capacity", settings::system::conn_pool_capacity);
+            if (g_conn_pool && g_conn_pool->enable()) {
+                m_writer.add_result("conn_pool_ready", g_conn_pool->get_ready_size());
+                m_writer.add_result("conn_pool_busy", g_conn_pool->get_busy_size());
+            }
             m_writer.add_result("blocks_cache_ver", settings::system::blocks_cache_ver);
             m_writer.add_result("blocks_cache_enable", g_cache->runing());
             m_writer.add_result("blocks_cache_next_block", g_cache->next_block());

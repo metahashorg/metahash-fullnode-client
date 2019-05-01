@@ -114,6 +114,26 @@ void socket_pool::stop_monitor()
     POOL_END()
 }
 
+size_t socket_pool::get_ready_size() const
+{
+    POOL_BGN
+    {
+        std::lock_guard<std::mutex> lock(m_lock);
+        return m_ready.size();
+    }
+    POOL_END(return 0)
+}
+
+size_t socket_pool::get_busy_size() const
+{
+    POOL_BGN
+    {
+        std::lock_guard<std::mutex> lock(m_lock);
+        return m_busy.size();
+    }
+    POOL_END(return 0)
+}
+
 void socket_pool::thread_proc(socket_pool* param)
 {
     param->routine();
