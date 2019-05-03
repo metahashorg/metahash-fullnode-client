@@ -105,7 +105,7 @@ void http_server::accept(tcp::acceptor& acceptor)
             boost::system::error_code er;
             const tcp::endpoint& ep = socket.remote_endpoint(er);
             if (er) {
-                LOGERR << __func__ << " Could not get remote endpoint: " << er.message();
+                LOGERR << "Accept: Could not get remote endpoint: " << er.message();
                 er.clear();
                 socket.shutdown(tcp::socket::shutdown_both, er);
                 socket.close(er);
