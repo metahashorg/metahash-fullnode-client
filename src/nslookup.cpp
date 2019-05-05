@@ -1,7 +1,5 @@
 #include "nslookup.h"
-
 #include "check.h"
-
 #include <curl/curl.h>
 
 #include <array>
@@ -9,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <iomanip>
 
 #include <duration.h>
 
@@ -18,6 +17,11 @@
 #include <netdb.h>
 #include <string.h>
 #include <arpa/inet.h>
+
+#include "settings/settings.h"
+#include "log.h"
+
+#include "common/stopProgram.h"
 
 static std::string parse_record(unsigned char *buffer, size_t r, ns_sect s, int idx, ns_msg *m) {
     ns_rr rr;
@@ -78,16 +82,6 @@ static std::vector<std::string> nsLookup(const std::string &server) {
     }
     return result;
 }
-
-struct NsResult {
-    std::string server;
-    unsigned long long timeout;
-    
-    NsResult(const std::string &server, unsigned long long timeout)
-        : server(server)
-        , timeout(timeout)
-    {}
-};
 
 static int writer(char *data, size_t size, size_t nmemb, std::string *buffer) {
     int result = 0;
@@ -153,7 +147,7 @@ static bool validateIpAddress(const std::string &ipAddress) {
     return result != 0;
 }
 
-std::string getBestIp(const std::string &address) {
+NsResult getBestIp(const std::string &address, const char* print) {
     std::string server = address;
     const auto foundScheme = server.find("://");
     std::string scheme;
@@ -172,7 +166,7 @@ std::string getBestIp(const std::string &address) {
     }
     
     if (validateIpAddress(server)) {
-        return scheme + server + ((port != 0) ? (":" + std::to_string(port)) : "");
+        return NsResult(scheme + server + ((port != 0) ? (":" + std::to_string(port)) : ""), 0);
     }
     
     const std::vector<std::string> result = nsLookup(server);
@@ -186,13 +180,74 @@ std::string getBestIp(const std::string &address) {
             tt.stop();
             pr.emplace_back(serv, tt.countMs());
         } catch (const common::exception &e) {
-            pr.emplace_back(serv, milliseconds(10s).count());
+            pr.emplace_back(serv, milliseconds(999s).count());
+        }
+    }
+
+    std::sort(pr.begin(), pr.end(), [](const NsResult &first, const NsResult &second) {
+        return first.timeout < second.timeout;
+    });
+
+    if (print) {
+        std::cout << print << std::endl;
+        LOGINFO << print;
+        for (const auto& i: pr) {
+            std::cout << std::left << std::setfill(' ') << std::setw(25) << i.server << i.timeout << " ms" << std::endl;
+            LOGINFO << i.server << " " << i.timeout << " ms";
         }
     }
     
-    const auto found = std::min_element(pr.begin(), pr.end(), [](const NsResult &first, const NsResult &second) {
-        return first.timeout < second.timeout;
-    });
+    const auto found = pr.begin();
+
     CHECK(found != pr.end(), "Servers empty");
-    return found->server;
+    return *pr.begin();
+}
+
+void lookup_best_ip()
+{
+    try {
+        std::string tor = settings::server::get_tor();
+        std::string proxy = settings::server::get_proxy();
+        std::chrono::system_clock::time_point tp;
+
+        pthread_t pt = pthread_self();
+        struct sched_param params;
+        params.sched_priority = sched_get_priority_min(SCHED_OTHER);
+        pthread_setschedparam(pt, SCHED_OTHER, &params);
+
+        NsResult res;
+
+        while (true) {
+            tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(60);
+
+            common::checkStopSignal();
+
+            res = getBestIp(settings::server::torName);
+            if (tor != res.server) {
+                tor = res.server;
+                settings::server::set_tor(tor);
+                LOGINFO << "Changed torrent address: " << res.server << " " << res.timeout << " ms";
+            }
+
+            common::checkStopSignal();
+
+            res = getBestIp(settings::server::proxyName);
+            if (proxy != res.server) {
+                proxy = res.server;
+                settings::server::set_proxy(proxy);
+                LOGINFO << "Changed proxy address: " << res.server << " " << res.timeout << " ms";
+            }
+
+            common::checkStopSignal();
+            std::this_thread::sleep_until(tp);
+        }
+    } catch (const common::exception &e) {
+        LOGERR << __func__ << " error: " << e;
+    } catch (const std::exception &e) {
+        LOGERR << __func__ << " error: " << e.what();
+    } catch (const common::StopException &e) {
+        LOGINFO << __func__ << " Stoped";
+    } catch (...) {
+        LOGERR << __func__ << " Unknown error";
+    }
 }

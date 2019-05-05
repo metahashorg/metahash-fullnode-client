@@ -1,12 +1,13 @@
-#pragma once
+#ifndef HTTP_SERVER_H
+#define HTTP_SERVER_H
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/system_timer.hpp>
 
-namespace	asio    = boost::asio;
-namespace	ip      = boost::asio::ip;
-using		tcp     = boost::asio::ip::tcp;
+namespace   asio    = boost::asio;
+namespace   ip      = boost::asio::ip;
+using       tcp     = boost::asio::ip::tcp;
 
 class http_server
 {
@@ -16,6 +17,7 @@ public:
 
     void run();
     void stop();
+    bool runnig();
 
 protected:
     void accept(tcp::acceptor& acceptor);
@@ -23,15 +25,20 @@ protected:
     bool check_access(const tcp::endpoint& ep);
 
 private:
-    
+    static void worker_proc(http_server* param);
+    void routine();
+
     void checkTimeout();
-    
+
 protected:
     int                 m_thread_count;
     asio::io_context    m_io_ctx;
     tcp::endpoint       m_ep;
+    bool                m_run;
     
 private:
     
     boost::asio::system_timer checkTimeoutTimer;
 };
+
+#endif // HTTP_SERVER_H

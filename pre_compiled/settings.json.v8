@@ -16,6 +16,17 @@
   "blocks_folder": "./blocks/",
   "leveldb_folder": "./leveldb/",
   "validate_blocks": false,
-  "use_local_database": false
+  "use_local_database": false,
+  "jrpc_conn_timeout": 1000,
+  "jrpc_timeout": 60000,
+  "conn_pool_enable": true,
+  "conn_pool_ttl": 60,
+  "conn_pool_capacity": 100,
+  "blocks_cache_enable": true
+ },
+ "extensions":
+ {
+  "use_tracking_history": false,
+  "tracking_history_folder": "./tracking_history"
  }
 }

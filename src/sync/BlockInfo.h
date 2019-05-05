@@ -261,6 +261,8 @@ struct BalanceInfo {
     
     std::optional<ForgedBalance> forged;
     
+    std::optional<size_t> hash;
+    
     size_t blockNumber = 0;
     
     BalanceInfo() = default;

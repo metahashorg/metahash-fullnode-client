@@ -1,4 +1,5 @@
 #include "base_handler.h"
+#include "string_utils.h"
 
 bool base_handler::prepare(const std::string& params)
 {
@@ -6,25 +7,26 @@ bool base_handler::prepare(const std::string& params)
     {
         m_duration.start();
 
-        CHK_PRM(this->m_reader.parse(params), "Parse error");
+        CHK_PARSE(m_reader.parse(params),
+                string_utils::str_concat("Parse error: ", std::to_string(m_reader.get_parse_error().Code())));
 
-        this->m_id = this->m_reader.get_id();
-        this->m_writer.set_id(this->m_id);
+        m_id = m_reader.get_id();
+        m_writer.set_id(m_id);
 
-        const bool complete = this->prepare_params();
-        const bool pending = this->m_result.pending;
+        const bool complete = prepare_params();
+        const bool pending = m_result.pending;
         if (!complete && !pending)
         {
             // prepare_params must set an error
 
-            if (!this->m_writer.is_error())
+            if (!m_writer.is_error())
             {
-                this->m_writer.reset();
-                this->m_writer.set_error(-32602, "Invalid params");
+                m_writer.reset();
+                m_writer.set_error(-32602, "Invalid params");
             }
         }
 
-        LOGDEBUG << "Prepared json (" << complete << pending << "):" << "\n" << this->m_writer.stringify();
+        LOGDEBUG << "Prepared json (" << complete << "," << pending << "):" << m_writer.stringify();
 
         return complete;
     }

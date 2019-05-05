@@ -1,12 +1,8 @@
 #include "get_dump_block_by_hash_handler_sync.h"
-
 #include "../SyncSingleton.h"
-
 #include "../generate_json.h"
-
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
-
 #include "check.h"
 
 bool get_dump_block_by_hash_handler_sync::prepare_params()

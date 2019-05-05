@@ -3,6 +3,10 @@
 
 #include "P2P.h"
 
+#include <map>
+
+#include "curlWrapper.h"
+
 namespace torrent_node_lib {
 
 class P2P_Ips: public P2P {   
@@ -24,13 +28,15 @@ private:
     
     std::vector<std::reference_wrapper<const Server>> getServersList() const;
     
-    std::string request(const std::string &qs, const std::string &postData, const std::string &header, const std::string &server) const;
+    std::string request(const common::Curl::CurlInstance &curl, const std::string &qs, const std::string &postData, const std::string &header, const std::string &server) const;
     
 private:
     
     std::vector<Server> servers;
     
     size_t countConnections;
+    
+    std::map<std::string, std::vector<common::Curl::CurlInstance>> curls;
     
 };
 

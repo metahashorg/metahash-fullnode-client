@@ -50,8 +50,12 @@ std::string genTransactionNotFoundResponse(const RequestId& requestId, const std
     rapidjson::Value errorJson(rapidjson::kObjectType);
     errorJson.AddMember("code", -32603, allocator);
     errorJson.AddMember("message", strToJson("Transaction " + transaction + " not found", allocator), allocator);
-    errorJson.AddMember("countBlocks", countBlocks, allocator);
-    errorJson.AddMember("knownBlock", knownBlock, allocator);
+
+    rapidjson::Value errorData(rapidjson::kObjectType);
+    errorData.AddMember("countBlocks", countBlocks, allocator);
+    errorData.AddMember("knownBlock", knownBlock, allocator);
+    errorJson.AddMember("data", errorData, allocator);
+
     jsonDoc.AddMember("error", errorJson, allocator);
     return jsonToString(jsonDoc, false);
 }
@@ -69,10 +73,15 @@ static rapidjson::Value transactionInfoToJson(const TransactionInfo &info, const
         infoJson.AddMember("data", strToJson(toHex(info.data.begin(), info.data.end()), allocator), allocator);
         infoJson.AddMember("timestamp", intOrString(bh.timestamp, isStringValue, allocator), allocator);
         infoJson.AddMember("type", strToJson(bh.getBlockType(), allocator), allocator);
-        infoJson.AddMember("blockNumber", intOrString(info.blockNumber, isStringValue, allocator), allocator);
+        if (info.blockNumber == 0) {
+            infoJson.AddMember("blockNumber", intOrString(bh.blockNumber.value_or(0), isStringValue, allocator), allocator);
+        } else {
+            infoJson.AddMember("blockNumber", intOrString(info.blockNumber, isStringValue, allocator), allocator);
+        }
         infoJson.AddMember("signature", strToJson(toHex(info.sign.begin(), info.sign.end()), allocator), allocator);
         infoJson.AddMember("publickey", strToJson(toHex(info.pubKey.begin(), info.pubKey.end()), allocator), allocator);
         infoJson.AddMember("fee", intOrString(info.fees, isStringValue, allocator), allocator);
+        infoJson.AddMember("realFee", intOrString(info.realFees.value_or(0), isStringValue, allocator), allocator);
         infoJson.AddMember("nonce", intOrString(info.nonce, isStringValue, allocator), allocator);
         if (info.intStatus.has_value()) {
             infoJson.AddMember("intStatus", info.intStatus.value(), allocator);

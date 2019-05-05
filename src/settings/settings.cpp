@@ -1,7 +1,7 @@
 #include "settings.h"
 
-#include <iostream>
-#include <boost/filesystem.hpp>
+//#include <iostream>
+//#include <boost/filesystem.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -22,14 +22,9 @@ namespace settings
     bool service::any_conns = {false};
     unsigned short service::port = {9999};
     int service::threads = {4};
+    bool service::keep_alive = {false};
     std::vector<std::string> service::access;
-    std::string system::leveldbFolder = "leveldb/";
-    std::string system::blocksFolder = "blocks/";
-    bool system::validateBlocks = false;
-    bool system::useLocalDatabase = true;
-    bool system::allowStateBlocks = false;
-    unsigned int system::jrpc_conn_timeout = 1000;
-    unsigned int system::jrpc_timeout = 60000;
+
     std::string statistic::statisticNetwork;
     std::string statistic::statisticGroup;
     std::string statistic::statisticServer;
@@ -38,20 +33,38 @@ namespace settings
     // server
     std::string server::torName     = {"tor.net-dev.metahash.org:5795"};
     std::string server::proxyName   = {"proxy.net-dev.metahash.org:9999"};
-    
-    std::string server::tor;
-    std::string server::proxy;
+    ATOMIC_PROP_IMPL(std::string, tor);
+    ATOMIC_PROP_IMPL(std::string, proxy);
     
     // system
-    std::string system::wallet_stotage = { boost::filesystem::current_path().append("/wallet").c_str() };
+    std::string system::wallet_stotage = { "./wallet" };
+    std::string system::leveldbFolder = "leveldb/";
+    std::string system::blocksFolder = "blocks/";
+    bool system::validateBlocks = false;
+    bool system::useLocalDatabase = true;
+    bool system::allowStateBlocks = false;
+    unsigned int system::jrpc_conn_timeout = 1000;
+    unsigned int system::jrpc_timeout = 60000;
+    bool system::conn_pool_enable = false;
+    unsigned int system::conn_pool_ttl = 60; // SECONDS!
+    unsigned int system::conn_pool_capacity = 100;
+    unsigned int system::blocks_cache_ver = 1;
+    bool system::blocks_cache_enable = false;
+    bool system::blocks_cache_force = true;
+    unsigned int system::blocks_cache_init_count = 50000;
+    unsigned int system::blocks_cache_recv_data_size = 5;
+    unsigned int system::blocks_cache_recv_count = 100;
+
+    // extensions
+    bool extensions::use_tracking_history = {false};
+    std::string extensions::tracking_history_folder  = { "./history_tracking" };
 
     void read(const std::string &pathToConfig) {
         pt::ptree tree;
         
-        boost::filesystem::path path;
+        std::string path;
         if (pathToConfig.empty()) {
-            path = boost::filesystem::current_path();
-            path.append("/settings.json");
+            path.append("./settings.json");
         } else {
             path = pathToConfig;
         }
@@ -60,52 +73,61 @@ namespace settings
 
         service::port = tree.get<unsigned short>("service.port", 9999);
         service::threads = tree.get<int>("service.threads", 4);
+        service::keep_alive = tree.get<bool>("service.keep_alive", false);
 
         asio::io_context ctx;
         tcp::resolver resolver(ctx);
         boost::property_tree::ptree access;
         access = tree.get_child("service.access", access);
-        for (auto &v : access)
-        {
+        for (auto &v : access) {
             boost::system::error_code er;
             auto eps = resolver.resolve({v.second.data(), ""}, er);
-            if (er)
-            {
+            if (er) {
                 LOGWARN << "Couldn't resolve " << v.second.data() << " : " << er.message();
                 continue;
             }
-            for (auto &e : eps)
+            for (auto &e : eps) {
                 service::access.push_back(e.endpoint().address().to_string());
+            }
         }
 
         server::torName     = tree.get<std::string>("server.tor", "tor.net-dev.metahash.org:5795");
         server::proxyName   = tree.get<std::string>("server.proxy", "proxy.net-dev.metahash.org:9999");
         
-        system::wallet_stotage = tree.get<std::string>("system.wallets-storage", boost::filesystem::current_path().append("/wallet").c_str());
+        system::wallet_stotage = tree.get<std::string>("system.wallets-storage", "./wallet");
         system::jrpc_conn_timeout = tree.get<unsigned int>("system.jrpc_conn_timeout", 1000);
-        system::jrpc_timeout    = tree.get<unsigned int>("system.jrpc_timeout", 60000);
+        system::jrpc_timeout = tree.get<unsigned int>("system.jrpc_timeout", 60000);
+        system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
+        system::blocksFolder = tree.get<std::string>("system.blocks_folder");
+        system::validateBlocks = tree.get<bool>("system.validate_blocks");
+        system::useLocalDatabase = tree.get<bool>("system.use_local_database");
+        system::allowStateBlocks = tree.get<bool>("system.allow_state_blocks", false);
 
-        settings::system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
-        
-        settings::system::blocksFolder = tree.get<std::string>("system.blocks_folder");
-        
-        settings::system::validateBlocks = tree.get<bool>("system.validate_blocks");
-        
-        settings::system::useLocalDatabase = tree.get<bool>("system.use_local_database");
+        system::conn_pool_enable = tree.get<bool>("system.conn_pool_enable", false);
+        system::conn_pool_ttl = tree.get<unsigned int>("system.conn_pool_ttl", 60);
+        system::conn_pool_capacity = tree.get<unsigned int>("system.conn_pool_capacity", 100);
 
-        settings::system::allowStateBlocks = tree.get<bool>("system.allow_state_blocks", false);
-        
+        system::blocks_cache_ver = tree.get<unsigned int>("system.blocks_cache_ver", 1);
+        system::blocks_cache_enable = tree.get<bool>("system.blocks_cache_enable", false);
+        system::blocks_cache_force = tree.get<bool>("system.blocks_cache_force", true);
+        system::blocks_cache_init_count = tree.get<unsigned int>("system.blocks_cache_init_count", 50000);
+        system::blocks_cache_recv_data_size = tree.get<unsigned int>("system.blocks_cache_recv_data_size", 5);
+        system::blocks_cache_recv_count = tree.get<unsigned int>("system.blocks_cache_recv_count", 100);
+
         if (tree.find("statistic") != tree.not_found()) {
-            settings::statistic::statisticNetwork = tree.get<std::string>("statistic.network");
-            settings::statistic::statisticGroup = tree.get<std::string>("statistic.group");
-            settings::statistic::statisticServer = tree.get<std::string>("statistic.server");
-            settings::statistic::latencyFile = tree.get<std::string>("statistic.latency_file");
+            statistic::statisticNetwork = tree.get<std::string>("statistic.network");
+            statistic::statisticGroup = tree.get<std::string>("statistic.group");
+            statistic::statisticServer = tree.get<std::string>("statistic.server");
+            statistic::latencyFile = tree.get<std::string>("statistic.latency_file");
         }
+
+        extensions::use_tracking_history = tree.get<bool>("extensions.use_tracking_history", false);
+        extensions::tracking_history_folder = tree.get<std::string>("extensions.tracking_history_folder", "./history_tracking");
     }
 
     std::string getConfigPath(boost::program_options::variables_map& vm) {
         if (vm.count("any")) {
-            settings::service::any_conns = true;
+            service::any_conns = true;
         }
         
         if (vm.count("config")) {

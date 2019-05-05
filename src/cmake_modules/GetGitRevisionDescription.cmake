@@ -135,6 +135,18 @@ function(git_get_exact_tag _var)
         set(${_var} "${out}" PARENT_SCOPE)
 endfunction()
 
+function(git_get_commit_datetime _var)
+	execute_process(COMMAND
+	  	"${GIT_EXECUTABLE}" log -1 --format=%aD
+	  	WORKING_DIRECTORY
+		"${CMAKE_SOURCE_DIR}"
+	  	OUTPUT_VARIABLE 
+		out
+	  	ERROR_QUIET
+		OUTPUT_STRIP_TRAILING_WHITESPACE)
+	set(${_var} "${out}" PARENT_SCOPE)
+endfunction()
+
 function(git_local_changes _var)
         if(NOT GIT_FOUND)
                 find_package(Git QUIET)

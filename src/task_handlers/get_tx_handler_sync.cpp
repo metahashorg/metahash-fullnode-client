@@ -1,11 +1,7 @@
 #include "get_tx_handler_sync.h"
-
 #include "common/convertStrings.h"
-
 #include "../SyncSingleton.h"
-
 #include "../generate_json.h"
-
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
 

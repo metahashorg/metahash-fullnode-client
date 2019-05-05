@@ -2,7 +2,8 @@
  "service":
  {
   "threads": 4, // Количество тредов
-  "port": 9999 // Порт, на котором сервис будет принимать запросы
+  "port": 9999, // Порт, на котором сервис будет принимать запросы
+  "keep_alive": false // keep-alive на соединеии юзер -> fullnode-client
  },
  "server":
  {
@@ -18,7 +19,10 @@
   "use_local_database": true, // Выкачивать базу данных или посылать запросы каждый раз на сервера tor.
   "jrpc_conn_timeout": 1000, // таймаут подключения json-rpc
   "jrpc_timeout": 60000, // таймаут выполнения json rpc
-  "allow_state_blocks": false // разрешать возвращать стейт блоки
+  "allow_state_blocks": false, // разрешать возвращать стейт блоки
+  "conn_pool_enable": "false", // пул соединений
+  "conn_pool_ttl": 60, // время жизни соединения
+  "conn_pool_capacity": 100 // размер пула
  },
  "statistic":
  {

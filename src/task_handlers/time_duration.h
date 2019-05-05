@@ -1,7 +1,7 @@
 #ifndef TIME_DURATION_H_
 #define TIME_DURATION_H_
 
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <string>
 
 namespace utils {
 
@@ -17,9 +17,9 @@ public:
     void set_message(const std::string& msg) { m_msg = msg; }
     
 protected:
-    bool                        m_run;
-    std::string                 m_msg;
-    boost::posix_time::ptime    m_start;
+    bool           m_run;
+    std::string    m_msg;
+    struct timeval m_start;
 };
 
 }

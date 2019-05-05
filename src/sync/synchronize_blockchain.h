@@ -62,6 +62,10 @@ public:
     
 public:
     
+    static BlockInfo parseBlockDump(const std::string &binaryDump, bool isValidate);
+    
+public:
+    
     bool isVirtualMachine() const;
     
     void synchronize(int countThreads, bool isSync);

@@ -10,14 +10,14 @@ namespace utils
 {
     void parse_address(const std::string& address, std::string& host, std::string& port, std::string& path, bool& use_ssl)
     {
-        std::string tmp = address;
+        std::string_view tmp = address;
 
         auto pos = tmp.find("http://");
         if (pos != std::string::npos)
         {
             port.clear();
             port = "80";
-            tmp = tmp.substr(pos + 7);
+            tmp.remove_prefix(7);
         }
 
         pos = tmp.find("https://");
@@ -25,16 +25,8 @@ namespace utils
         {
             port.clear();
             port = "443";
-            tmp = tmp.substr(pos + 8);
+            tmp.remove_prefix(8);
             use_ssl = true;
-        }
-
-        pos = tmp.find(":");
-        if (pos != std::string::npos)
-        {
-            port.clear();
-            port = tmp.substr(pos + 1);
-            tmp = tmp.substr(0, pos);
         }
 
         pos = tmp.find("/");
@@ -42,7 +34,15 @@ namespace utils
         {
             path.clear();
             path = tmp.substr(pos);
-            tmp = tmp.substr(0, pos);
+            tmp.remove_suffix(tmp.size() - pos);
+        }
+
+        pos = tmp.find(":");
+        if (pos != std::string::npos)
+        {
+            port.clear();
+            port = tmp.substr(pos + 1);
+            tmp.remove_suffix(tmp.size() - pos);
         }
 
         host = tmp;
@@ -63,6 +63,12 @@ namespace utils
                     utils::write_compact_int(va_arg(args, uint32_t), data);
                     break;
                 case 'D':
+                    utils::write_compact_int(va_arg(args, uint64_t), data);
+                    break;
+                case 'u':
+                    utils::write_compact_int(va_arg(args, uint32_t), data);
+                    break;
+                case 'U':
                     utils::write_compact_int(va_arg(args, uint64_t), data);
                     break;
                 case 'x':
@@ -110,11 +116,14 @@ namespace utils
 
     // Timer
     Timer::~Timer() {
-        stop();
+        if (m_thr.joinable()) {
+            m_thr.join();
+        }
     }
 
     void Timer::start(const Interval& interval, const Handler& handler, bool immediately /*= true*/) {
-        m_handler = handler;
+        std::unique_lock<std::mutex> guard(m_locker);
+        set_callback(handler);
         m_interval = interval;
         if (immediately) {
             isStopped = false;
@@ -125,15 +134,16 @@ namespace utils
     }
 
     void Timer::stop() {
+        std::unique_lock<std::mutex> guard(m_locker);
         if (!isStopped) {
-            std::unique_lock<std::mutex> guard(m_locker);
             isStopped = true;
+            cond.notify_one();
             guard.unlock();
-            cond.notify_all();
             if (m_thr.joinable()) {
                 m_thr.join();
             }
         }
+        set_callback(nullptr);
     }
 
     void Timer::run_once() {
@@ -143,11 +153,16 @@ namespace utils
             if (cond.wait_for(guard, m_interval, [&](){return isStopped;})) {
                 return;
             }
-            guard.unlock();
+            isStopped = true;
+//            guard.unlock();
             if (m_handler) {
                 m_handler();
             }
         });
+    }
+
+    void Timer::set_callback(const Handler& handler) {
+        m_handler = handler;
     }
 
     // time_duration
@@ -176,7 +191,7 @@ namespace utils
         if (!m_run)
         {
             m_run = true;
-            m_start = boost::posix_time::microsec_clock::local_time();
+            gettimeofday(&m_start, NULL);
         }
     }
 
@@ -185,7 +200,10 @@ namespace utils
         if (m_run)
         {
             m_run = false;
-            LOGDEBUG << m_msg << ": " << (boost::posix_time::microsec_clock::local_time() - m_start).total_milliseconds() << " milisec";
+            struct timeval end;
+            gettimeofday(&end, NULL);
+            long elapsed = ((end.tv_sec - m_start.tv_sec) * 1000) + (end.tv_usec / 1000 - m_start.tv_usec / 1000);
+            LOGDEBUG << m_msg << " " << elapsed << " millisec";
         }
     }
 }

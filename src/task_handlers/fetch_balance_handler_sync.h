@@ -3,23 +3,20 @@
 
 #include "sync_handler.h"
 
-class fetch_balance_handler_sync : public base_sync_handler, public Perform<fetch_balance_handler_sync> {
+class fetch_balance_handler_sync : public base_sync_handler
+{
 public:
     
     fetch_balance_handler_sync(http_session_ptr session): base_sync_handler(session) {
-        std::stringstream ss;
-        ss << __FUNCTION__;
-        m_duration.set_message(ss.str());
+        m_duration.set_message(__func__);
     }
-    
     virtual ~fetch_balance_handler_sync() override {}
-    
+
+protected:
     virtual bool prepare_params() override;
-    
     virtual void executeImpl() override;
-    
+
 private:
-    
     std::string address;
 };
 

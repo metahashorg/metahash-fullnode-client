@@ -1,9 +1,6 @@
 #include "get_block_by_number_handler_sync.h"
-
 #include "../SyncSingleton.h"
-
 #include "../generate_json.h"
-
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
 #include "settings/settings.h"
