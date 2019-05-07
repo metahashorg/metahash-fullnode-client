@@ -11,6 +11,7 @@
 #include <byteswap.h>
 #include "../sync/BlockInfo.h"
 #include "../sync/synchronize_blockchain.h"
+#include "compress.h"
 
 #include "task_handlers/get_count_blocks_handler.h"
 #include "task_handlers/get_dump_block_by_number_handler.h"
@@ -182,7 +183,7 @@ void blocks_cache::routine()
             while (m_run && m_nextblock <= count_blocks) {
                 ctx.restart();
                 json.clear();
-                string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-dump-block-by-number\", \"params\":{\"number\":", std::to_string(m_nextblock), "}}");
+                string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-dump-block-by-number\", \"params\":{\"number\":", std::to_string(m_nextblock), ", \"compress\":true}}");
                 gdbn->set_body(json);
                 gdbn->set_host(settings::server::get_tor());
                 gdbn->execute();
@@ -201,7 +202,8 @@ void blocks_cache::routine()
                     goto next;
                 }
 
-                torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(response->get().body(), false);
+                std::string buf = torrent_node_lib::decompress(response->get().body());
+                torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(buf, false);
 
                 if (save_block(m_nextblock, bi.header.hash, response->get().body())) {
                     update_number(++m_nextblock);
@@ -227,6 +229,7 @@ void blocks_cache::routine_2()
         m_run = true;
         handler_result res;
         std::string json;
+        std::string decompressed;
         std::string_view dump;
         json_rpc_reader reader;
         rapidjson::Value* tmp = nullptr;
@@ -373,7 +376,7 @@ void blocks_cache::routine_2()
             }
 
             json.clear();
-            json.append("{\"id\":1, \"version\":\"2.0\", \"method\":\"get-dumps-blocks-by-hash\", \"params\":{\"hashes\":[");
+            json.append("{\"id\":1, \"version\":\"2.0\", \"method\":\"get-dumps-blocks-by-hash\", \"params\":{\"compress\":true, \"hashes\":[");
             for (auto i = hashes.cbegin(); i != hashes.cend(); i++) {
                 if (i != hashes.cbegin()) {
                     json.append(",");
@@ -408,8 +411,9 @@ void blocks_cache::routine_2()
                 goto wait;
             }
 
-            resp_size = response->get().body().size();
-            buf = response->get().body().c_str();
+            decompressed = torrent_node_lib::decompress(response->get().body());
+            resp_size = decompressed.size();
+            buf = decompressed.c_str();
             p = buf;
             iter = hashes.cbegin();
             while (p < buf + resp_size && iter != hashes.cend()) {

@@ -24,6 +24,7 @@ add_executable(${PROJECT_NAME}
     common/filesystem_utils.cpp
     exception/except.cpp
     settings/settings.cpp
+    cache/compress.cpp
     cache/blocks_cache.cpp
     connection_pool.cpp
     http_server.cpp
@@ -79,20 +80,15 @@ add_executable(${PROJECT_NAME}
     )
 
 include_directories( SYSTEM
-    #${Boost_LIBRARY_DIRS} /
     ${BOOST_LIBS_INCLUDE}
     ../3rdParty/ssl/include/
     ../3rdParty/log4cpp/include/
     ../3rdParty/leveldb/include/
+    ../3rdParty/lz4/include/
     common/
     sync/
     ./
-    )
-#include_directories(
-#    common/
-#    sync/
-#    ./
-#    )
+)
 
 
 find_package(Threads)
@@ -109,7 +105,8 @@ find_library(SYNC torrent_node_lib HINTS sync/)
 find_library(LEVELDB NAMES libleveldb.a HINTS sync/)
 find_library(LEVELDB_SNAPPY NAMES libsnappy.a HINTS sync/)
 find_library(LEVELDB_MEMENV NAMES libmemenv.a HINTS sync/)
-target_link_libraries(${PROJECT_NAME} ${SYNC} ${COMMON_LIB} ${LEVELDB} ${LEVELDB_SNAPPY} ${LEVELDB_MEMENV} ${LOG4CPP})
+find_library(LZ4 NAMES lz4 HINTS ../3rdParty/lz4/lib/)
+target_link_libraries(${PROJECT_NAME} ${SYNC} ${COMMON_LIB} ${LEVELDB} ${LEVELDB_SNAPPY} ${LEVELDB_MEMENV} ${LOG4CPP} ${LZ4})
 target_link_libraries(${PROJECT_NAME} stdc++fs.a curl resolv)
 
 find_library(LIB_CRYPTO NAMES libcrypto.so HINTS ../3rdParty/ssl/lib/)
