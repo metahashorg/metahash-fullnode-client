@@ -413,6 +413,9 @@ void blocks_cache::routine_2()
 
             decompressed = torrent_node_lib::decompress(response->get().body());
             resp_size = decompressed.size();
+
+            LOGINFO << "Cache. Getting " << hashes.size() << " block(s). Size " << response->get().body().size() << "/" << resp_size;
+
             buf = decompressed.c_str();
             p = buf;
             iter = hashes.cbegin();
