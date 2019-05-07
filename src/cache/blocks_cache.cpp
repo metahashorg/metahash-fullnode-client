@@ -296,7 +296,7 @@ void blocks_cache::routine_2()
         }
 
         // max summary size of blocks per request
-        const unsigned int blocks_max_size = settings::system::blocks_cache_recv_data_size * 1024 * 1024;
+        const unsigned int blocks_max_size = settings::system::blocks_cache_recv_data_size * 1024 * 1024 * 2; // because of compress we can increase approximately up to 2 times
         unsigned int blocks_size = 0;
 
         http_json_rpc_request_ptr get_blocks = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
