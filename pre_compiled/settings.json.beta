@@ -11,7 +11,6 @@
  },
  "system":
  {
-  "torrent_server": "52.221.238.117:5795",
   "wallets-storage": "/opt/mhservice/wallet",
   "blocks_folder": "./blocks/",
   "leveldb_folder": "./leveldb/",

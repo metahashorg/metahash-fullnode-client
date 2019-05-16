@@ -111,10 +111,10 @@ int main(int argc, char* argv[])
         const std::string configPath = settings::getConfigPath(vm);
         settings::read(configPath);
 
-        const NsResult bestTorrentIp = getBestIp(settings::server::torName, "Torrent addresses:");
+        const NsResult bestTorrentIp = getBestIp(settings::server::torName, "Torrents:");
         settings::server::set_tor(bestTorrentIp.server);
         
-        const NsResult bestProxyIp = getBestIp(settings::server::proxyName, "Proxy addresses:");
+        const NsResult bestProxyIp = getBestIp(settings::server::proxyName, "Proxies:");
         settings::server::set_proxy(bestProxyIp.server);
         
         const bool isStartStatistic = !settings::statistic::statisticNetwork.empty();

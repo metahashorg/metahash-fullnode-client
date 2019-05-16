@@ -31,8 +31,8 @@ namespace settings
     std::string statistic::latencyFile;
     
     // server
-    std::string server::torName     = {"tor.net-dev.metahash.org:5795"};
-    std::string server::proxyName   = {"proxy.net-dev.metahash.org:9999"};
+    std::string server::torName;
+    std::string server::proxyName;
     ATOMIC_PROP_IMPL(std::string, tor);
     ATOMIC_PROP_IMPL(std::string, proxy);
     
@@ -91,8 +91,8 @@ namespace settings
             }
         }
 
-        server::torName     = tree.get<std::string>("server.tor", "tor.net-dev.metahash.org:5795");
-        server::proxyName   = tree.get<std::string>("server.proxy", "proxy.net-dev.metahash.org:9999");
+        server::torName     = tree.get<std::string>("server.tor", "127.0.0.0");
+        server::proxyName   = tree.get<std::string>("server.proxy", "127.0.0.0");
         
         system::wallet_stotage = tree.get<std::string>("system.wallets-storage", "./wallet");
         system::jrpc_conn_timeout = tree.get<unsigned int>("system.jrpc_conn_timeout", 1000);
@@ -107,7 +107,7 @@ namespace settings
         system::conn_pool_ttl = tree.get<unsigned int>("system.conn_pool_ttl", 60);
         system::conn_pool_capacity = tree.get<unsigned int>("system.conn_pool_capacity", 100);
 
-        system::blocks_cache_ver = tree.get<unsigned int>("system.blocks_cache_ver", 1);
+        system::blocks_cache_ver = tree.get<unsigned int>("system.blocks_cache_ver", 2);
         system::blocks_cache_enable = tree.get<bool>("system.blocks_cache_enable", false);
         system::blocks_cache_force = tree.get<bool>("system.blocks_cache_force", true);
         system::blocks_cache_init_count = tree.get<unsigned int>("system.blocks_cache_init_count", 50000);
