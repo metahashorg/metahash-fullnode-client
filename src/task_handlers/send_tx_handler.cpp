@@ -11,41 +11,66 @@ bool send_tx_handler::prepare_params()
 {
     BGN_TRY
     {
-        if (!check_params())
-            return false;
+        get_type();
+        switch (m_type) {
+            case 1:
+            {
+                if (!check_send_params()) {
+                    return false;
+                }
+                m_writer.reset();
+                m_writer.set_method("mhc_send");
+                m_writer.add_param("transaction", m_transaction.c_str());
+                m_writer.add_param("to", m_to.c_str());
+                m_writer.add_param("value", std::to_string(m_value));
+                m_writer.add_param("fee", !m_fee ? "" : std::to_string(m_fee));
+                m_writer.add_param("nonce", std::to_string(m_nonce));
+                m_writer.add_param("data", m_data.c_str());
+                m_writer.add_param("pubkey", m_pubkey);
+                m_writer.add_param("sign", m_sign);
+            }
+            break;
 
-        auto params = m_reader.get_params();
-        auto jValue = m_reader.get("nonce", *params);
-        if (jValue)
-        {
-            std::string tmp;
-            CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field has incorrect format")
-            m_nonce = std::stoull(tmp);
+            default:
+            {
+                if (!check_params()) {
+                    return false;
+                }
+
+                auto params = m_reader.get_params();
+                auto jValue = m_reader.get("nonce", *params);
+                if (jValue) {
+                    std::string tmp;
+                    CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field has incorrect format")
+                    m_nonce = std::stoull(tmp);
+                } else if (settings::system::useLocalDatabase) {
+                    CHK_PRM(syncSingleton() != nullptr, "Sync not set");
+                    const torrent_node_lib::Sync &sync = *syncSingleton();
+                    const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(m_address));
+                    m_nonce = balance.countSpent + 1;
+                } else {
+                    m_result.pending = true;
+
+                    json_rpc_writer writer;
+                    writer.set_id(1);
+                    writer.add_param("address", m_address);
+
+                    auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), m_session->get_io_context());
+                    request->set_path("fetch-balance");
+                    request->set_body(writer.stringify());
+
+                    auto self = shared_from(this);
+                    request->execute_async([self, request](){ self->on_get_balance(request); });
+
+                    return false;
+                }
+
+                if (!build_request()) {
+                    return false;
+                }
+            }
+            break;
         }
-        else if (settings::system::useLocalDatabase) {
-            CHK_PRM(syncSingleton() != nullptr, "Sync not set");
-            const torrent_node_lib::Sync &sync = *syncSingleton();
-            const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(m_address));
-            m_nonce = balance.countSpent + 1;
-        } else {
-            m_result.pending = true;
-
-            json_rpc_writer writer;
-            writer.set_id(1);
-            writer.add_param("address", m_address);
-
-            auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), m_session->get_io_context());
-            request->set_path("fetch-balance");
-            request->set_body(writer.stringify());
-
-            auto self = shared_from(this);
-            request->execute_async([self, request](){ self->on_get_balance(request); });
-
-            return false;
-        }
-
-        if (!build_request())
-            return false;
 
         return true;
     }
@@ -99,3 +124,59 @@ void send_tx_handler::process_response(json_rpc_reader &reader)
         m_writer.set_result(*params);
     }
 }
+
+bool send_tx_handler::check_send_params()
+{
+    BGN_TRY
+    {
+        CHK_PRM(m_id, "id field not found")
+
+        auto params = m_reader.get_params();
+        CHK_PRM(params, "params field not found")
+
+        CHK_PRM(m_reader.get_value(*params, "transaction", m_transaction) && !m_transaction.empty(), "transaction field not found")
+
+        CHK_PRM(m_reader.get_value(*params, "to", m_to) && !m_to.empty(), "to field not found")
+        CHK_PRM(m_to.compare(0, 2, "0x") == 0, "to field must be in hex format")
+
+        auto jValue = m_reader.get("value", *params);
+        CHK_PRM(jValue, "value field not found")
+
+        std::string tmp;
+        CHK_PRM(json_utils::val2str(jValue, tmp), "value field incorrect format")
+        m_value = std::stoull(tmp);
+
+        jValue = m_reader.get("fee", *params);
+        if (jValue && json_utils::val2str(jValue, tmp)) {
+            m_fee = std::stoull(tmp);
+        }
+
+        jValue = m_reader.get("nonce", *params);
+        CHK_PRM(jValue, "nonce field not found")
+        tmp.clear();
+        CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field has incorrect format")
+        m_nonce = std::stoull(tmp);
+
+        m_reader.get_value(*params, "data", m_data);
+
+        CHK_PRM(m_reader.get_value(*params, "pubkey", m_pubkey) && !m_pubkey.empty(), "pubkey field not found")
+        CHK_PRM(m_reader.get_value(*params, "sign", m_sign) && !m_sign.empty(), "sign field not found")
+
+        return true;
+    }
+    END_TRY_RET(false)
+}
+
+void send_tx_handler::get_type()
+{
+    BGN_TRY
+    {
+        auto params = m_reader.get_params();
+        if (!params) {
+            return;
+        }
+        m_reader.get_value(*params, "type", m_type);
+    }
+    END_TRY
+}
+

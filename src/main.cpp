@@ -41,12 +41,16 @@ void runServer() {
         g_server->run();
     } catch (const common::exception &e) {
         LOGERR << "Server run Error " << e;
+        g_server->stop();
     } catch (const std::exception &e) {
         LOGERR << "Server run Error " << e.what();
+        g_server->stop();
     } catch (const common::StopException &) {
         LOGINFO << "Server stopped";
+        g_server->stop();
     } catch (...) {
         LOGERR << "Server run Error: Unknown";
+        g_server->stop();
     }
 };
 
