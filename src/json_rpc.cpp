@@ -86,6 +86,9 @@ rapidjson::Value* json_rpc_reader::get_params()
 
 rapidjson::Value* json_rpc_reader::get(const std::string& name, rapidjson::Value& root)
 {
+    if (!root.IsObject()) {
+        return nullptr;
+    }
     auto p = root.FindMember(name);
     if (p == root.MemberEnd())
         return nullptr;
@@ -94,8 +97,9 @@ rapidjson::Value* json_rpc_reader::get(const std::string& name, rapidjson::Value
 
 bool json_rpc_reader::get_value(rapidjson::Value& root, const char* name, std::string_view& value) const
 {
-    if (!root.IsObject())
+    if (!root.IsObject()) {
         return false;
+    }
     auto v = root.FindMember(name);
     if (v != root.MemberEnd() && v->value.IsString())
     {
@@ -182,6 +186,9 @@ std::string json_rpc_writer::stringify(rapidjson::Value* value /*= nullptr*/)
 
 rapidjson::Value& json_rpc_writer::get_value(rapidjson::Value& root, const std::string& name, rapidjson::Type Type)
 {
+    if (!root.IsObject()) {
+        root.SetObject();
+    }
     auto node = root.FindMember(name);
     if (node != root.MemberEnd())
         return node->value;
@@ -206,7 +213,10 @@ void json_rpc_writer::reset()
 
 bool json_rpc_writer::is_error() const
 {
-    return m_doc.HasMember("error");
+    if (m_doc.IsObject()) {
+        return m_doc.HasMember("error");
+    }
+    return false;
 }
 
 rapidjson::Value* json_rpc_writer::get_params()

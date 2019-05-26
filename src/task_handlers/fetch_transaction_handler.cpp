@@ -56,6 +56,9 @@ void fetch_transaction_handler::execute()
             rapidjson::Value arr(rapidjson::kArrayType);
             rapidjson::Value::MemberIterator data;
             for (auto& v : doc.GetArray()) {
+                if (!v.IsObject()) {
+                    continue;
+                }
                 data = v.FindMember("data");
                 if (data == v.MemberEnd()) {
                     // TODO Warning

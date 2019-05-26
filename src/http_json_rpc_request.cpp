@@ -272,7 +272,7 @@ void http_json_rpc_request::on_connect_timeout()
         }
         m_canceled = true;
 
-        LOGDEBUG << "json-rpc[" << m_id << "] Connection timeout " << settings::system::jrpc_conn_timeout << " ms to " << m_host;
+        LOGERR << "json-rpc[" << m_id << "] Connection timeout " << settings::system::jrpc_conn_timeout << " ms to " << m_host;
 
         close(true);
         m_timer.stop();
@@ -323,7 +323,11 @@ void http_json_rpc_request::on_handshake(const boost::system::error_code& e)
             return;
         }
 
+#ifdef _DEBUG_
         LOGDEBUG << "json-rpc[" << m_id << "] Send request: " << m_host << " <<< " << m_req.body().c_str();
+#else
+        LOGDEBUG << "json-rpc[" << m_id << "] Send request: " << m_host << " " << m_req.body().size() << " bytes";
+#endif
 
         auto self = shared_from_this();
         http::async_write(m_ssl_socket, m_req, [self](const boost::system::error_code& e, std::size_t){
@@ -367,6 +371,8 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
         m_duration.stop();
         close();
 
+        LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " payload " << m_response->get().body().size() << " bytes";
+
         http::status status = m_response->get().result();
         if (status != http::status::ok) {
             LOGWARN << "json-rpc[" << m_id << "] Incorrect response http status: " << status;
@@ -374,13 +380,17 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
 
         const bool succ = m_result.parse(m_response->get().body());
         if (!succ) {
-//            LOGERR << "json-rpc[" << m_id << "] Response json parse error: " << m_result.getDoc().GetParseError();
             if (status != http::status::ok) {
                 m_result.set_error(-32603,
                     string_utils::str_concat("Incorrect response http status: ", std::to_string(static_cast<unsigned>(status))));
+                LOGERR << "json-rpc[" << m_id << "] Response json parse error: " << m_result.getDoc().GetParseError();
             }
-            LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " >>> " << m_result.stringify();
+        } else {
+#ifdef _DEBUG_
+            LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " payload " << m_response->get().body().size() << " bytes";
+#endif
         }
+
         perform_callback();
 
         if (!m_async && !m_io_ctx.stopped()) {

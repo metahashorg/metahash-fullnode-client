@@ -22,7 +22,12 @@
   "conn_pool_enable": true,
   "conn_pool_ttl": 60,
   "conn_pool_capacity": 100,
-  "blocks_cache_enable": true
+  "blocks_cache_ver": 2,
+  "blocks_cache_enable": true,
+  "blocks_cache_force": true,
+  "blocks_cache_init_count": 50000,
+  "blocks_cache_recv_count": 100,
+  "blocks_cache_recv_data_size": 5
  },
  "extensions":
  {

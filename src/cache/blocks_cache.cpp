@@ -347,6 +347,9 @@ void blocks_cache::routine_2()
             hashes.clear();
             blocks_size = 0;
             for (arr_it = tmp->GetArray().begin(); arr_it != tmp->GetArray().end(); arr_it++) {
+                if (!arr_it->IsObject()) {
+                    continue;
+                }
                 it = arr_it->FindMember("size");
                 if (it != arr_it->MemberEnd()) {
                     blocks_size += it->value.GetUint();

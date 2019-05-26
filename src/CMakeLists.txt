@@ -122,6 +122,7 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
     set (CMAKE_CXX_FLAGS "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -Ofast -Wall -Wextra -Werror -Wno-unused-parameter")
 endif()
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG_")
     set (CMAKE_CXX_FLAGS "-Werror -pthread")
 endif()
 
