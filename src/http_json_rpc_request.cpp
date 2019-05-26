@@ -387,7 +387,7 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
             }
         } else {
 #ifdef _DEBUG_
-            LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " payload " << m_response->get().body().size() << " bytes";
+            LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " >>> " << m_response->get().body();
 #endif
         }
 
