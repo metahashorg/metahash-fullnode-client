@@ -25,9 +25,11 @@ bool base_handler::prepare(const std::string& params)
                 m_writer.set_error(-32602, "Invalid params");
             }
         }
-
-        LOGDEBUG << "Prepared json (" << complete << "," << pending << "):" << m_writer.stringify();
-
+#ifdef _DEBUG_
+        LOGDEBUG << "Prepared json " << complete << pending << ":" << m_writer.stringify();
+#else
+        LOGDEBUG << "Prepared json " << complete << pending;
+#endif
         return complete;
     }
     END_TRY_RET(false)
