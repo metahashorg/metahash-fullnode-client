@@ -218,33 +218,38 @@ void lookup_best_ip()
         NsResult res;
 
         while (true) {
-            tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(60);
+            try {
+                tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(60);
 
-            common::checkStopSignal();
+                common::checkStopSignal();
 
-            res = getBestIp(settings::server::torName);
-            if (tor != res.server) {
-                tor = res.server;
-                settings::server::set_tor(tor);
-                LOGINFO << "Changed torrent address: " << res.server << " " << res.timeout << " ms";
+                res = getBestIp(settings::server::torName);
+                if (tor != res.server) {
+                    tor = res.server;
+                    settings::server::set_tor(tor);
+                    LOGINFO << "Changed torrent address: " << res.server << " " << res.timeout << " ms";
+                }
+
+                common::checkStopSignal();
+
+                res = getBestIp(settings::server::proxyName);
+                if (proxy != res.server) {
+                    proxy = res.server;
+                    settings::server::set_proxy(proxy);
+                    LOGINFO << "Changed proxy address: " << res.server << " " << res.timeout << " ms";
+                }
+
+                common::checkStopSignal();
+                std::this_thread::sleep_until(tp);
+
+            } catch (const common::exception &e) {
+                LOGERR << __func__ << " error: " << e;
+                std::this_thread::sleep_until(tp);
             }
-
-            common::checkStopSignal();
-
-            res = getBestIp(settings::server::proxyName);
-            if (proxy != res.server) {
-                proxy = res.server;
-                settings::server::set_proxy(proxy);
-                LOGINFO << "Changed proxy address: " << res.server << " " << res.timeout << " ms";
-            }
-
-            common::checkStopSignal();
-            std::this_thread::sleep_until(tp);
         }
-    } catch (const common::exception &e) {
-        LOGERR << __func__ << " error: " << e;
+
     } catch (const std::exception &e) {
-        LOGERR << __func__ << " error: " << e.what();
+        LOGERR << __func__ << " std error: " << e.what();
     } catch (const common::StopException &e) {
         LOGINFO << __func__ << " Stoped";
     } catch (...) {

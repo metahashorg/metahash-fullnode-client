@@ -148,6 +148,9 @@ namespace utils
 
     void Timer::run_once() {
         isStopped = false;
+        if (m_thr.joinable()) {
+            m_thr.join();
+        }
         m_thr = std::thread([&]() {
             std::unique_lock<std::mutex> guard(m_locker);
             if (cond.wait_for(guard, m_interval, [&](){return isStopped;})) {

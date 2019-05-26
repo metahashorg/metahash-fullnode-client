@@ -109,7 +109,7 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
 
         LOGERR << "json-rpc[" << m_id << "] Request error (" << from << "): " << e.value() << " " << e.message();
 
-        close();
+        close(boost::asio::error::get_system_category().equivalent(e, e.value()));
 
         //if (e != asio::error::operation_aborted)
         {
@@ -148,6 +148,7 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
             m_callback = callback;
         }
 
+        m_canceled = false;
         m_result.reset();
         m_response.reset(new json_response_type());
         m_response->body_limit((std::numeric_limits<std::uint64_t>::max)());
@@ -180,6 +181,9 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
 
                 if (!ec) {
                     need_connect = false;
+                    m_timer.start(std::chrono::milliseconds(settings::system::jrpc_timeout), [self](){
+                        self->on_request_timeout();
+                    });
                     if (is_ssl()) {
                         http::async_write(m_ssl_socket, m_req, [self](const boost::system::error_code& e, std::size_t){
                             self->on_write(e);
@@ -224,7 +228,7 @@ void http_json_rpc_request::on_request_timeout()
 
         LOGERR << "json-rpc[" << m_id << "] Request timeout " << settings::system::jrpc_timeout << " ms";
 
-        close();
+        close(true);
         m_connect_timer.stop();
         m_timer.set_callback(nullptr);
         m_duration.stop();

@@ -10,7 +10,7 @@ public:
     time_duration(bool _start);
     time_duration(bool _start, std::string message);
     ~time_duration();
-    
+
     void start();
     void stop();
     
