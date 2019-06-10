@@ -54,7 +54,6 @@ namespace utils
             return 0;
         }
         std::string tmp;
-        uint64_t res (0);
         if (buf.compare("fa") == 0) {
             // uint16_t
             if (buf.size() < sizeof(uint16_t) + 2) {
