@@ -39,9 +39,14 @@ namespace utils
         buf.insert(buf.end(), result.begin(), result.end());
     }
 
+    uint64_t read_compact_int(std::string_view& buf);
+
     void parse_address(const std::string& address, std::string& host, std::string& port, std::string& path, bool& use_ssl);
 
     bool gen_sign(std::string &transaction, std::string& result, const std::string& prv_key, const char* fmt, ...);
+    bool make_tx(std::string& result, const char* fmt, ...);
+
+    bool parse_tansaction(std::string_view transaction, std::string& to, uint64_t& value, uint64_t& fee, uint64_t& nonce, uint64_t& data_size, std::string& data);
 
     class Timer
     {

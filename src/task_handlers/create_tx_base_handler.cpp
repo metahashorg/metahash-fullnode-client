@@ -41,10 +41,10 @@ bool create_tx_base_handler::check_params() {
         CHK_PRM(storage::keys::peek(m_address, m_keys), "failed on get keys")
 
         return true;
+
     }
     END_TRY_RET(false)
 }
-
 
 bool create_tx_base_handler::build_request()
 {
@@ -73,4 +73,3 @@ bool create_tx_base_handler::build_request()
     }
     END_TRY_RET(false)
 }
-

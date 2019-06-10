@@ -30,6 +30,7 @@
 const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_handlers = {
     { std::pair<std::string, UseLocalDatabase>("generate", false),                  perform<generate_handler> },
     { std::pair<std::string, UseLocalDatabase>("create-tx", false),                 perform<create_tx_handler> },
+    { std::pair<std::string, UseLocalDatabase>("create-tx2", false),                perform<create_tx_handler_v2> },
     { std::pair<std::string, UseLocalDatabase>("send-tx", false),                   perform<send_tx_handler> },
     { std::pair<std::string, UseLocalDatabase>("get-count-blocks", false),          perform<get_count_blocks_handler> },
     { std::pair<std::string, UseLocalDatabase>("get-last-txs", false),              perform<get_last_txs_handler> },
@@ -47,6 +48,7 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_hand
 
     { std::pair<std::string, UseLocalDatabase>("generate", true),                   perform<generate_handler> },
     { std::pair<std::string, UseLocalDatabase>("create-tx", true),                  perform<create_tx_handler> },
+    { std::pair<std::string, UseLocalDatabase>("create-tx2", true),                 perform<create_tx_handler_v2> },
     { std::pair<std::string, UseLocalDatabase>("fetch-balance", true),              perform<fetch_balance_handler_sync> }, // +
     { std::pair<std::string, UseLocalDatabase>("fetch-history", true),              perform<fetch_history_handler_sync> }, // +
     { std::pair<std::string, UseLocalDatabase>("send-tx", true),                    perform<send_tx_handler_sync> }, // +

@@ -46,4 +46,17 @@ void bin2hex(const std::string& buf, std::string& res) noexcept
     }
 }
 
+void hex2val_le(std::string_view& buf, size_t size) noexcept
+{
+    uint64_t res = 0;
+    unsigned char c;
+    for (size_t i = size/2; i > 0; --i) {
+        c = static_cast<unsigned char>(buf[i]);
+        res *= 0x10;
+        res += ('0' <= c && c <= '9' ? (c - '0') :
+        ('a' <= c && c <= 'f' ? (c - 'a' + 10) :
+        ('A' <= c && c <= 'F' ? (c - 'A' + 10) : 0)));
+    }
+}
+
 }

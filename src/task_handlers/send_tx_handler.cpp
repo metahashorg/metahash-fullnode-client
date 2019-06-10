@@ -6,6 +6,7 @@
 #include "http_session.h"
 #include "http_json_rpc_request.h"
 #include "common/string_utils.h"
+#include "task_handlers/utils.h"
 
 bool send_tx_handler::prepare_params()
 {
@@ -18,6 +19,15 @@ bool send_tx_handler::prepare_params()
                 if (!check_send_params()) {
                     return false;
                 }
+
+                /*
+                uint64_t data_size = 0;
+                CHK_PRM(utils::parse_tansaction(m_transaction, m_to, m_value, m_fee, m_nonce, data_size, m_data), "invalid transaction");
+                if (!build_request()) {
+                    return false;
+                }
+                */
+
                 m_writer.reset();
                 m_writer.set_method("mhc_send");
                 m_writer.add_param("transaction", m_transaction.c_str());
@@ -28,6 +38,7 @@ bool send_tx_handler::prepare_params()
                 m_writer.add_param("data", m_data.c_str());
                 m_writer.add_param("pubkey", m_pubkey);
                 m_writer.add_param("sign", m_sign);
+
             }
             break;
 

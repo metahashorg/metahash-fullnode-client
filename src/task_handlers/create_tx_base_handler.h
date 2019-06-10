@@ -14,7 +14,7 @@ public:
 
 protected:
     bool check_params();
-    bool build_request();
+    virtual bool build_request();
 
 protected:
     mh_count_t          m_fee;

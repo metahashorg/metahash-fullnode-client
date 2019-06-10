@@ -119,6 +119,8 @@ void str_append(std::string& res, const T1& v1, const T2& v2, const T3& v3, cons
 void bin2hex(const unsigned char* buf, size_t size, char* res) noexcept;
 void bin2hex(const std::string& buf, std::string& res) noexcept;
 
+void hex2val_le(std::string_view& buf, size_t size) noexcept;
+
 //void get_size(size_t& size) {
 //}
 
