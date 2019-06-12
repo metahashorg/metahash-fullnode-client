@@ -38,6 +38,9 @@ bool send_tx_handler::prepare_params()
                 m_writer.add_param("data", m_data.c_str());
                 m_writer.add_param("pubkey", m_pubkey);
                 m_writer.add_param("sign", m_sign);
+                if (!m_hash.empty()) {
+                    m_writer.add_param("hash", m_hash);
+                }
 
             }
             break;
@@ -172,6 +175,8 @@ bool send_tx_handler::check_send_params()
 
         CHK_PRM(m_reader.get_value(*params, "pubkey", m_pubkey) && !m_pubkey.empty(), "pubkey field not found")
         CHK_PRM(m_reader.get_value(*params, "sign", m_sign) && !m_sign.empty(), "sign field not found")
+
+        m_reader.get_value(*params, "hash", m_hash);
 
         return true;
     }

@@ -25,6 +25,7 @@ protected:
     std::string m_transaction;
     std::string m_pubkey;
     std::string m_sign;
+    std::string m_hash;
     mh_count_t m_type;
 };
 
