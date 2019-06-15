@@ -110,6 +110,16 @@ public:
 
     void set_error(rapidjson::Value& value);
     void set_error(int code, const std::string& message);
+    void set_error(int code, const char* message);
+
+    template <typename T>
+    void add_error_data(const std::string& name, T value)
+    {
+        rapidjson::Value& result = get_value(m_doc, "error", rapidjson::kObjectType);
+        rapidjson::Value& param = get_value(result, name, rapidjson::kNullType);
+        param.Set<T>(value, m_doc.GetAllocator());
+    }
+
     void set_id(json_rpc_id value);
 
     bool is_error() const;

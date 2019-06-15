@@ -151,13 +151,16 @@ void json_rpc_writer::set_result(rapidjson::Value& value)
 
 void json_rpc_writer::set_error(int code, const std::string& message)
 {
-    rapidjson::Value err(rapidjson::kObjectType);
+    set_error(code, message.c_str());
+}
 
+void json_rpc_writer::set_error(int code, const char* message)
+{
+    rapidjson::Value err(rapidjson::kObjectType);
     err.AddMember("code", rapidjson::kNumberType, m_doc.GetAllocator());
     err["code"].SetInt(code);
     err.AddMember("message", rapidjson::kStringType, m_doc.GetAllocator());
     err["message"].SetString(message, m_doc.GetAllocator());
-
     get_value(m_doc, "error", rapidjson::kObjectType) = err;
 }
 

@@ -25,7 +25,7 @@ bool send_tx_handler_sync::prepare_params()
             m_nonce = balance.countSpent + 1;
         }
 
-        if (!build_request())
+        if (!build_request(true))
             return false;
 
         return true;

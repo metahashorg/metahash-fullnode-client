@@ -48,6 +48,8 @@ namespace utils
 
     bool parse_tansaction(std::string_view transaction, std::string& to, uint64_t& value, uint64_t& fee, uint64_t& nonce, uint64_t& data_size, std::string& data);
 
+    void reverse_byte_order(std::string& hex);
+
     class Timer
     {
     public:

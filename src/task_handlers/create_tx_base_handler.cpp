@@ -2,6 +2,7 @@
 #include "settings/settings.h"
 #include "utils.h"
 #include "common/convertStrings.h"
+//#include "cpplib_open_ssl_decor/crypto.h"
 
 create_tx_base_handler::create_tx_base_handler(http_session_ptr session)
     : base_network_handler(settings::server::get_proxy(), session)
@@ -46,7 +47,7 @@ bool create_tx_base_handler::check_params() {
     END_TRY_RET(false)
 }
 
-bool create_tx_base_handler::build_request()
+bool create_tx_base_handler::build_request(bool create_hash /*= false*/)
 {
     BGN_TRY
     {
@@ -54,22 +55,39 @@ bool create_tx_base_handler::build_request()
             m_fee = m_data.size();
         }
         m_data = common::toHex(m_data.begin(), m_data.end());
-        std::string sign;
-        std::string transaction;
-        CHK_PRM(utils::gen_sign(transaction, sign, m_keys.prv_key, "xUUUux", m_to.c_str(), m_value, m_fee, m_nonce, m_data.size() / 2, m_data.c_str()), "failed on gen sign")
+        CHK_PRM(utils::gen_sign(m_transaction, m_sign, m_keys.prv_key, "xUUUux", m_to.c_str(), m_value, m_fee, m_nonce, m_data.size() / 2, m_data.c_str()), "failed on gen sign")
 
+        if (create_hash) {
+            CHK_PRM(utils::make_tx(m_hash, "xuxux", m_transaction.c_str(), m_sign.size() / 2, m_sign.c_str(), m_keys.pub_key.size() / 2, m_keys.pub_key.c_str()), "failed on generate tx")
+        }
+
+        make_json();
+
+        return true;
+    }
+    END_TRY_RET(false)
+}
+
+void create_tx_base_handler::make_json()
+{
+    BGN_TRY
+    {
         m_writer.reset();
         m_writer.set_method("mhc_send");
-        m_writer.add_param("transaction", transaction.c_str());
+        m_writer.add_param("transaction", m_transaction.c_str());
         m_writer.add_param("to", m_to.c_str());
         m_writer.add_param("value", std::to_string(m_value));
         m_writer.add_param("fee", !m_fee ? "" : std::to_string(m_fee));
         m_writer.add_param("nonce", std::to_string(m_nonce));
         m_writer.add_param("data", m_data.c_str());
         m_writer.add_param("pubkey", m_keys.pub_key);
-        m_writer.add_param("sign", sign);
-
-        return true;
+        m_writer.add_param("sign", m_sign);
+        if (!m_hash.empty()) {
+            m_writer.add_param("hash", m_hash);
+        }
+#ifdef _DEBUG_
+        std::cout << "create-tx json: " << m_writer.stringify() << std::endl;
+#endif
     }
-    END_TRY_RET(false)
+    END_TRY
 }

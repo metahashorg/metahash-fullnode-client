@@ -14,7 +14,9 @@ public:
 
 protected:
     bool check_params();
-    virtual bool build_request();
+
+    virtual bool build_request(bool create_hash = false);
+    virtual void make_json();
 
 protected:
     mh_count_t          m_fee;
@@ -23,6 +25,9 @@ protected:
     std::string         m_address;
     std::string         m_to;
     std::string         m_data;
+    std::string         m_hash;
+    std::string         m_sign;
+    std::string         m_transaction;
     storage::crypt_keys m_keys;
 };
 

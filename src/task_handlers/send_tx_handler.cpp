@@ -6,56 +6,44 @@
 #include "http_session.h"
 #include "http_json_rpc_request.h"
 #include "common/string_utils.h"
+#include "cpplib_open_ssl_decor/crypto.h"
 #include "task_handlers/utils.h"
 
 bool send_tx_handler::prepare_params()
 {
     BGN_TRY
     {
-        get_type();
-        switch (m_type) {
+        switch (send_tx_handler::check_params()) {
+            case -1:
+                // error
+                return false;
+
             case 1:
+                make_json();
+                break;
+
+            case 2:
             {
-                if (!check_send_params()) {
-                    return false;
-                }
+                mh_count_t data_size = 0;
+                CHK_PRM(utils::parse_tansaction(m_transaction, m_to, m_value, m_fee, m_nonce, data_size, m_data), "failed on parse transaction")
 
-                /*
-                uint64_t data_size = 0;
-                CHK_PRM(utils::parse_tansaction(m_transaction, m_to, m_value, m_fee, m_nonce, data_size, m_data), "invalid transaction");
-                if (!build_request()) {
-                    return false;
-                }
-                */
+                std::vector<unsigned char> data_bin = hex2bin(m_transaction);
+                std::vector<unsigned char> sign_bin;
+                CRYPTO_sign_data(sign_bin, m_keys.prv_key, data_bin);
+                m_sign = bin2hex(sign_bin);
 
-                m_writer.reset();
-                m_writer.set_method("mhc_send");
-                m_writer.add_param("transaction", m_transaction.c_str());
-                m_writer.add_param("to", m_to.c_str());
-                m_writer.add_param("value", std::to_string(m_value));
-                m_writer.add_param("fee", !m_fee ? "" : std::to_string(m_fee));
-                m_writer.add_param("nonce", std::to_string(m_nonce));
-                m_writer.add_param("data", m_data.c_str());
-                m_writer.add_param("pubkey", m_pubkey);
-                m_writer.add_param("sign", m_sign);
-                if (!m_hash.empty()) {
-                    m_writer.add_param("hash", m_hash);
-                }
-
+                CHK_PRM(utils::make_tx(m_hash, "xuxux", m_transaction.c_str(), m_sign.size() / 2, m_sign.c_str(), m_keys.pub_key.size() / 2, m_keys.pub_key.c_str()), "failed on generate tx")
+                make_json();
             }
             break;
 
             default:
             {
-                if (!check_params()) {
-                    return false;
-                }
-
                 auto params = m_reader.get_params();
                 auto jValue = m_reader.get("nonce", *params);
                 if (jValue) {
                     std::string tmp;
-                    CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field has incorrect format")
+                    CHK_PRM(json_utils::val2str(jValue, tmp), "'nonce' field has incorrect format")
                     m_nonce = std::stoull(tmp);
                 } else if (settings::system::useLocalDatabase) {
                     CHK_PRM(syncSingleton() != nullptr, "Sync not set");
@@ -79,7 +67,7 @@ bool send_tx_handler::prepare_params()
                     return false;
                 }
 
-                if (!build_request()) {
+                if (!build_request(true)) {
                     return false;
                 }
             }
@@ -113,10 +101,10 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request)
         }
 
         mh_count_t count_spent(0);
-        CHK_PRM(reader.get_value(*res, "count_spent", count_spent), "fetch-balane response: field spent count not found")
+        CHK_PRM(reader.get_value(*res, "count_spent", count_spent), "fetch-balane response: field 'count_spent' not found")
         m_nonce = count_spent + 1;
 
-        if (!build_request()) {
+        if (!build_request(true)) {
             send_response();
         } else {
             send_tx_handler::execute();
@@ -139,7 +127,7 @@ void send_tx_handler::process_response(json_rpc_reader &reader)
     }
 }
 
-bool send_tx_handler::check_send_params()
+int send_tx_handler::check_params()
 {
     BGN_TRY
     {
@@ -148,10 +136,33 @@ bool send_tx_handler::check_send_params()
         auto params = m_reader.get_params();
         CHK_PRM(params, "params field not found")
 
-        CHK_PRM(m_reader.get_value(*params, "transaction", m_transaction) && !m_transaction.empty(), "transaction field not found")
+        m_reader.get_value(*params, "transaction", m_transaction);
+        if (m_transaction.empty()) {
+            return create_tx_base_handler::check_params() ? 0 : -1;
+        }
 
+        m_reader.get_value(*params, "address", m_address);
+        if (m_address.empty()) {
+            return check_params_1();
+        } else {
+            return check_params_2();
+        }
+    }
+    END_TRY_RET(-1)
+}
+
+int send_tx_handler::check_params_1()
+{
+    BGN_TRY
+    {
+        auto params = m_reader.get_params();
+        CHK_PRM(params, "params field not found")
+
+        CHK_PRM(!m_transaction.empty(), "transaction field not found")
         CHK_PRM(m_reader.get_value(*params, "to", m_to) && !m_to.empty(), "to field not found")
         CHK_PRM(m_to.compare(0, 2, "0x") == 0, "to field must be in hex format")
+        CHK_PRM(m_reader.get_value(*params, "pubkey", m_keys.pub_key) && !m_keys.pub_key.empty(), "pubkey field not found")
+        CHK_PRM(m_reader.get_value(*params, "sign", m_sign) && !m_sign.empty(), "sign field not found")
 
         auto jValue = m_reader.get("value", *params);
         CHK_PRM(jValue, "value field not found")
@@ -172,27 +183,21 @@ bool send_tx_handler::check_send_params()
         m_nonce = std::stoull(tmp);
 
         m_reader.get_value(*params, "data", m_data);
-
-        CHK_PRM(m_reader.get_value(*params, "pubkey", m_pubkey) && !m_pubkey.empty(), "pubkey field not found")
-        CHK_PRM(m_reader.get_value(*params, "sign", m_sign) && !m_sign.empty(), "sign field not found")
-
         m_reader.get_value(*params, "hash", m_hash);
-
-        return true;
+        return 1;
     }
-    END_TRY_RET(false)
+    END_TRY_RET(-1)
 }
 
-void send_tx_handler::get_type()
+int send_tx_handler::check_params_2()
 {
     BGN_TRY
     {
-        auto params = m_reader.get_params();
-        if (!params) {
-            return;
-        }
-        m_reader.get_value(*params, "type", m_type);
+        CHK_PRM(!m_transaction.empty(), "transaction field not found")
+        CHK_PRM(!m_address.empty(), "address field not found")
+        CHK_PRM(m_address.compare(0, 2, "0x") == 0, "address field must be in hex format")
+        CHK_PRM(storage::keys::peek(m_address, m_keys), "failed on get keys")
+        return 2;
     }
-    END_TRY
+    END_TRY_RET(-1)
 }
-

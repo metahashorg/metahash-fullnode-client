@@ -4,6 +4,7 @@
 #include <iostream>
 #include "time_duration.h"
 #include "openssl/sha.h"
+#include "common/convertStrings.h"
 
 #include "common/log.h"
 
@@ -53,40 +54,42 @@ namespace utils
         if (buf.size() < 2) {
             return 0;
         }
+
         std::string tmp;
-        if (buf.compare("fa") == 0) {
+        if (buf.compare(0, 2, "fa") == 0) {
             // uint16_t
-            if (buf.size() < sizeof(uint16_t) + 2) {
+            if (buf.size() < sizeof(uint16_t)*2 + 2) {
                 throw std::invalid_argument("Can not read compact uint16");
             }
             buf.remove_prefix(2);
-            tmp.assign(buf.data(), sizeof(uint16_t));
-            buf.remove_prefix(sizeof(uint16_t));
-        } else if (buf.compare("fb") == 0) {
+            tmp.assign(buf.data(), sizeof(uint16_t)*2);
+            buf.remove_prefix(sizeof(uint16_t)*2);
+        } else if (buf.compare(0, 2, "fb") == 0) {
             // uint32_t
-            if (buf.size() < sizeof(uint32_t) + 2) {
+            if (buf.size() < sizeof(uint32_t)*2 + 2) {
                 throw std::invalid_argument("Can not read compact uint32");
             }
             buf.remove_prefix(2);
-            tmp.assign(buf.data(), sizeof(uint32_t));
-            buf.remove_prefix(sizeof(uint32_t));
-        } else if (buf.compare("fc") == 0) {
+            tmp.assign(buf.data(), sizeof(uint32_t)*2);
+            buf.remove_prefix(sizeof(uint32_t)*2);
+        } else if (buf.compare(0, 2, "fc") == 0) {
             // uint64_t
-            if (buf.size() < sizeof(uint64_t) + 2) {
+            if (buf.size() < sizeof(uint64_t)*2 + 2) {
                 throw std::invalid_argument("Can not read compact uint64");
             }
             buf.remove_prefix(2);
-            tmp.assign(buf.data(), sizeof(uint64_t));
-            buf.remove_prefix(sizeof(uint64_t));
+            tmp.assign(buf.data(), sizeof(uint64_t)*2);
+            buf.remove_prefix(sizeof(uint64_t)*2);
         } else {
             // uint8_t
-            if (buf.size() < 2) {
+            if (buf.size() < sizeof(uint8_t)*2 + 2) {
                 throw std::invalid_argument("Can not read compact uint8");
             }
-            tmp.assign(buf.data(), sizeof(uint8_t));
-            buf.remove_prefix(sizeof(uint8_t));
+            tmp.assign(buf.data(), sizeof(uint8_t)*2);
+            buf.remove_prefix(sizeof(uint8_t)*2);
         }
-        return tmp.empty() ? 0 : std::atoll(tmp.c_str());
+        reverse_byte_order(tmp);
+        return common::hexStrToInt<uint64_t>(tmp);
     }
 
     bool gen_sign(std::string &transaction, std::string& result, const std::string& prv_key, const char* fmt, ...)
@@ -224,19 +227,34 @@ namespace utils
     bool parse_tansaction(std::string_view transaction, std::string& to, uint64_t& value, uint64_t& fee, uint64_t& nonce, uint64_t& data_size, std::string& data)
     {
         try {
-                to.reserve(54);
-                to = "0x";
-                to.append(transaction.data(), 52);
-                transaction.remove_prefix(52);
-                value = read_compact_int(transaction);
-                fee = read_compact_int(transaction);
-                nonce = read_compact_int(transaction);
-                data_size = read_compact_int(transaction);
-                data.assign(transaction.data(), transaction.size());
+            to.reserve(52);
+            to.append("0x");
+            to.append(transaction.data(), 50);
+            transaction.remove_prefix(50);
+            value = read_compact_int(transaction);
+            fee = read_compact_int(transaction);
+            nonce = read_compact_int(transaction);
+            data_size = read_compact_int(transaction);
+            data.assign(transaction.data(), transaction.size());
             return true;
         } catch (std::exception& e) {
             LOGERR << "parse transaction failed: " << e.what();
             return false;
+        }
+    }
+
+    void reverse_byte_order(std::string& hex)
+    {
+        char c;
+        for (size_t i = 0, sz = hex.size(), cnt = sz/2 - (sz/2 % 2); i < cnt; ++i) {
+            c = hex[i];
+            if (i % 2) {
+                hex[i] = hex[sz-i];
+                hex[sz-i] = c;
+            } else {
+                hex[i] = hex[sz-i-2];
+                hex[sz-i-2] = c;
+            }
         }
     }
 

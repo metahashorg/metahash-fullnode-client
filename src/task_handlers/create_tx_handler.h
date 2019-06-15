@@ -24,7 +24,8 @@ public:
     virtual ~create_tx_handler_v2() override {}
 
 protected:
-    virtual bool build_request() override;
+    virtual bool build_request(bool create_hash = false) override;
+    virtual void make_json() override;
 };
 
 #endif // __CREATE_TX_HANDLER_H__

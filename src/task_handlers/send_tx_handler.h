@@ -7,8 +7,7 @@ class send_tx_handler : public create_tx_base_handler
 {
 public:
     send_tx_handler(http_session_ptr session)
-        : create_tx_base_handler(session)
-        , m_type(0) {}
+        : create_tx_base_handler(session) {}
     virtual ~send_tx_handler() override {}
 
 protected:
@@ -18,15 +17,9 @@ protected:
 
     void process_response(json_rpc_reader &reader) override;
 
-    bool check_send_params();
-    void get_type();
-
-protected:
-    std::string m_transaction;
-    std::string m_pubkey;
-    std::string m_sign;
-    std::string m_hash;
-    mh_count_t m_type;
+    int check_params();
+    int check_params_1();
+    int check_params_2();
 };
 
 #endif // __SEND_TX_HANDLER_H__
