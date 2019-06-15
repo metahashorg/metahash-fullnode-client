@@ -19,10 +19,6 @@ bool send_tx_handler::prepare_params()
                 return false;
 
             case 1:
-                make_json();
-                break;
-
-            case 2:
             {
                 mh_count_t data_size = 0;
                 CHK_PRM(utils::parse_tansaction(m_transaction, m_to, m_value, m_fee, m_nonce, data_size, m_data), "failed on parse transaction")
@@ -33,6 +29,7 @@ bool send_tx_handler::prepare_params()
                 m_sign = bin2hex(sign_bin);
 
                 CHK_PRM(utils::make_tx(m_hash, "xuxux", m_transaction.c_str(), m_sign.size() / 2, m_sign.c_str(), m_keys.pub_key.size() / 2, m_keys.pub_key.c_str()), "failed on generate tx")
+
                 make_json();
             }
             break;
@@ -141,12 +138,12 @@ int send_tx_handler::check_params()
             return create_tx_base_handler::check_params() ? 0 : -1;
         }
 
-        m_reader.get_value(*params, "address", m_address);
-        if (m_address.empty()) {
-            return check_params_1();
-        } else {
-            return check_params_2();
-        }
+        CHK_PRM(m_reader.get_value(*params, "address", m_address), "address field not found");
+        CHK_PRM(!m_address.empty(), "address field not found")
+        CHK_PRM(m_address.compare(0, 2, "0x") == 0, "address field must be in hex format")
+        CHK_PRM(storage::keys::peek(m_address, m_keys), "failed on get keys")
+
+        return 1;
     }
     END_TRY_RET(-1)
 }
@@ -158,11 +155,9 @@ int send_tx_handler::check_params_1()
         auto params = m_reader.get_params();
         CHK_PRM(params, "params field not found")
 
-        CHK_PRM(!m_transaction.empty(), "transaction field not found")
-        CHK_PRM(m_reader.get_value(*params, "to", m_to) && !m_to.empty(), "to field not found")
+        CHK_PRM(m_reader.get_value(*params, "to", m_to), "to field not found");
         CHK_PRM(m_to.compare(0, 2, "0x") == 0, "to field must be in hex format")
-        CHK_PRM(m_reader.get_value(*params, "pubkey", m_keys.pub_key) && !m_keys.pub_key.empty(), "pubkey field not found")
-        CHK_PRM(m_reader.get_value(*params, "sign", m_sign) && !m_sign.empty(), "sign field not found")
+        //CHK_PRM(m_reader.get_value(*params, "sign", m_sign) && !m_sign.empty(), "sign field not found")
 
         auto jValue = m_reader.get("value", *params);
         CHK_PRM(jValue, "value field not found")
@@ -181,23 +176,8 @@ int send_tx_handler::check_params_1()
         tmp.clear();
         CHK_PRM(json_utils::val2str(jValue, tmp), "nonce field has incorrect format")
         m_nonce = std::stoull(tmp);
-
-        m_reader.get_value(*params, "data", m_data);
-        m_reader.get_value(*params, "hash", m_hash);
         return 1;
     }
     END_TRY_RET(-1)
 }
 
-int send_tx_handler::check_params_2()
-{
-    BGN_TRY
-    {
-        CHK_PRM(!m_transaction.empty(), "transaction field not found")
-        CHK_PRM(!m_address.empty(), "address field not found")
-        CHK_PRM(m_address.compare(0, 2, "0x") == 0, "address field must be in hex format")
-        CHK_PRM(storage::keys::peek(m_address, m_keys), "failed on get keys")
-        return 2;
-    }
-    END_TRY_RET(-1)
-}
