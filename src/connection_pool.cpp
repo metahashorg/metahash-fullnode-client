@@ -66,6 +66,7 @@ pool_object socket_pool::checkout(const std::string& host)
             m_busy.insert(m_busy.begin(), {host.c_str()});
             return m_busy.begin();
         }
+        LOGWARN << "Connection pool monitor. Pool is full. Capacity: " << m_capacity << ", busy/ready: " << m_busy.size() << "/" << m_ready.size();
         return m_busy.end();
     }
     POOL_END(return m_busy.end())
@@ -80,6 +81,7 @@ void socket_pool::checkin(pool_object& value)
         for (; it != m_busy.end(); ++it) {
             if (it == value) {
                 if (value->socket == -1) {
+                    LOGINFO << "Connection pool monitor. Removed invalid socket " << it->ep;
                     m_busy.erase(it);
                 } else {
                     it->ttl = std::chrono::high_resolution_clock::now() + std::chrono::seconds(settings::system::conn_pool_ttl);

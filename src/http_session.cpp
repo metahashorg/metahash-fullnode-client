@@ -169,6 +169,10 @@ void http_session::process_post_request()
         std::string json;
         json_rpc_reader reader;
         json_rpc_writer writer;
+
+        // TODO Add notifications
+        // if "id" not provided it means notification
+
         if (reader.parse(m_req.body().c_str())) {
             auto it = post_handlers.find(std::make_pair(reader.get_method(), settings::system::useLocalDatabase));
             if (it == post_handlers.end()) {

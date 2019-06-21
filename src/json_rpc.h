@@ -115,8 +115,9 @@ public:
     template <typename T>
     void add_error_data(const std::string& name, T value)
     {
-        rapidjson::Value& result = get_value(m_doc, "error", rapidjson::kObjectType);
-        rapidjson::Value& param = get_value(result, name, rapidjson::kNullType);
+        rapidjson::Value& err = get_value(m_doc, "error", rapidjson::kObjectType);
+        rapidjson::Value& data = get_value(err, "data", rapidjson::kObjectType);
+        rapidjson::Value& param = get_value(data, name, rapidjson::kNullType);
         param.Set<T>(value, m_doc.GetAllocator());
     }
 
