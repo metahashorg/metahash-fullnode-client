@@ -45,6 +45,7 @@ namespace settings
     bool system::allowStateBlocks = false;
     unsigned int system::jrpc_conn_timeout = 1000;
     unsigned int system::jrpc_timeout = 60000;
+    unsigned int system::jrpc_attempts_count = 2;
     bool system::conn_pool_enable = false;
     unsigned int system::conn_pool_ttl = 60; // SECONDS!
     unsigned int system::conn_pool_capacity = 100;
@@ -97,6 +98,7 @@ namespace settings
         system::wallet_stotage = tree.get<std::string>("system.wallets-storage", "./wallet");
         system::jrpc_conn_timeout = tree.get<unsigned int>("system.jrpc_conn_timeout", 1000);
         system::jrpc_timeout = tree.get<unsigned int>("system.jrpc_timeout", 60000);
+        system::jrpc_attempts_count = tree.get<unsigned int>("system.jrpc_attempts_count", 2);
         system::leveldbFolder = tree.get<std::string>("system.leveldb_folder");
         system::blocksFolder = tree.get<std::string>("system.blocks_folder");
         system::validateBlocks = tree.get<bool>("system.validate_blocks");

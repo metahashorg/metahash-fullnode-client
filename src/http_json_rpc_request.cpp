@@ -22,7 +22,8 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
     m_ssl_socket(m_io_ctx, m_ssl_ctx),
     m_async(true),
     m_use_ssl(false),
-    m_canceled(false)
+    m_canceled(false),
+    m_attempt(0)
 {
     std::string addr, path, port;
     utils::parse_address(m_host, addr, port, path, m_use_ssl);
@@ -88,6 +89,11 @@ void http_json_rpc_request::set_host(const std::string& host)
     JRPC_END()
 }
 
+void http_json_rpc_request::reset_attempts()
+{
+    m_attempt = 0;
+}
+
 bool http_json_rpc_request::error_handler(const boost::system::error_code& e, const char* from)
 {
     JRPC_BGN
@@ -112,18 +118,20 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
         //close(boost::asio::error::get_system_category().equivalent(e, e.value()));
         close(true);
 
-        //if (e != asio::error::operation_aborted)
-        {
+        m_duration.stop();
+
+        if (++m_attempt < settings::system::jrpc_attempts_count) {
+            LOGINFO << "json-rpc[" << m_id << "] Rerun request";
+            execute_async(m_callback);
+        } else {
             m_result.set_error(-32603, string_utils::str_concat("Json-rpc error ", std::to_string(e.value()), " : ", e.message()));
             m_result.add_error_data("when", from);
             m_result.add_error_data("host", m_host);
             perform_callback();
+
+            if (!m_async && !m_io_ctx.stopped())
+                m_io_ctx.stop();
         }
-
-        if (!m_async && !m_io_ctx.stopped())
-            m_io_ctx.stop();
-
-        m_duration.stop();
 
         return true;
     }
@@ -150,6 +158,8 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
         if (callback) {
             m_callback = callback;
         }
+
+        LOGDEBUG << "json-rpc[" << m_id << "] Run request attempt " << m_attempt+1 << "/" << settings::system::jrpc_attempts_count;
 
         m_canceled = false;
         m_result.reset();

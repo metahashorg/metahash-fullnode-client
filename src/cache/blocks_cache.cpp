@@ -153,6 +153,7 @@ void blocks_cache::routine()
 
             ctx.restart();
             gcb->set_host(settings::server::get_tor());
+            gcb->reset_attempts();
             gcb->execute();
             response = gcb->get_response();
             if (!response) {
@@ -186,6 +187,7 @@ void blocks_cache::routine()
                 string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-dump-block-by-number\", \"params\":{\"number\":", std::to_string(m_nextblock), ", \"compress\":true}}");
                 gdbn->set_body(json);
                 gdbn->set_host(settings::server::get_tor());
+                gdbn->reset_attempts();
                 gdbn->execute();
                 response = gdbn->get_response();
                 if (response->get().body().empty()) {
@@ -318,6 +320,7 @@ void blocks_cache::routine_2()
             ctx.restart();
             get_blocks->set_host(settings::server::get_tor());
             get_blocks->set_body(json);
+            get_blocks->reset_attempts();
             get_blocks->execute();
             response = get_blocks->get_response();
             if (!response) {
@@ -393,6 +396,7 @@ void blocks_cache::routine_2()
             ctx.restart();
             get_dumps->set_host(settings::server::get_tor());
             get_dumps->set_body(json);
+            get_dumps->reset_attempts();
             get_dumps->execute();
             response = get_dumps->get_response();
             if (!response) {

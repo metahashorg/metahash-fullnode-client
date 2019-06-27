@@ -53,6 +53,7 @@ void status_handler::execute()
             m_writer.add_result("allow_state_blocks", settings::system::allowStateBlocks);
             m_writer.add_result("jrpc_timeout", settings::system::jrpc_timeout);
             m_writer.add_result("jrpc_conn_timeout", settings::system::jrpc_conn_timeout);
+            m_writer.add_result("jrpc_attempts_count", settings::system::jrpc_attempts_count);
             m_writer.add_result("conn_pool_enable", g_conn_pool && g_conn_pool->enable() ? true : false);
             m_writer.add_result("conn_pool_ttl", settings::system::conn_pool_ttl);
             m_writer.add_result("conn_pool_capacity", settings::system::conn_pool_capacity);

@@ -48,6 +48,7 @@ namespace settings
         static std::string wallet_stotage;
         static unsigned int jrpc_conn_timeout;
         static unsigned int jrpc_timeout;
+        static unsigned int jrpc_attempts_count;
         static std::string leveldbFolder;
         static std::string blocksFolder;
         static bool validateBlocks;

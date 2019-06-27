@@ -45,6 +45,8 @@ public:
     void set_body(const std::string& body);
     void set_host(const std::string& host);
 
+    void reset_attempts();
+
     void execute();
     void execute_async(http_json_rpc_execute_callback callback);
 
@@ -87,6 +89,7 @@ protected:
     bool                                m_canceled;
     std::mutex                          m_locker;
     pool_object                         m_pool_obj;
+    unsigned int                        m_attempt;
 };
 
 #define JRPC_BGN try
