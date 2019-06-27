@@ -379,9 +379,25 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
 
         m_timer.stop();
         m_duration.stop();
-        close();
 
-        LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " payload " << m_response->get().body().size() << " bytes";
+        bool keep_alive = true;
+        for (;;) {
+            auto field = m_response->get().find(http::field::connection);
+            if (field != m_response->get().end() && field->value() == "close") {
+                keep_alive = false;
+                break;
+            }
+            if (m_response->get().version() == 11) {
+                keep_alive = true;
+                break;
+            }
+            keep_alive = m_response->get().keep_alive();
+            break;
+        }
+
+        LOGDEBUG << "json-rpc[" << m_id << "] Recieve response: " << m_host << " payload " << m_response->get().body().size() << " bytes, keep-alive " << keep_alive;
+
+        close(!keep_alive);
 
         http::status status = m_response->get().result();
         if (status != http::status::ok) {
