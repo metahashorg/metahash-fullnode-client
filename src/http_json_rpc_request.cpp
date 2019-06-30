@@ -23,7 +23,8 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
     m_async(true),
     m_use_ssl(false),
     m_canceled(false),
-    m_attempt(0)
+    m_attempt(0),
+    m_rerun(false)
 {
     std::string addr, path, port;
     utils::parse_address(m_host, addr, port, path, m_use_ssl);
@@ -100,15 +101,21 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
     {
         std::lock_guard<std::mutex> lock(m_locker);
 
-        if (m_canceled) {
-            return true;
-        }
+        if (!m_rerun) {
+            if (m_canceled) {
+                return true;
+            }
 
-        if (!e) {
-            return false;
+            if (!e) {
+                return false;
+            }
+        } else {
+            m_rerun = false;
         }
 
         m_canceled = true;
+
+        m_locker.unlock();
 
         m_timer.stop();
         m_connect_timer.stop();
@@ -120,7 +127,7 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
 
         m_duration.stop();
 
-        if (++m_attempt < settings::system::jrpc_attempts_count) {
+        if (m_attempt < settings::system::jrpc_attempts_count) {
             LOGINFO << "json-rpc[" << m_id << "] Rerun request";
             execute_async(m_callback);
         } else {
@@ -159,7 +166,9 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
             m_callback = callback;
         }
 
-        LOGDEBUG << "json-rpc[" << m_id << "] Run request attempt " << m_attempt+1 << "/" << settings::system::jrpc_attempts_count;
+        m_attempt++;
+
+        LOGDEBUG << "json-rpc[" << m_id << "] Run request attempt " << m_attempt << "/" << settings::system::jrpc_attempts_count;
 
         m_canceled = false;
         m_result.reset();
@@ -246,10 +255,14 @@ void http_json_rpc_request::on_request_timeout()
         m_connect_timer.stop();
         m_timer.set_callback(nullptr);
         m_duration.stop();
-        m_result.set_error(-32603,
-            string_utils::str_concat("Json-rpc timeout ", std::to_string(settings::system::jrpc_timeout), " ms"));
-        m_result.add_error_data("host", m_host);
-        perform_callback();
+        if (m_attempt < settings::system::jrpc_attempts_count) {
+            m_rerun = true;
+        } else {
+            m_result.set_error(-32603,
+                string_utils::str_concat("Json-rpc timeout ", std::to_string(settings::system::jrpc_timeout), " ms"));
+            m_result.add_error_data("host", m_host);
+            perform_callback();
+        }
     }
     JRPC_END()
 }
@@ -297,10 +310,14 @@ void http_json_rpc_request::on_connect_timeout()
         m_timer.stop();
         m_connect_timer.set_callback(nullptr);
         m_duration.stop();
-        m_result.set_error(-32603,
-            string_utils::str_concat("Json-rpc connection timeout ", std::to_string(settings::system::jrpc_conn_timeout), " ms"));
-        m_result.add_error_data("host", m_host);
-        perform_callback();
+        if (m_attempt < settings::system::jrpc_attempts_count) {
+            m_rerun = true;
+        } else {
+            m_result.set_error(-32603,
+                string_utils::str_concat("Json-rpc connection timeout ", std::to_string(settings::system::jrpc_conn_timeout), " ms"));
+            m_result.add_error_data("host", m_host);
+            perform_callback();
+        }
     }
     JRPC_END()
 }

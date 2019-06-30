@@ -90,6 +90,7 @@ protected:
     std::mutex                          m_locker;
     pool_object                         m_pool_obj;
     unsigned int                        m_attempt;
+    bool                                m_rerun;
 };
 
 #define JRPC_BGN try
