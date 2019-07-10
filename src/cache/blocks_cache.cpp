@@ -335,6 +335,11 @@ void blocks_cache::routine_2()
                 LOGERR << "Cache. Could not parse get-blocks: " << reader.get_parse_error().Code();
                 goto wait;
             }
+            tmp = reader.get_error();
+            if (tmp != nullptr) {
+                LOGERR << "Cache. Got error from get-blocks: " << reader.stringify(tmp);
+                goto wait;
+            }
             tmp = reader.get_result();
             if (tmp == nullptr) {
                 LOGERR << "Cache. Did not find result in get-blocks";
@@ -422,6 +427,10 @@ void blocks_cache::routine_2()
             resp_size = decompressed.size();
 
             LOGINFO << "Cache. Getting " << hashes.size() << " block(s). Size " << response->get().body().size() << "/" << resp_size;
+
+            if (resp_size == 0) {
+                goto wait;
+            }
 
             buf = decompressed.c_str();
             p = buf;
