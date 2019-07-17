@@ -2,7 +2,9 @@
  "service":
  {
   "threads": 4,
-  "port": 9999
+  "port": 9999,
+  "auth_enable": false,
+  "auth_key": "changeme"
  },
  "server":
  {
