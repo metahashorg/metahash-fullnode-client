@@ -24,6 +24,8 @@ namespace settings
     int service::threads = {4};
     bool service::keep_alive = {false};
     std::vector<std::string> service::access;
+    bool service::auth_enable = {false};
+    std::string service::auth_key;
 
     std::string statistic::statisticNetwork;
     std::string statistic::statisticGroup;
@@ -75,6 +77,11 @@ namespace settings
         service::port = tree.get<unsigned short>("service.port", 9999);
         service::threads = tree.get<int>("service.threads", 4);
         service::keep_alive = tree.get<bool>("service.keep_alive", false);
+        service::auth_enable = tree.get<bool>("service.auth_enable", false);
+        service::auth_key = tree.get<std::string>("service.auth_key", "");
+        if (service::auth_key.empty()) {
+            service::auth_enable = false;
+        }
 
         asio::io_context ctx;
         tcp::resolver resolver(ctx);
@@ -92,8 +99,8 @@ namespace settings
             }
         }
 
-        server::torName     = tree.get<std::string>("server.tor", "127.0.0.0");
-        server::proxyName   = tree.get<std::string>("server.proxy", "127.0.0.0");
+        server::torName     = tree.get<std::string>("server.tor", "127.0.0.1");
+        server::proxyName   = tree.get<std::string>("server.proxy", "127.0.0.1");
         
         system::wallet_stotage = tree.get<std::string>("system.wallets-storage", "./wallet");
         system::jrpc_conn_timeout = tree.get<unsigned int>("system.jrpc_conn_timeout", 1000);

@@ -63,6 +63,13 @@ void http_session::process_request()
 {
     HTTP_SESS_BGN
     {
+        m_http_keep_alive = false;
+
+        if (!check_auth(m_req)) {
+            send_bad_response(http::status::unauthorized, "Authentication failed");
+            return;
+        }
+
         for (;;) {
             m_http_ver = m_req.version();
             auto field = m_req.find(http::field::connection);
@@ -86,19 +93,19 @@ void http_session::process_request()
             process_get_request();
             break;
         default:
-            send_bad_request("Incorrect http method");
+            send_bad_response(http::status::bad_request, "Incorrect http method");
             break;
         }
     }
     HTTP_SESS_END
 }
 
-void http_session::send_bad_request(const char* error)
+void http_session::send_bad_response(http::status status, const char* error)
 {
     HTTP_SESS_BGN
     {
         http::response<http::string_body> response;
-        response.result(http::status::bad_request);
+        response.result(status);
         response.set(http::field::content_type, "text/plain");
         // TODO convertation into UTF-8
         response.body().assign(error);
@@ -133,7 +140,7 @@ void http_session::send_response(http::response<http::string_body>& response)
         strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S %Z", &tm);
 
         response.set(http::field::date, buf);
-        response.set(http::field::server, "metahash.service");
+        //response.set(http::field::server, "metahash.service");
         response.set(http::field::content_length, response.body().size());
         if (settings::service::keep_alive) {
             if (m_http_ver == 10) {
@@ -162,7 +169,7 @@ void http_session::process_post_request()
     {
         if (m_req.target().size() != 1 || m_req.target()[0] != '/')
         {
-            send_bad_request("Incorrect path");
+            send_bad_response(http::status::bad_request, "Incorrect path");
             return;
         }
 
@@ -204,7 +211,7 @@ void http_session::process_get_request()
     HTTP_SESS_BGN
     {
         if (m_req.target().size() == 1) {
-            send_bad_request("Incorrect path");
+            send_bad_response(http::status::bad_request, "Incorrect path");
             return;
         }
 
@@ -257,6 +264,18 @@ bool http_session::keep_alive()
 {
     if (settings::service::keep_alive) {
         return m_http_keep_alive;
+    }
+    return false;
+}
+
+bool http_session::check_auth(const http::request<http::string_body>& req)
+{
+    if (!settings::service::auth_enable) {
+        return true;
+    }
+    auto field = req.find("x-auth-key");
+    if (field != req.end()) {
+        return field->value().compare(settings::service::auth_key) == 0;
     }
     return false;
 }

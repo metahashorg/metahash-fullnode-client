@@ -35,6 +35,8 @@ namespace settings
         static int threads;
         static std::vector<std::string> access;
         static bool keep_alive;
+        static bool auth_enable;
+        static std::string auth_key;
     };
 
     struct server {
