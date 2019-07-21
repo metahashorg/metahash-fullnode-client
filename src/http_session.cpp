@@ -66,6 +66,13 @@ void http_session::process_request()
         m_http_keep_alive = false;
 
         if (!check_auth(m_req)) {
+            boost::system::error_code ec;
+            const tcp::endpoint& ep = m_socket.remote_endpoint(ec);
+            if (ec) {
+                LOGWARN << "Unknown client has not passed authentication";
+            } else {
+                LOGWARN << ep.address().to_string(ec) << ":" << ep.port() << " has not passed authentication";
+            }
             send_bad_response(http::status::unauthorized, "Access Denied");
             return;
         }
