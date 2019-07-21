@@ -1,4 +1,5 @@
 #include "string_utils.h"
+#include <algorithm>
 
 namespace string_utils
 {
@@ -27,7 +28,18 @@ namespace {
     };
 }
 
-void bin2hex(const unsigned char* buf, size_t size, char* res) noexcept
+std::string bin2hex(const std::vector<unsigned char>& src)
+{
+    std::string res;
+    res.reserve(src.size() * 2 + 1);
+    for (size_t i = 0, size = src.size(); i < size; i++) {
+        const char* c = hex + static_cast<unsigned char>(src[i])*2;
+        res.insert(res.end(), c, c + 2);
+    }
+    return res;
+}
+
+void bin2hex(const unsigned char* buf, size_t size, char* res)
 {
     for (size_t i = 0; i < size; i++) {
         const char* c = hex + (*(buf+i))*2;
@@ -36,7 +48,7 @@ void bin2hex(const unsigned char* buf, size_t size, char* res) noexcept
     }
 }
 
-void bin2hex(const std::string& buf, std::string& res) noexcept
+void bin2hex(const std::string& buf, std::string& res)
 {
     res.reserve(buf.size() * 2);
     for (size_t i = 0, size = buf.size(); i < size; i++) {
@@ -46,7 +58,7 @@ void bin2hex(const std::string& buf, std::string& res) noexcept
     }
 }
 
-void hex2val_le(std::string_view& buf, size_t size) noexcept
+void hex2val_le(std::string_view& buf, size_t size)
 {
     uint64_t res = 0;
     unsigned char c;
@@ -57,6 +69,32 @@ void hex2val_le(std::string_view& buf, size_t size) noexcept
         ('a' <= c && c <= 'f' ? (c - 'a' + 10) :
         ('A' <= c && c <= 'F' ? (c - 'A' + 10) : 0)));
     }
+}
+
+std::string to_lower(const std::string &str)
+{
+    std::string res;
+    res.reserve(str.size() + 1);
+    std::transform(str.begin(), str.end(), std::back_inserter(res), tolower);
+    return res;
+}
+
+std::string to_lower(const char* buf, size_t size)
+{
+    std::string res;
+    res.reserve(size + 1);
+    for (size_t i = 0; i < size; i++) {
+        res.push_back(static_cast<char>(tolower(static_cast<int>(*(buf+i)))));
+    }
+    return res;
+}
+
+std::string to_upper(const std::string &str)
+{
+    std::string res;
+    res.reserve(str.size() + 1);
+    std::transform(str.begin(), str.end(), std::back_inserter(res), toupper);
+    return res;
 }
 
 }

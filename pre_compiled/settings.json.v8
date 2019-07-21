@@ -23,7 +23,16 @@
   "conn_pool_enable": true,
   "conn_pool_ttl": 60,
   "conn_pool_capacity": 100,
-  "blocks_cache_enable": true
+  "blocks_cache_enable": true,
+  "blocks_cache_block_verification": true,
+  "cores":[
+    "0x0028dd1ca2951fe554ef526d60ff55a64776ee5e033120ca91",
+    "0x005140a0ae997aeae77c09d7d4ccf97aa65695a9a1e28812bd",
+    "0x0057b301028c5e0c234bb35b611fc8d3d15c797fb39ef768a4",
+    "0x0069fce976a40fbd2c894f1fe635255fc16c80bfe17ce65f5e",
+    "0x007fce3c1e56c67f963428b3dcdfc4400408918b843d1652ec",
+    "0x00a88a888d16a23991e73b4081b745eec0f56cdc7063baa360",
+    "0x00f3dc22cbe3519ce94e9bf12145d61789da0bfd26bbdf7999"]
  },
  "extensions":
  {

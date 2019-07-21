@@ -68,7 +68,9 @@ void status_handler::execute()
             m_writer.add_result("blocks_cache_init_count", settings::system::blocks_cache_init_count);
             m_writer.add_result("blocks_cache_recv_count", settings::system::blocks_cache_recv_count);
             m_writer.add_result("blocks_cache_recv_data_size", settings::system::blocks_cache_recv_data_size);
+            m_writer.add_result("blocks_cache_block_verification", settings::system::blocks_cache_block_verification);
             m_writer.add_result("keep_alive", settings::service::keep_alive);
+            m_writer.add_result("auth_enable", settings::service::auth_enable);
             if (syncSingleton() != nullptr) {
                 const torrent_node_lib::Sync &sync = *syncSingleton();
                 m_writer.add_result("blocks_count", sync.getBlockchain().countBlocks());

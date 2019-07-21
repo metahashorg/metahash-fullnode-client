@@ -34,7 +34,7 @@ protected:
     void process_get_request();
 
     void send_response(http::response<http::string_body>& response);
-    void send_bad_response(http::status status, const char* error);
+    void send_bad_response(http::status status, const char* error = nullptr);
 
     void close();
     bool keep_alive();

@@ -6,6 +6,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include "log.h"
+#include "string_utils.h"
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/program_options.hpp>
@@ -57,6 +58,8 @@ namespace settings
     unsigned int system::blocks_cache_init_count = 50000;
     unsigned int system::blocks_cache_recv_data_size = 5;
     unsigned int system::blocks_cache_recv_count = 100;
+    bool system::blocks_cache_block_verification = true;
+    std::vector<std::string> system::cores;
 
     // extensions
     bool extensions::use_tracking_history = {false};
@@ -122,6 +125,13 @@ namespace settings
         system::blocks_cache_init_count = tree.get<unsigned int>("system.blocks_cache_init_count", 50000);
         system::blocks_cache_recv_data_size = tree.get<unsigned int>("system.blocks_cache_recv_data_size", 5);
         system::blocks_cache_recv_count = tree.get<unsigned int>("system.blocks_cache_recv_count", 100);
+        system::blocks_cache_block_verification = tree.get<bool>("system.blocks_cache_block_verification", true);
+
+        boost::property_tree::ptree cores;
+        cores = tree.get_child("system.cores", cores);
+        for (auto &v : cores) {
+            system::cores.emplace_back(string_utils::to_lower(v.second.data()));
+        }
 
         if (tree.find("statistic") != tree.not_found()) {
             statistic::statisticNetwork = tree.get<std::string>("statistic.network");

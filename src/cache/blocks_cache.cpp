@@ -232,7 +232,7 @@ void blocks_cache::routine_2()
         handler_result res;
         std::string json;
         std::string decompressed;
-        std::string_view dump;
+//        std::string_view dump;
         json_rpc_reader reader;
         rapidjson::Value* tmp = nullptr;
         rapidjson::Value::MemberIterator it;
@@ -240,23 +240,30 @@ void blocks_cache::routine_2()
         std::chrono::system_clock::time_point tp;
 
         struct block_info {
-            block_info(unsigned int number_, const char* data, size_t size)
+            block_info(unsigned int number_, const char* str, size_t size)
                 : number(number_)
-                , hash(data, size) {}
-            unsigned int number;
-            std::string_view hash;
+                , hash(str, size) {
+                std::transform(hash.begin(), hash.end(), hash.begin(), ::tolower);
+            }
+            const unsigned int number;
+            std::string hash;
         };
 
         std::vector<block_info> hashes;
         std::vector<block_info>::const_iterator iter;
         const char
                 *buf = nullptr,
-                *p = nullptr;
-        uint64_t blk_size = 0;
+                *p = nullptr,
+                *p_prev = nullptr;
+        uint64_t blk_size, sz_prev = 0;
         size_t resp_size = 0;
 
         json_response_type* response = nullptr;
         boost::asio::io_context ctx;
+
+        torrent_node_lib::BlockInfo bi, bi_prev;
+        std::string tmp_str;
+//        bool tmp_bool = false;
 
         unsigned int tmp_blk_num = 0;
         if (m_nextblock == 0) {
@@ -307,6 +314,9 @@ void blocks_cache::routine_2()
         http_json_rpc_request_ptr get_dumps = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
         get_dumps->set_path("get-dumps-blocks-by-hash");
 
+        http_json_rpc_request_ptr get_block = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
+        get_block->set_path("get-block-by-number");
+
         while (m_run) {
             common::checkStopSignal();
 
@@ -352,6 +362,7 @@ void blocks_cache::routine_2()
             if (tmp->Size() == 0) {
                 goto wait;
             }
+
             hashes.clear();
             blocks_size = 0;
             for (arr_it = tmp->GetArray().begin(); arr_it != tmp->GetArray().end(); arr_it++) {
@@ -361,7 +372,7 @@ void blocks_cache::routine_2()
                 it = arr_it->FindMember("size");
                 if (it != arr_it->MemberEnd()) {
                     blocks_size += it->value.GetUint();
-                    if (arr_it != tmp->GetArray().begin()) {
+                    if (settings::system::blocks_cache_block_verification ? hashes.size() > 1 : hashes.size() > 0) {
                         if (blocks_size > blocks_max_size) {
                             LOGWARN << "Cache. Reached maximum blocks data size per request: " << blocks_max_size << " bytes";
                             break;
@@ -383,6 +394,10 @@ void blocks_cache::routine_2()
             }
 
             if (hashes.empty()) {
+                goto wait;
+            }
+
+            if (settings::system::blocks_cache_block_verification && hashes.size() < 2) {
                 goto wait;
             }
 
@@ -435,6 +450,12 @@ void blocks_cache::routine_2()
             buf = decompressed.c_str();
             p = buf;
             iter = hashes.cbegin();
+
+            // reset previous block
+            bi_prev.header.hash.clear();
+            p_prev = nullptr;
+            sz_prev = 0;
+
             while (p < buf + resp_size && iter != hashes.cend()) {
                 memcpy(&blk_size, p, sizeof(blk_size));
                 blk_size = __builtin_bswap64(blk_size);
@@ -443,13 +464,103 @@ void blocks_cache::routine_2()
                     break;
                 }
                 p += sizeof(blk_size);
-                if (save_block(iter->number, iter->hash, std::string_view(p, blk_size))) {
-                    m_nextblock = iter->number+1;
-                    update_number(m_nextblock);
+
+                if (settings::system::blocks_cache_block_verification && iter->number > 1) {
+
+                    // getting previous block
+                    if (bi_prev.header.hash.empty()) {
+
+                        // try get from cache
+                        if (get_block_by_num(iter->number-1, tmp_str)) {
+                            bi_prev = torrent_node_lib::Sync::parseBlockDump(tmp_str, false);
+                        } else {
+
+                            // if block does not exist in cache we take from torrent
+                            json.clear();
+                            string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-block-by-number\", \"params\":{\"number\":",
+                                                     std::to_string(iter->number-1), "}}");
+
+                            ctx.restart();
+                            get_block->set_host(settings::server::get_tor());
+                            get_block->set_body(json);
+                            get_block->reset_attempts();
+                            get_block->execute();
+                            response = get_block->get_response();
+                            if (!response) {
+                                LOGERR << "Cache. Could not get response from get-block-by-number";
+                                break;
+                            }
+                            if (response->get().body().empty()) {
+                                LOGERR << "Cache. Could not get get-block-by-number";
+                                break;
+                            }
+                            if (!reader.parse(response->get().body())) {
+                                LOGERR << "Cache. Could not parse get-block-by-number: " << reader.get_parse_error().Code();
+                                break;
+                            }
+                            tmp = reader.get_error();
+                            if (tmp != nullptr) {
+                                LOGERR << "Cache. Got error from get-block-by-number: " << reader.stringify(tmp);
+                                break;
+                            }
+                            tmp = reader.get_result();
+                            if (tmp == nullptr) {
+                                LOGERR << "Cache. Did not find result in get-block-by-number";
+                                break;
+                            }
+                            if (!reader.get_value(*tmp, "hash", bi_prev.header.hash)) {
+                                LOGERR << "Cache. Did not find hash in result get-block-by-number";
+                                break;
+                            }
+                            if (bi_prev.header.hash.empty()) {
+                                LOGERR << "Cache. Hash must be not blank";
+                                break;
+                            }
+                        }
+                        bi_prev.header.blockNumber = iter->number-1;
+                        std::transform(bi_prev.header.hash.begin(), bi_prev.header.hash.end(), bi_prev.header.hash.begin(), ::tolower);
+                    }
+
+                    // getting current block
+                    bi = torrent_node_lib::Sync::parseBlockDump(std::string(p, blk_size), false);
+                    bi.header.blockNumber = iter->number;
+                    std::transform(bi.header.hash.begin(), bi.header.hash.end(), bi.header.hash.begin(), ::tolower);
+
+                    // checking hashes
+                    if (bi.header.hash.compare(iter->hash) != 0) {
+                        LOGERR << "Cache. Block " << bi.header.hash << " is not equal " << iter->hash;
+                        goto next;
+                    }
+
+                    // checking current block core addresses
+                    if (!core_addr_verification(bi, bi_prev.header.hash)) {
+                        goto next;
+                    }
+
+                    if (sz_prev > 0 && p_prev) {
+                        if (save_block(static_cast<unsigned>(bi_prev.header.blockNumber.value()), bi_prev.header.hash, std::string_view(p_prev, sz_prev))) {
+                            m_nextblock = static_cast<unsigned>(bi_prev.header.blockNumber.value()) + 1;
+                            update_number(m_nextblock);
+                        }
+                    }
+
+                    // save block to next iterration
+                    std::swap(bi, bi_prev);
+                    p_prev = p;
+                    sz_prev = blk_size;
+
+                } else {
+                    // save blocks without verification
+                    if (save_block(iter->number, iter->hash, std::string_view(p, blk_size))) {
+                        m_nextblock = iter->number+1;
+                        update_number(m_nextblock);
+                    }
                 }
+next:
                 p += blk_size;
                 iter++;
             }
+
             if (settings::system::blocks_cache_force) {
                 continue;
             }
@@ -538,6 +649,61 @@ bool blocks_cache::get_block_by_hash(std::string& hash, std::string& num, std::s
         if (status.ok() && !num.empty()) {
             return get_block_by_num(num, result);
         }
+        return false;
+    }
+    CACHE_END(return false)
+}
+
+bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi, const std::string& prev_hash)
+{
+    CACHE_BGN
+    {
+        if (bi.header.isStateBlock() || bi.header.isForgingBlock()) {
+            return true;
+        }
+        bool succ = false;
+        std::vector<std::string> cores = settings::system::cores;
+        std::vector<std::string>::iterator it;
+
+        for (size_t i = 0; i < bi.txs.size(); ++i) {
+            if (i > 6) {
+                break;
+            }
+            if (!bi.txs[i].isSignBlockTx) {
+                LOGWARN << "Cache. Block " << bi.header.hash << " tx[" << i << "] is not a SignBlockTx";
+                succ = true;
+                continue;
+            }
+            succ = false;
+            if (bi.txs[i].toAddress != bi.txs[i].fromAddress) {
+                LOGERR << "Cache. Block " << bi.header.hash << " tx[" << i << "] fields fromAddress (" << bi.txs[i].fromAddress.calcHexString()
+                       << ") and toAddress (" << bi.txs[i].toAddress.calcHexString() << ") is not equal";
+                break;
+            }
+            std::string from = bi.txs[i].fromAddress.calcHexString();
+            std::transform(from.begin(), from.end(), from.begin(), ::tolower);
+            for (it = cores.begin(); it != cores.end(); it++) {
+                if (it->compare(from) == 0){
+                    cores.erase(it);
+                    succ = true;
+                    break;
+                }
+            }
+            if (!succ) {
+                LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << bi.header.hash << " tx[" << i << "] " << from << " is not core address";
+                break;
+            }
+            std::string tmp = string_utils::bin2hex(bi.txs[i].data);
+            if (tmp.compare(prev_hash) != 0) {
+                succ = false;
+                LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << bi.header.hash << " tx[" << i << "] data " << tmp << " is not equal previous hash " << prev_hash ;
+                break;
+            }
+        }
+        if (succ) {
+            return true;
+        }
+        LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << bi.header.hash << " did not pass core address verification";
         return false;
     }
     CACHE_END(return false)

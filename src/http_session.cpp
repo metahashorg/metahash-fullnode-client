@@ -66,7 +66,7 @@ void http_session::process_request()
         m_http_keep_alive = false;
 
         if (!check_auth(m_req)) {
-            send_bad_response(http::status::unauthorized, "Authentication failed");
+            send_bad_response(http::status::unauthorized, "Access Denied");
             return;
         }
 
@@ -93,7 +93,7 @@ void http_session::process_request()
             process_get_request();
             break;
         default:
-            send_bad_response(http::status::bad_request, "Incorrect http method");
+            send_bad_response(http::status::bad_request, "Incorrect HTTP Method");
             break;
         }
     }
@@ -108,7 +108,9 @@ void http_session::send_bad_response(http::status status, const char* error)
         response.result(status);
         response.set(http::field::content_type, "text/plain");
         // TODO convertation into UTF-8
-        response.body().assign(error);
+        if (error) {
+            response.body().assign(error);
+        }
         send_response(response);
     }
     HTTP_SESS_END
@@ -169,7 +171,7 @@ void http_session::process_post_request()
     {
         if (m_req.target().size() != 1 || m_req.target()[0] != '/')
         {
-            send_bad_response(http::status::bad_request, "Incorrect path");
+            send_bad_response(http::status::bad_request, "Incorrect Path");
             return;
         }
 
@@ -178,7 +180,7 @@ void http_session::process_post_request()
         json_rpc_writer writer;
 
         // TODO Add notifications
-        // if "id" not provided it means notification
+        // if "id" not provided it means it is notification
 
         if (reader.parse(m_req.body().c_str())) {
             auto it = post_handlers.find(std::make_pair(reader.get_method(), settings::system::useLocalDatabase));
@@ -211,7 +213,7 @@ void http_session::process_get_request()
     HTTP_SESS_BGN
     {
         if (m_req.target().size() == 1) {
-            send_bad_response(http::status::bad_request, "Incorrect path");
+            send_bad_response(http::status::bad_request, "Incorrect Path");
             return;
         }
 

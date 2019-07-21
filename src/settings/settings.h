@@ -65,6 +65,8 @@ namespace settings
         static unsigned int blocks_cache_init_count;
         static unsigned int blocks_cache_recv_data_size;
         static unsigned int blocks_cache_recv_count;
+        static bool blocks_cache_block_verification;
+        static std::vector<std::string> cores;
     };
 
     struct statistic {
