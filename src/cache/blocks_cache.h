@@ -37,6 +37,7 @@ protected:
     bool update_number(unsigned int number);
 
     bool core_addr_verification(const torrent_node_lib::BlockInfo& bi, const std::string& prev_hash);
+    void dump_bad_block(size_t num, const char* buf, size_t size);
 
 private:
     bool        m_run;

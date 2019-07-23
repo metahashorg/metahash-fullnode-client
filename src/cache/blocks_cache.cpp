@@ -199,7 +199,7 @@ void blocks_cache::routine()
                     if (tmp) {
                         LOGERR << "Cache. get-count-blocks error: " << reader.stringify(tmp);
                     } else {
-                        LOGERR << "Cache. get-count-blocks error: json response occured " << reader.stringify();
+                        LOGERR << "Cache. get-count-blocks error: json response occured " << response->get().body().size() << " bytes: " << response->get().body();
                     }
                     goto next;
                 }
@@ -431,11 +431,15 @@ void blocks_cache::routine_2()
             if (reader.parse(response->get().body())) {
                 tmp = reader.get_error();
                 if (tmp) {
-                    LOGERR << "Cache. get-dumps-blocks-by-hash error: " << reader.stringify(tmp);
-                } else {
-                    LOGERR << "Cache. get-dumps-blocks-by-hash: json response occured " << reader.stringify();
+                    LOGERR << "Cache. get-dumps-blocks-by-hash got error: " << reader.stringify(tmp);
+                    goto wait;
                 }
-                goto wait;
+                tmp = reader.get_result();
+                if (tmp) {
+                    LOGERR << "Cache. get-dumps-blocks-by-hash got result " << reader.stringify(tmp);
+                    goto wait;
+                }
+                LOGWARN << "Cache. get-dumps-blocks-by-hash body has parsed " << response->get().body().size() << " bytes";
             }
 
             decompressed = torrent_node_lib::decompress(response->get().body());
@@ -534,6 +538,7 @@ void blocks_cache::routine_2()
 
                     // checking current block core addresses
                     if (!core_addr_verification(bi, bi_prev.header.hash)) {
+                        dump_bad_block(bi.header.blockNumber.value(), p, blk_size);
                         goto next;
                     }
 
@@ -701,10 +706,39 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi,
             }
         }
         if (succ) {
-            return true;
+            if (bi.header.blockNumber.value() < 1222912) {
+                return true;
+            } else if (static_cast<int>(settings::system::cores.size()) - 3 > static_cast<int>(cores.size())) {
+                return true;
+            }
         }
-        LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << bi.header.hash << " did not pass core address verification";
+        LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << bi.header.hash
+               << " did not pass verification (" << settings::system::cores.size() << "/" << cores.size() << ")";
         return false;
     }
     CACHE_END(return false)
+}
+
+void blocks_cache::dump_bad_block(size_t num, const char* buf, size_t size)
+{
+    CACHE_BGN
+    {
+        if (!fs_utils::dir::is_exists("./data/bad_dumps/")){
+            if (!fs_utils::dir::create("./data/bad_dumps/")) {
+                LOGERR << "Cache. Could not create folder ./data/bad_dumps/";
+                return;
+            };
+        }
+        std::chrono::time_point now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
+        char c[32] = {0};
+        strftime(c, sizeof(c), "_%d_%m_%Y_%H_%M_%S.", std::localtime(&t));
+        std::string name;
+        string_utils::str_append(name, "./data/bad_dumps/", std::to_string(num), c, std::to_string(now.time_since_epoch().count()));
+        std::ofstream f{name};
+        f.write(buf, static_cast<std::streamsize>(size));
+        f.flush();
+        f.close();
+    }
+    CACHE_END()
 }
