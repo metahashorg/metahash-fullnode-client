@@ -706,14 +706,15 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi,
             }
         }
         if (succ) {
-            if (bi.header.blockNumber.value() < 1222912) {
+            if (settings::system::cores.size() == cores.size()) {
                 return true;
-            } else if (static_cast<int>(settings::system::cores.size()) - 3 > static_cast<int>(cores.size())) {
+            }
+            if (settings::system::cores.size() - cores.size() > 3) {
                 return true;
             }
         }
         LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << bi.header.hash
-               << " did not pass verification (" << settings::system::cores.size() << "/" << cores.size() << ")";
+               << " did not pass verification (" << settings::system::cores.size() - cores.size() << "/" << settings::system::cores.size() << ")";
         return false;
     }
     CACHE_END(return false)
