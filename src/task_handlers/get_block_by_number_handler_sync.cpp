@@ -55,12 +55,17 @@ BGN_TRY {
     }
     
     torrent_node_lib::BlockHeader nextBh = sync.getBlockchain().getBlock(*bh.blockNumber + 1);
-    sync.fillSignedTransactionsInBlock(nextBh);
+    std::vector<torrent_node_lib::TransactionInfo> signs;
+    if (nextBh.blockNumber.has_value()) {
+        const torrent_node_lib::BlockInfo nextBi = sync.getFullBlock(nextBh, 0, 10);
+        signs = nextBi.getBlockSignatures();
+    }
+    
     if (type == 0 || type == 4) {
-        blockHeaderToJson(bh, nextBh, false, JsonVersion::V1, m_writer.getDoc());
+        blockHeaderToJson(bh, signs, false, JsonVersion::V1, m_writer.getDoc());
     } else {
         const torrent_node_lib::BlockInfo bi = sync.getFullBlock(bh, beginTx, countTxs);
-        blockInfoToJson(bi, nextBh, type, false, JsonVersion::V1, m_writer.getDoc());
+        blockInfoToJson(bi, signs, type, false, JsonVersion::V1, m_writer.getDoc());
     }
 } END_TRY_RET();
 }

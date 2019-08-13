@@ -112,11 +112,12 @@ target_link_libraries(${PROJECT_NAME} stdc++fs.a curl resolv)
 
 find_library(LIB_CRYPTO NAMES libcrypto.so HINTS ../3rdParty/ssl/lib/)
 find_library(LIB_SSL NAMES libssl.so HINTS ../3rdParty/ssl/lib/)
+find_library(SECP_LIB NAMES libsecp256k1.a HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/secp256k1/lib/)
 
 #find_package(OpenSSL REQUIRED)
 #target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
 #include_directories(${OPENSSL_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} ${LIB_CRYPTO} ${LIB_SSL})
+target_link_libraries(${PROJECT_NAME} ${LIB_CRYPTO} ${LIB_SSL} ${SECP_LIB} gmp)
 
 if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
     set (CMAKE_CXX_FLAGS "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -pthread -Ofast -Wall -Wextra -Werror -Wno-unused-parameter")

@@ -9,6 +9,8 @@
 #include "rapidjson/prettywriter.h"
 #include "http_server.h"
 
+#include <fstream>
+
 extern std::unique_ptr<http_server> g_server;
 
 namespace ext

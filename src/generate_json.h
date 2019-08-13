@@ -34,14 +34,22 @@ void addressesInfoToJson(const std::string &address, const std::vector<torrent_n
 
 void balanceInfoToJson(const std::string &address, const torrent_node_lib::BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
-void blockHeaderToJson(const torrent_node_lib::BlockHeader &bh, const std::optional<std::reference_wrapper<const torrent_node_lib::BlockHeader>> &nextBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
+void blockHeaderToJson(const torrent_node_lib::BlockHeader &bh, const std::vector<torrent_node_lib::TransactionInfo> &signatures, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
-std::string blockHeadersToJson(const RequestId &requestId, const std::vector<torrent_node_lib::BlockHeader> &bh, bool isFormat, const JsonVersion &version);
+void blockHeadersToJson(const RequestId &requestId, const std::vector<torrent_node_lib::BlockHeader> &bh, const std::vector<std::vector<torrent_node_lib::TransactionInfo>> &signatures, uint64_t type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
-void blockInfoToJson(const torrent_node_lib::BlockInfo &bi, const std::optional<std::reference_wrapper<const torrent_node_lib::BlockHeader>> &nextBlock, int type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
+void blockInfoToJson(const torrent_node_lib::BlockInfo &bi, const std::vector<torrent_node_lib::TransactionInfo> &signatures, uint64_t type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
 void genCountBlockJson(size_t countBlocks, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
 void genBlockDumpJson(const std::string &blockDump, bool isFormat, rapidjson::Document &doc);
+
+std::string parseDumpBlockBinary(const std::string &response, bool isCompress);
+
+std::vector<std::string> parseDumpBlocksBinary(const std::string &response, bool isCompress);
+
+torrent_node_lib::MinimumBlockHeader parseBlockHeader(const std::string &response);
+
+std::vector<torrent_node_lib::MinimumBlockHeader> parseBlocksHeader(const std::string &response);
 
 #endif // GENERATE_JSON_H_

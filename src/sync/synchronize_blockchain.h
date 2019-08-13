@@ -9,7 +9,7 @@
 #include <set>
 #include <unordered_map>
 
-#include "LevelDbOptions.h"
+#include "ConfigOptions.h"
 
 namespace torrent_node_lib {
 
@@ -29,28 +29,16 @@ struct NodeTestTrust;
 struct NodeTestCount;
 struct NodeTestExtendedStat;
 
+struct TransactionsFilters;
+
 class P2P;
 
 class SyncImpl;
 
-class Sync: public common::no_copyable, common::no_moveable {
-public:
-       
-    struct CachesOptions {
-        size_t maxCountElementsBlockCache;
-        size_t maxCountElementsTxsCache;
-        size_t macLocalCacheElements;
-        
-        CachesOptions(size_t maxCountElementsBlockCache, size_t maxCountElementsTxsCache, size_t macLocalCacheElements)
-            : maxCountElementsBlockCache(maxCountElementsBlockCache)
-            , maxCountElementsTxsCache(maxCountElementsTxsCache)
-            , macLocalCacheElements(macLocalCacheElements)
-        {}
-    };
-    
+class Sync: public common::no_copyable, common::no_moveable {    
 public:
     
-    Sync(const std::string &folderPath, const LevelDbOptions &leveldbOpt, const CachesOptions &cachesOpt, P2P *p2p, bool getBlocksFromFile, bool isValidate);
+    Sync(const std::string &folderPath, const std::string &technicalAddress, const LevelDbOptions &leveldbOpt, const CachesOptions &cachesOpt, const GetterBlockOptions &getterBlocksOpt, const std::string &signKeyName, const TestNodesOptions &testNodesOpt, bool validateStates);
        
     void setLeveldbOptScript(const LevelDbOptions &leveldbOptScript);
     
@@ -68,26 +56,26 @@ public:
     
     bool isVirtualMachine() const;
     
-    void synchronize(int countThreads, bool isSync);
+    void synchronize(int countThreads);
 
     void addUsers(const std::set<Address> &addresses);
     
-    std::vector<TransactionInfo> getTxsForAddress(const Address &address, size_t from, size_t count) const;
+    std::vector<TransactionInfo> getTxsForAddress(const Address &address, size_t from, size_t count, size_t limitTxs) const;
 
+    std::vector<TransactionInfo> getTxsForAddress(const Address &address, size_t &from, size_t count, size_t limitTxs, const TransactionsFilters &filters) const;
+    
     TransactionInfo getTransaction(const std::string &txHash) const;
 
     BalanceInfo getBalance(const Address &address) const;
 
-    std::string getBlockDump(const BlockHeader &bh, size_t fromByte, size_t toByte, bool isHex) const;
+    std::string getBlockDump(const BlockHeader &bh, size_t fromByte, size_t toByte, bool isHex, bool isSign) const;
 
     BlockInfo getFullBlock(const BlockHeader &bh, size_t beginTx, size_t countTx) const;
 
     std::vector<TransactionInfo> getLastTxs() const;
 
     size_t getKnownBlock() const;
-    
-    void fillSignedTransactionsInBlock(BlockHeader &bh) const;
-    
+        
     std::vector<std::pair<Address, DelegateState>> getDelegateStates(const Address &fromAddress) const;
     
     V8Details getContractDetails(const Address &contractAddress) const;
@@ -114,17 +102,17 @@ public:
     
     size_t getLastBlockDay() const;
     
+    std::string signTestString(const std::string &str, bool isHex) const;
+    
+    bool verifyTechnicalAddressSign(const std::string &binary, const std::vector<unsigned char> &signature, const std::vector<unsigned char> &pubkey) const;
+    
 private:
     
     std::unique_ptr<SyncImpl> impl;
     
 };
 
-enum class BlockVersion {
-    V1, V2
-};
-
-void initBlockchainUtils(const BlockVersion &blockVersion);
+void initBlockchainUtils();
 
 }
 

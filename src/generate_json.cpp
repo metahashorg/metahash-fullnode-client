@@ -8,6 +8,8 @@
 #include "jsonUtils.h"
 #include "check.h"
 #include "convertStrings.h"
+#include "utils/compress.h"
+#include "utils/serialize.h"
 
 using namespace common;
 using namespace torrent_node_lib;
@@ -196,68 +198,58 @@ void balanceInfoToJson(const std::string &address, const BalanceInfo &balance, s
     doc.AddMember("result", resultValue, allocator);
 }
 
-static rapidjson::Value blockHeaderToJson(const BlockHeader &bh, const std::optional<std::reference_wrapper<const BlockHeader>> &nextBlock, rapidjson::Document::AllocatorType &allocator, const JsonVersion &version) {
+static rapidjson::Value blockHeaderToJson(const BlockHeader &bh, const std::vector<TransactionInfo> &signatures, rapidjson::Document::AllocatorType &allocator, const JsonVersion &version) {
     const bool isStringValue = version == JsonVersion::V2;
     
     CHECK(bh.blockNumber.has_value(), "Block header not set");
     rapidjson::Value resultValue(rapidjson::kObjectType);
     resultValue.AddMember("type", strToJson(bh.getBlockType(), allocator), allocator);
-    resultValue.AddMember("hash", strToJson(bh.hash, allocator), allocator);
-    resultValue.AddMember("prev_hash", strToJson(bh.prevHash, allocator), allocator);
-    resultValue.AddMember("tx_hash", strToJson(bh.txsHash, allocator), allocator);
+    resultValue.AddMember("hash", strToJson(toHex(bh.hash), allocator), allocator);
+    resultValue.AddMember("prev_hash", strToJson(toHex(bh.prevHash), allocator), allocator);
+    resultValue.AddMember("tx_hash", strToJson(toHex(bh.txsHash), allocator), allocator);
     resultValue.AddMember("number", intOrString(bh.blockNumber.value(), isStringValue, allocator), allocator);
     resultValue.AddMember("timestamp", intOrString(bh.timestamp, isStringValue, allocator), allocator);
-    CHECK(bh.countTxs.has_value(), "Count txs not set");
-    resultValue.AddMember("count_txs", intOrString(bh.countTxs.value(), isStringValue, allocator), allocator);
+    resultValue.AddMember("count_txs", intOrString(bh.countTxs, isStringValue, allocator), allocator);
     resultValue.AddMember("sign", strToJson(toHex(bh.signature), allocator), allocator);
     resultValue.AddMember("size", bh.blockSize, allocator);
-    resultValue.AddMember("fileName", strToJson(bh.filePos.fileName, allocator), allocator);
+    resultValue.AddMember("fileName", strToJson(bh.filePos.fileNameRelative, allocator), allocator);
         
-    if (nextBlock.has_value()) {
-        rapidjson::Value signaturesValue(rapidjson::kArrayType);
-        for (const TransactionInfo &tx: nextBlock.value().get().blockSignatures) {
-            const BlockHeader &bh = *nextBlock;
-            signaturesValue.PushBack(transactionInfoToJson(tx, bh, 0, allocator, 2, version), allocator);
-        }
-        resultValue.AddMember("signatures", signaturesValue, allocator);
+    rapidjson::Value signaturesValue(rapidjson::kArrayType);
+    for (const TransactionInfo &tx: signatures) {
+        signaturesValue.PushBack(transactionInfoToJson(tx, bh, 0, allocator, 2, version), allocator);
     }
+    resultValue.AddMember("signatures", signaturesValue, allocator);
     return resultValue;
 }
 
-void blockHeaderToJson(const BlockHeader &bh, const std::optional<std::reference_wrapper<const BlockHeader>> &nextBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
+void blockHeaderToJson(const BlockHeader &bh, const std::vector<TransactionInfo> &signatures, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     if (bh.blockNumber == 0) {
         genErrorResponse(-32603, "Incorrect block number: 0. Genesis block begin with number 1", doc);
         return;
     }
     auto &allocator = doc.GetAllocator();
-    doc.AddMember("result", blockHeaderToJson(bh, nextBlock, allocator, version), allocator);
+    doc.AddMember("result", blockHeaderToJson(bh, signatures, allocator, version), allocator);
 }
 
-std::string blockHeadersToJson(const RequestId &requestId, const std::vector<BlockHeader> &bh, bool isFormat, const JsonVersion &version) {
-    rapidjson::Document doc(rapidjson::kObjectType);
+void blockHeadersToJson(const RequestId &requestId, const std::vector<BlockHeader> &bh, const std::vector<std::vector<TransactionInfo>> &signatures, uint64_t type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     auto &allocator = doc.GetAllocator();
     addIdToResponse(requestId, doc, allocator);
     rapidjson::Value vals(rapidjson::kArrayType);
-    for (auto iter = bh.begin(); iter != bh.end();) {
-        const BlockHeader &b  = *iter;
-        const auto nextIter = ++iter;
-        std::optional<std::reference_wrapper<const BlockHeader>> nextBlock;
-        if (nextIter != bh.end()) {
-            nextBlock = std::cref(*nextIter);
-        }
+    CHECK(bh.size() + 1 == signatures.size(), "Incorrect signatures vect");
+    for (size_t i = 0; i < bh.size(); i++) {
+        const BlockHeader &b  = bh[i];
+        const std::vector<TransactionInfo> signature = signatures[i + 1];
         
         if (b.blockNumber == 0) {
-            //genErrorResponse(requestId, -32603, "Incorrect block number: 0. Genesis block begin with number 1");
+            genErrorResponse(-32603, "Incorrect block number: 0. Genesis block begin with number 1", doc);
+            return;
         }
-        vals.PushBack(blockHeaderToJson(b, nextBlock, allocator, version), allocator);
-        
-        iter = nextIter;
+        vals.PushBack(blockHeaderToJson(b, signature, allocator, version), allocator);
     }
     doc.AddMember("result", vals, allocator);
-    return jsonToString(doc, isFormat);
 }
 
-void blockInfoToJson(const BlockInfo &bi, const std::optional<std::reference_wrapper<const BlockHeader>> &nextBlock, int type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
+void blockInfoToJson(const BlockInfo &bi, const std::vector<TransactionInfo> &signatures, uint64_t type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
     const BlockHeader &bh = bi.header;
     
     if (bh.blockNumber == 0) {
@@ -266,7 +258,7 @@ void blockInfoToJson(const BlockInfo &bi, const std::optional<std::reference_wra
     }
     
     auto &allocator = doc.GetAllocator();
-    rapidjson::Value resultValue = blockHeaderToJson(bh, nextBlock, allocator, version);
+    rapidjson::Value resultValue = blockHeaderToJson(bh, signatures, allocator, version);
     rapidjson::Value txs(rapidjson::kArrayType);
     for (const TransactionInfo &tx: bi.txs) {
         txs.PushBack(transactionInfoToJson(tx, bi.header, 0, allocator, type, version), allocator);
@@ -288,4 +280,68 @@ void genBlockDumpJson(const std::string &blockDump, bool isFormat, rapidjson::Do
     rapidjson::Value resultValue(rapidjson::kObjectType);
     resultValue.AddMember("dump", strToJson(blockDump, allocator), allocator);
     doc.AddMember("result", resultValue, allocator);
+}
+
+std::string parseDumpBlockBinary(const std::string &response, bool isCompress) {
+    if (!isCompress) {
+        return response;
+    } else {
+        return decompress(response);
+    }
+}
+
+std::vector<std::string> parseDumpBlocksBinary(const std::string &response, bool isCompress) {
+    std::vector<std::string> res;
+    const std::string r = isCompress ? decompress(response) : response;
+    size_t from = 0;
+    while (from < r.size()) {
+        res.emplace_back(deserializeStringBigEndian(r, from));
+    }
+    return res;
+}
+
+static MinimumBlockHeader parseBlockHeader(const rapidjson::Value &resultJson) {    
+    MinimumBlockHeader result;
+    CHECK(resultJson.HasMember("number") && resultJson["number"].IsInt64(), "number field not found");
+    result.number = resultJson["number"].GetInt64();
+    CHECK(resultJson.HasMember("hash") && resultJson["hash"].IsString(), "hash field not found");
+    result.hash = resultJson["hash"].GetString();
+    CHECK(resultJson.HasMember("prev_hash") && resultJson["prev_hash"].IsString(), "prev_hash field not found");
+    result.parentHash = resultJson["prev_hash"].GetString();
+    CHECK(resultJson.HasMember("size") && resultJson["size"].IsInt64(), "size field not found");
+    result.blockSize = resultJson["size"].GetInt64();
+    CHECK(resultJson.HasMember("fileName") && resultJson["fileName"].IsString(), "fileName field not found");
+    result.fileName = resultJson["fileName"].GetString();
+    
+    return result;
+}
+
+MinimumBlockHeader parseBlockHeader(const std::string &response) {
+    rapidjson::Document doc;
+    const rapidjson::ParseResult pr = doc.Parse(response.c_str());
+    CHECK(pr, "rapidjson parse error. Data: " + response);
+    
+    CHECK(!doc.HasMember("error") || doc["error"].IsNull(), jsonToString(doc["error"], false));
+    CHECK(doc.HasMember("result") && doc["result"].IsObject(), "result field not found");
+    const auto &resultJson = doc["result"];
+    
+    return parseBlockHeader(resultJson);
+}
+
+std::vector<MinimumBlockHeader> parseBlocksHeader(const std::string &response) {
+    rapidjson::Document doc;
+    const rapidjson::ParseResult pr = doc.Parse(response.c_str());
+    CHECK(pr, "rapidjson parse error. Data: " + response);
+    
+    CHECK(!doc.HasMember("error") || doc["error"].IsNull(), jsonToString(doc["error"], false));
+    CHECK(doc.HasMember("result") && doc["result"].IsArray(), "result field not found");
+    const auto &resultJson = doc["result"].GetArray();
+    
+    std::vector<MinimumBlockHeader> result;
+    for (const auto &rJson: resultJson) {
+        CHECK(rJson.IsObject(), "result field not found");
+        result.emplace_back(parseBlockHeader(rJson));
+    }
+    
+    return result;
 }

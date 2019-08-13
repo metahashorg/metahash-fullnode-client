@@ -44,6 +44,11 @@ inline size_t getDayNumber(const size_t millisecond) {
     return getHourNumber(millisecond) / 24;
 }
 
+inline size_t getTimestampForDay(size_t dayNumber) {
+    const hours hour(dayNumber * 24);
+    return milliseconds(hour).count();
+}
+
 class Timer {
 public:
     
@@ -57,10 +62,14 @@ public:
     }
     
     size_t countMs() {
+        return count().count();
+    }
+    
+    milliseconds count() {
         if (!isStopped) {
             stop();
         }
-        return std::chrono::duration_cast<milliseconds>(stoppedTime - beginTime).count();
+        return std::chrono::duration_cast<milliseconds>(stoppedTime - beginTime);        
     }
     
 private:

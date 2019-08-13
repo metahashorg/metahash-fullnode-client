@@ -10,69 +10,19 @@
 
 #include "duration.h"
 
-namespace torrent_node_lib {
+#include "Address.h"
 
-class Address {
-public:
-    
-    const static std::string INITIAL_WALLET_TRANSACTION;
-    
-public:
-    
-    Address() = default;
-    
-    explicit Address(const std::vector<unsigned char> &address, bool isBlockedAddress = false);
-        
-    template<typename Iterator>
-    Address(Iterator begin, Iterator end);
-        
-    bool operator==(const Address &second) const;
-        
-    bool operator!=(const Address &second) const {
-        return !(*this == second);
-    }
-    
-    bool operator<(const Address &second) const;
-    
-    explicit Address(const std::string &hexAddress);
-        
-    const std::string& getBinaryString() const;
-    
-    const std::string& toBdString() const;
-    
-    std::string calcHexString() const;
-    
-    void setEmpty();
-    
-    bool isEmpty() const;
-    
-    bool isSet_() const {
-        return isSet;
-    }
-    
-    bool isInitialWallet() const;
-    
-    bool isScriptAddress() const;
-    
-private:
-    
-    std::string address;
-    
-    bool isInitialW = false;
-    
-    bool isSet = false;
-    
-};
+namespace torrent_node_lib {
 
 struct FilePosition {
     size_t pos;
-    std::string fileName;
+    std::string fileNameRelative;
     
     FilePosition() = default;
     
-    FilePosition(const std::string &fileName, size_t pos)
+    FilePosition(const std::string &fileNameRelative, size_t pos)
         : pos(pos)
-        , fileName(fileName)
+        , fileNameRelative(fileNameRelative)
     {}
     
     std::string serialize() const;
@@ -91,14 +41,16 @@ struct AddressInfo {
     
     AddressInfo() = default;
     
-    AddressInfo(size_t pos, const std::string &fileName, size_t blockNumber)
+    AddressInfo(size_t pos, const std::string &fileName, size_t blockNumber, size_t index)
         : filePos(fileName, pos)
         , blockNumber(blockNumber)
+        , blockIndex(index)
     {}
     
     FilePosition filePos;
     
     size_t blockNumber = 0;
+    size_t blockIndex = 0;
     
     std::optional<int64_t> undelegateValue;
     
@@ -175,8 +127,12 @@ struct TransactionInfo {
     };
     
     struct ScriptInfo {
+        enum class ScriptType {
+            compile, run, pay, unknown
+        };
+        
         std::string txRaw;
-        bool isInitializeScript;
+        ScriptType type = ScriptType::unknown;
     };
     
     std::string hash;
@@ -186,6 +142,7 @@ struct TransactionInfo {
     int64_t fees = 0;
     uint64_t nonce = 0;
     size_t blockNumber = 0;
+    size_t blockIndex = 0;
     size_t sizeRawTx = 0;
     bool isSaveToBd = true;
     
@@ -256,6 +213,7 @@ struct BalanceInfo {
     size_t spent = 0;
     size_t countReceived = 0;
     size_t countSpent = 0;
+    size_t countTxs = 0;
     
     std::optional<DelegateBalance> delegated;
     
@@ -272,6 +230,10 @@ struct BalanceInfo {
     void plusWithoutDelegate(const TransactionInfo &tx, const Address &address, bool changeBalance, bool isForging);
         
     BalanceInfo& operator+=(const BalanceInfo &second);
+    
+    int64_t calcBalance();
+    
+    int64_t calcBalanceWithoutDelegate();
     
     void serialize(std::vector<char> &buffer) const;
     
@@ -294,24 +256,23 @@ struct CommonBalance {
 
 struct BlockHeader {
     size_t timestamp;
-    uint64_t blockSize;
-    uint64_t blockType;
-    std::string hash;
-    std::string prevHash;
-    
+    uint64_t blockSize = 0;
+    uint64_t blockType = 0;
+    std::vector<unsigned char> hash;
+    std::vector<unsigned char> prevHash;
+    std::vector<unsigned char> txsHash;
+        
     std::vector<unsigned char> signature;
-    
-    std::string txsHash;
-    
-    std::optional<size_t> countTxs;
+       
+    size_t countTxs = 0;
     
     FilePosition filePos;
-    
-    size_t endBlockPos = 0;
-    
+        
     std::optional<size_t> blockNumber;
-    
-    std::vector<TransactionInfo> blockSignatures;
+        
+    std::vector<unsigned char> senderSign;
+    std::vector<unsigned char> senderPubkey;
+    std::vector<unsigned char> senderAddress;
     
     std::string serialize() const;
     
@@ -324,6 +285,16 @@ struct BlockHeader {
     bool isForgingBlock() const;
     
     std::string getBlockType() const;
+    
+    size_t endBlockPos() const;
+};
+
+struct MinimumBlockHeader {
+    size_t number;
+    size_t blockSize;
+    std::string hash;
+    std::string parentHash;
+    std::string fileName;
 };
 
 struct BlockTimes {
@@ -350,21 +321,19 @@ struct BlockInfo {
     TransactionStatistics txsStatistic;
     
     std::vector<TransactionInfo> txs;
+    
+    std::vector<TransactionInfo> getBlockSignatures() const;
 };
 
 struct BlocksMetadata {
-    std::string blockHash;
-    std::string prevBlockHash;
-    size_t addressCounter = 0;
-    size_t blockNumber = 0;
+    std::vector<unsigned char> blockHash;
+    std::vector<unsigned char> prevBlockHash;
        
     BlocksMetadata() = default;
     
-    BlocksMetadata(const std::string &blockHash, const std::string &prevBlockHash, size_t addressCounter, size_t blockNumber)
+    BlocksMetadata(const std::vector<unsigned char> &blockHash, const std::vector<unsigned char> &prevBlockHash)
         : blockHash(blockHash)
         , prevBlockHash(prevBlockHash)
-        , addressCounter(addressCounter)
-        , blockNumber(blockNumber)
     {}
     
     std::string serialize() const;
@@ -373,14 +342,14 @@ struct BlocksMetadata {
     
 };
 
-struct ScriptBlockInfo {
+struct MainBlockInfo {
     size_t blockNumber = 0;
-    std::string blockHash;
+    std::vector<unsigned char> blockHash;
     size_t countVal = 0;
     
-    ScriptBlockInfo() = default;
+    MainBlockInfo() = default;
     
-    ScriptBlockInfo(size_t blockNumber, const std::string &blockHash, size_t countVal)
+    MainBlockInfo(size_t blockNumber, const std::vector<unsigned char> &blockHash, size_t countVal)
         : blockNumber(blockNumber)
         , blockHash(blockHash)
         , countVal(countVal)
@@ -388,26 +357,7 @@ struct ScriptBlockInfo {
     
     std::string serialize() const;
     
-    static ScriptBlockInfo deserialize(const std::string &raw);
-    
-};
-
-struct NodeStatBlockInfo {
-    size_t blockNumber = 0;
-    std::string blockHash;
-    size_t countVal = 0;
-    
-    NodeStatBlockInfo() = default;
-    
-    NodeStatBlockInfo(size_t blockNumber, const std::string &blockHash, size_t countVal)
-        : blockNumber(blockNumber)
-        , blockHash(blockHash)
-        , countVal(countVal)
-    {}
-    
-    std::string serialize() const;
-    
-    static NodeStatBlockInfo deserialize(const std::string &raw);
+    static MainBlockInfo deserialize(const std::string &raw);
     
 };
 
@@ -432,8 +382,6 @@ struct BatchResults {
     std::vector<std::pair<Address, ValueType>> elements;
     size_t lastBlockNum;
 };
-
-BalanceInfo calcBalance(const Address &address, const std::vector<TransactionInfo> &txs);
 
 struct DelegateState {
     int64_t value = 0;
@@ -467,67 +415,6 @@ struct DelegateStateHelper {
     
 };
 
-struct V8State {
-    enum class ErrorType {
-        OK, USER_ERROR, SERVER_ERROR, SCRIPT_ERROR
-    };
-    
-    V8State() = default;
-    
-    V8State(size_t blockNumber)
-        : blockNumber(blockNumber)
-    {}
-    
-    Address address;
-    std::string state;
-    
-    size_t blockNumber = 0;
-    
-    std::string details;
-    
-    size_t errorCode = 0;
-    ErrorType errorType = ErrorType::OK;
-    std::string errorMessage;
-    
-    std::string serialize() const;
-    
-    static V8State deserialize(const std::string &raw);
-
-};
-
-struct V8Details {
-    V8Details() = default;
-    
-    V8Details(const std::string &details, const std::string &lastError)
-        : details(details)
-        , lastError(lastError)
-    {}
-    
-    std::string details;
-    
-    std::string lastError;
-
-    std::string serialize() const;
-    
-    static V8Details deserialize(const std::string &raw);
-    
-};
-
-struct V8Code {
-    V8Code() = default;
-    
-    V8Code(const std::vector<unsigned char> &code)
-        : code(code)
-    {}
-    
-    std::vector<unsigned char> code;
-    
-    std::string serialize() const;
-    
-    static V8Code deserialize(const std::string &raw);
-    
-};
-
 struct ForgingSums {
     std::unordered_map<uint64_t, size_t> sums;
     size_t blockNumber = 0;
@@ -537,154 +424,6 @@ struct ForgingSums {
     static ForgingSums deserialize(const std::string &raw);
     
     ForgingSums& operator +=(const ForgingSums &second);
-    
-};
-
-struct NodeTestType {
-    enum class Type {
-        unknown, torrent, proxy
-    };
-    
-    Type type = Type::unknown;
-    
-    NodeTestType() = default;
-    
-    NodeTestType(Type type)
-        : type(type)
-    {}
-    
-    std::string serialize() const;
-    
-    static NodeTestType deserialize(const std::string &raw, size_t &from);
-    
-};
-
-struct NodeTestResult {
-    std::string result;
-    size_t timestamp = 0;
-    NodeTestType type;
-    std::string ip;
-    size_t day = 0;
-    
-    uint64_t avgRps = 0;
-    
-    NodeTestResult() = default;
-    
-    NodeTestResult(const std::string &result, size_t timestamp, NodeTestType type, const std::string &ip, size_t day)
-        : result(result)
-        , timestamp(timestamp)
-        , type(type)
-        , ip(ip)
-        , day(day)
-    {}
-    
-    std::string serialize() const;
-    
-    static NodeTestResult deserialize(const std::string &raw);
-
-};
-
-struct NodeTestTrust {
-    std::string trustJson;
-       
-    size_t timestamp = 0;
-    
-    int trust = 1; // default
-    
-    NodeTestTrust() = default;
-    
-    NodeTestTrust(size_t blockNumber, const std::vector<unsigned char> &trustJson, int trust)
-        : trustJson(trustJson.begin(), trustJson.end())
-        , timestamp(blockNumber)
-        , trust(trust)
-    {}
-    
-    std::string serialize() const;
-    
-    static NodeTestTrust deserialize(const std::string &raw);
-    
-};
-
-struct NodeTestCount {
-    
-    size_t countAll = 0;
-    
-    size_t countFailure = 0;
-    
-    size_t day = 0;
-
-    std::set<Address> testers;
-    
-    NodeTestCount() = default;
-    
-    NodeTestCount(size_t day)
-        : day(day)
-    {}
-    
-    size_t countSuccess() const;
-    
-    std::string serialize() const;
-    
-    static NodeTestCount deserialize(const std::string &raw);
-    
-    NodeTestCount& operator+=(const NodeTestCount &second);
-    
-};
-
-NodeTestCount operator+(const NodeTestCount &first, const NodeTestCount &second);
-
-struct NodeTestExtendedStat {
-    
-    NodeTestCount count;
-    
-    NodeTestType type;
-    
-    std::string ip;
-    
-    NodeTestExtendedStat() = default;
-    
-    NodeTestExtendedStat(const NodeTestCount &count, const NodeTestType &type, const std::string &ip)
-        : count(count)
-        , type(type)
-        , ip(ip)
-    {}
-    
-};
-
-struct NodeTestDayNumber {
-    size_t dayNumber = 0;
-    
-    std::string serialize() const;
-    
-    static NodeTestDayNumber deserialize(const std::string &raw);
-    
-};
-
-struct AllTestedNodes {
-    
-    std::set<std::string> nodes;
-    
-    size_t day = 0;
-    
-    AllTestedNodes() = default;
-    
-    AllTestedNodes(size_t day)
-        : day(day)
-    {}
-    
-    std::string serialize() const;
-    
-    static AllTestedNodes deserialize(const std::string &raw);
-    
-};
-
-struct NodeRps {
-    
-    std::vector<uint64_t> rps;
-    
-    std::string serialize() const;
-    
-    static NodeRps deserialize(const std::string &raw);
     
 };
 

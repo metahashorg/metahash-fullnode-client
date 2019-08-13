@@ -15,6 +15,8 @@
 
 #include "task_handlers/get_count_blocks_handler.h"
 #include "task_handlers/get_dump_block_by_number_handler.h"
+#include <convertStrings.h>
+#include <fstream>
 
 #define CACHE_BGN try
 
@@ -207,7 +209,7 @@ void blocks_cache::routine()
                 std::string buf = torrent_node_lib::decompress(response->get().body());
                 torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(buf, false);
 
-                if (save_block(m_nextblock, bi.header.hash, response->get().body())) {
+                if (save_block(m_nextblock, string_utils::bin2hex(bi.header.hash), response->get().body())) {
                     update_number(++m_nextblock);
                 }
                 common::checkStopSignal();
@@ -242,11 +244,10 @@ void blocks_cache::routine_2()
         struct block_info {
             block_info(unsigned int number_, const char* str, size_t size)
                 : number(number_)
-                , hash(str, size) {
-                std::transform(hash.begin(), hash.end(), hash.begin(), ::tolower);
+                , hash(common::fromHex(std::string(str, str + size))) {
             }
             const unsigned int number;
-            std::string hash;
+            std::vector<unsigned char> hash;
         };
 
         std::vector<block_info> hashes;
@@ -408,7 +409,8 @@ void blocks_cache::routine_2()
                     json.append(",");
                 }
                 json.append("\"");
-                json.append(i->hash.data(), i->hash.size());
+                const std::string hashStr = string_utils::bin2hex(i->hash);
+                json.append(hashStr.data(), hashStr.size());
                 json.append("\"");
             }
             json.append("]}}");
@@ -512,7 +514,9 @@ void blocks_cache::routine_2()
                                 LOGERR << "Cache. Did not find result in get-block-by-number";
                                 break;
                             }
-                            if (!reader.get_value(*tmp, "hash", bi_prev.header.hash)) {
+                            std::string hashStr;
+                            if (!reader.get_value(*tmp, "hash", hashStr)) {
+                                bi_prev.header.hash = common::fromHex(hashStr);
                                 LOGERR << "Cache. Did not find hash in result get-block-by-number";
                                 break;
                             }
@@ -522,28 +526,26 @@ void blocks_cache::routine_2()
                             }
                         }
                         bi_prev.header.blockNumber = iter->number-1;
-                        std::transform(bi_prev.header.hash.begin(), bi_prev.header.hash.end(), bi_prev.header.hash.begin(), ::tolower);
                     }
 
                     // getting current block
                     bi = torrent_node_lib::Sync::parseBlockDump(std::string(p, blk_size), false);
                     bi.header.blockNumber = iter->number;
-                    std::transform(bi.header.hash.begin(), bi.header.hash.end(), bi.header.hash.begin(), ::tolower);
 
                     // checking hashes
-                    if (bi.header.hash.compare(iter->hash) != 0) {
-                        LOGERR << "Cache. Block " << bi.header.hash << " is not equal " << iter->hash;
+                    if (bi.header.hash != iter->hash) {
+                        LOGERR << "Cache. Block " << string_utils::bin2hex(bi.header.hash) << " is not equal " << string_utils::bin2hex(iter->hash);
                         goto next;
                     }
 
                     // checking current block core addresses
-                    if (!core_addr_verification(bi, bi_prev.header.hash)) {
+                    if (!core_addr_verification(bi, string_utils::bin2hex(bi_prev.header.hash))) {
                         dump_bad_block(bi.header.blockNumber.value(), p, blk_size);
                         goto next;
                     }
 
                     if (sz_prev > 0 && p_prev) {
-                        if (save_block(static_cast<unsigned>(bi_prev.header.blockNumber.value()), bi_prev.header.hash, std::string_view(p_prev, sz_prev))) {
+                        if (save_block(static_cast<unsigned>(bi_prev.header.blockNumber.value()), string_utils::bin2hex(bi_prev.header.hash), std::string_view(p_prev, sz_prev))) {
                             m_nextblock = static_cast<unsigned>(bi_prev.header.blockNumber.value()) + 1;
                             update_number(m_nextblock);
                         }
@@ -556,7 +558,7 @@ void blocks_cache::routine_2()
 
                 } else {
                     // save blocks without verification
-                    if (save_block(iter->number, iter->hash, std::string_view(p, blk_size))) {
+                    if (save_block(iter->number, string_utils::bin2hex(iter->hash), std::string_view(p, blk_size))) {
                         m_nextblock = iter->number+1;
                         update_number(m_nextblock);
                     }
@@ -585,7 +587,7 @@ bool blocks_cache::save_block(unsigned int number, const std::string& dump)
     return save_block(number, "", std::string_view(dump.c_str(), dump.size()));
 }
 
-bool blocks_cache::save_block(unsigned int number, const std::string_view& hash, const std::string_view& dump)
+bool blocks_cache::save_block(unsigned int number, const std::string& hash, const std::string_view& dump)
 {
     CACHE_BGN
     {
@@ -675,13 +677,13 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi,
                 break;
             }
             if (!bi.txs[i].isSignBlockTx) {
-                LOGWARN << "Cache. Block " << bi.header.hash << " tx[" << i << "] is not a SignBlockTx";
+                LOGWARN << "Cache. Block " << string_utils::bin2hex(bi.header.hash) << " tx[" << i << "] is not a SignBlockTx";
                 succ = true;
                 continue;
             }
             succ = false;
             if (bi.txs[i].toAddress != bi.txs[i].fromAddress) {
-                LOGERR << "Cache. Block " << bi.header.hash << " tx[" << i << "] fields fromAddress (" << bi.txs[i].fromAddress.calcHexString()
+                LOGERR << "Cache. Block " << string_utils::bin2hex(bi.header.hash) << " tx[" << i << "] fields fromAddress (" << bi.txs[i].fromAddress.calcHexString()
                        << ") and toAddress (" << bi.txs[i].toAddress.calcHexString() << ") is not equal";
                 break;
             }
@@ -695,13 +697,13 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi,
                 }
             }
             if (!succ) {
-                LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << bi.header.hash << " tx[" << i << "] " << from << " is not core address";
+                LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << string_utils::bin2hex(bi.header.hash) << " tx[" << i << "] " << from << " is not core address";
                 break;
             }
             std::string tmp = string_utils::bin2hex(bi.txs[i].data);
             if (tmp.compare(prev_hash) != 0) {
                 succ = false;
-                LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << bi.header.hash << " tx[" << i << "] data " << tmp << " is not equal previous hash " << prev_hash ;
+                LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << string_utils::bin2hex(bi.header.hash) << " tx[" << i << "] data " << tmp << " is not equal previous hash " << prev_hash ;
                 break;
             }
         }
@@ -713,7 +715,7 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi,
                 return true;
             }
         }
-        LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << bi.header.hash
+        LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << string_utils::bin2hex(bi.header.hash)
                << " did not pass verification (" << settings::system::cores.size() - cores.size() << "/" << settings::system::cores.size() << ")";
         return false;
     }

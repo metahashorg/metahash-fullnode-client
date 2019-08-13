@@ -62,10 +62,10 @@ bool get_block_by_number_handler::prepare_params()
                 switch (m_type) {
                 case 0:
                 case 4:
-                    blockHeaderToJson(bi.header, std::nullopt, false, JsonVersion::V1, m_writer.getDoc());
+                    blockHeaderToJson(bi.header, {}, false, JsonVersion::V1, m_writer.getDoc());
                     break;
                 default:
-                    blockInfoToJson(bi, std::nullopt, m_type, false, JsonVersion::V1, m_writer.getDoc());
+                    blockInfoToJson(bi, {}, m_type, false, JsonVersion::V1, m_writer.getDoc());
                     break;
                 }
                 m_from_cache = true;
@@ -124,12 +124,17 @@ void get_block_by_number_handler::execute()
             }
 
             torrent_node_lib::BlockHeader nextBh = sync.getBlockchain().getBlock(*bh.blockNumber + 1);
-            sync.fillSignedTransactionsInBlock(nextBh);
+            std::vector<torrent_node_lib::TransactionInfo> signs;
+            if (nextBh.blockNumber.has_value()) {
+                const torrent_node_lib::BlockInfo nextBi = sync.getFullBlock(nextBh, 0, 10);
+                signs = nextBi.getBlockSignatures();
+            }
+            
             if (m_type == 0 || m_type == 4) {
-                blockHeaderToJson(bh, nextBh, false, JsonVersion::V1, m_writer.getDoc());
+                blockHeaderToJson(bh, signs, false, JsonVersion::V1, m_writer.getDoc());
             } else {
                 const torrent_node_lib::BlockInfo bi = sync.getFullBlock(bh, m_beginTx, m_countTxs);
-                blockInfoToJson(bi, nextBh, m_type, false, JsonVersion::V1, m_writer.getDoc());
+                blockInfoToJson(bi, signs, m_type, false, JsonVersion::V1, m_writer.getDoc());
             }
         } else {
             base_network_handler::execute();

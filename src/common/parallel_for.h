@@ -3,13 +3,12 @@
 
 #include <functional>
 #include <vector>
-#include <thread>
 #include <mutex>
 #include <optional>
 
 #include "check.h"
-#include "log.h"
 #include "stopProgram.h"
+#include "Thread.h"
 
 namespace common {
 
@@ -23,9 +22,9 @@ inline void parallelFor(int countThreads, Iter begin, Iter end, const Operator &
     const size_t step = countElements / countThreads;
     CHECK(step != 0, "step == 0");
     
-    std::optional<std::string> errorStr;
+    std::exception_ptr error;
     std::mutex mutError;
-    auto workerThrowWrapper = [&worker, &errorStr, &mutError](size_t threadNumber, Iter from, Iter to) {
+    const auto workerThrowWrapper = [&worker, &error, &mutError](size_t threadNumber, Iter from, Iter to) {
         try {
             for (Iter iter = from; iter != to; iter++) {
                 if constexpr (std::is_invocable_r<void, decltype(worker), size_t, decltype(*iter)>::value) {
@@ -35,20 +34,17 @@ inline void parallelFor(int countThreads, Iter begin, Iter end, const Operator &
                     (void)threadNumber;
                 }
             }
-        } catch (const exception &e) {
-            std::lock_guard<std::mutex> lock(mutError);
-            errorStr = e;
         } catch (const StopException&) {
             return;
         } catch (...) {
             std::lock_guard<std::mutex> lock(mutError);
-            errorStr = "Unknown error";
+            error = std::current_exception();
         }
     };
     
     size_t prevPosition = 0;
     auto prevIterator = begin;
-    std::vector<std::thread> threads;
+    std::vector<Thread> threads;
     threads.reserve(countThreads - 1);
     for (int i = 0; i < countThreads - 1; i++) {
         const size_t nextPosition = std::min(prevPosition + step, countElements);
@@ -59,13 +55,15 @@ inline void parallelFor(int countThreads, Iter begin, Iter end, const Operator &
         prevPosition = nextPosition;
         prevIterator = nextIterator;
     }
-        
+
     workerThrowWrapper(0, prevIterator, end);
     
-    for (std::thread &th: threads) {
+    for (Thread &th: threads) {
         th.join();
     }
-    CHECK(!errorStr.has_value(), errorStr.value());
+    if (error) {
+        std::rethrow_exception(error);
+    }
 }
 
 }

@@ -66,7 +66,7 @@ void fetch_history_handler::execute()
         if (settings::system::useLocalDatabase) {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();
-            const std::vector<torrent_node_lib::TransactionInfo> txs = sync.getTxsForAddress(torrent_node_lib::Address(m_addr), m_beginTx, m_countTxs);
+            const std::vector<torrent_node_lib::TransactionInfo> txs = sync.getTxsForAddress(torrent_node_lib::Address(m_addr), m_beginTx, m_countTxs, m_countTxs);
             addressesInfoToJson(m_addr, txs, sync.getBlockchain(), 0, false, JsonVersion::V1, m_writer.getDoc());
         } else {
             base_network_handler::execute();

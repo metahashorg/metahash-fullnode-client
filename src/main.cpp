@@ -9,8 +9,8 @@
 #include "common/log.h"
 #include "common/Thread.h"
 #include "sync/Modules.h"
-#include "sync/P2P_Ips.h"
-#include "sync/LevelDbOptions.h"
+#include "sync/P2P/P2P_Ips.h"
+#include "sync/ConfigOptions.h"
 
 #include "SyncSingleton.h"
 
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
         LOGINFO << "Revision: " << g_GIT_SHA1;
         LOGINFO << "Build DateTime: " << g_GIT_DATE;
 
-        torrent_node_lib::initBlockchainUtils(torrent_node_lib::BlockVersion::V2);
+        torrent_node_lib::initBlockchainUtils();
         std::set<std::string> modulesStrs = {
             torrent_node_lib::MODULE_BLOCK_STR,
             torrent_node_lib::MODULE_TXS_STR,
@@ -135,20 +135,36 @@ int main(int argc, char* argv[])
         if (settings::system::useLocalDatabase) {
             syncSingleton() = std::make_unique<torrent_node_lib::Sync>(
                 settings::system::blocksFolder, 
+                "",
                 torrent_node_lib::LevelDbOptions(8, true, true, settings::system::leveldbFolder, 100),
-                torrent_node_lib::Sync::CachesOptions(0, 1, 100),
-                p2p.get(), false, settings::system::validateBlocks
+                torrent_node_lib::CachesOptions(0, 1, 100),
+                torrent_node_lib::GetterBlockOptions(100, 100, p2p.get(), false, settings::system::validateBlocks, false, false),
+                "",
+                torrent_node_lib::TestNodesOptions(0, "", ""),
+                false
             );
         }
 
+        /*Sync sync(
+            pathToFolder, 
+            technicalAddress,
+            LevelDbOptions(settingsDb.writeBufSizeMb, settingsDb.isBloomFilter, settingsDb.isChecks, getFullPath("simple", pathToBd), settingsDb.lruCacheMb),
+                  CachesOptions(maxCountElementsBlockCache, maxCountElementsTxsCache, maxLocalCacheElements),
+                  GetterBlockOptions(maxAdvancedLoadBlocks, countBlocksInBatch, p2p.get(), getBlocksFromFile, isValidate, isValidateSign, isCompress),
+                  signKey,
+                  TestNodesOptions(otherPortTorrent, myIp, testNodesServer),
+                  isValidateState
+        );*/
+        
         common::Thread runServerThread(runServer);
 
+        torrent_node_lib::StatisticGuard statGuard;
         if (isStartStatistic) {
-            torrent_node_lib::startStatistics();
+            statGuard = torrent_node_lib::startStatistics();
         }
         
         if (settings::system::useLocalDatabase) {
-            syncSingleton()->synchronize(2, true);
+            syncSingleton()->synchronize(2);
         }
 
         if (settings::extensions::use_tracking_history) {
@@ -164,9 +180,7 @@ int main(int argc, char* argv[])
         g_track_his.stop();
         ip_lookup.join();
 
-        if (isStartStatistic) {
-            torrent_node_lib::joinStatistics();
-        }
+        statGuard.join();
         
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {

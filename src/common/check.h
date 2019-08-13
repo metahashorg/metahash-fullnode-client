@@ -17,30 +17,37 @@ struct UserException {
 
 }
 
-#define throwErr(s) { \
-{ \
-    throw common::exception((s) + std::string(". Error at file ") \
+#define throwErr1(except, s) { \
+    { \
+        throw except((s) + std::string(". Error at file ") \
         + std::string(__FILE__) + std::string(" line ") + std::to_string(__LINE__)); \
-} \
+    } \
+}
+
+#define throwErr(s) { \
+    { \
+        throwErr1(common::exception, s); \
+    } \
 }
 
 #define throwUserErr(s) { \
-{ \
-    throw common::UserException((s) + std::string(". Error at file ") \
-        + std::string(__FILE__) + std::string(" line ") + std::to_string(__LINE__)); \
-} \
+    { \
+        throwErr1(common::UserException, s); \
+    } \
+}
+
+#define CHECK1(v, s, except) { \
+    if (!(v)) { \
+        throwErr1(except, s); \
+    } \
 }
 
 #define CHECK(v, s) { \
-if (!(v)) { \
-    throwErr(s); \
-} \
+    CHECK1(v, s, common::exception); \
 }
 
 #define CHECK_USER(v, s) { \
-if (!(v)) { \
-    throwUserErr(s); \
-} \
+    CHECK1(v, s, common::UserException); \
 }
 
 #endif // CHECK_H_

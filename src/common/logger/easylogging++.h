@@ -387,10 +387,9 @@ ELPP_INTERNAL_DEBUGGING_OUT_INFO << ELPP_INTERNAL_DEBUGGING_MSG(internalInfoStre
 #include <vector>
 #include <map>
 #include <unordered_map>
-#include <utility>
 #include <functional>
 #include <algorithm>
-#include <fstream>
+#include <iosfwd>
 #include <iostream>
 #include <sstream>
 #include <memory>
@@ -864,32 +863,6 @@ safeDelete(T*& pointer) {
 }
 /// @brief Bitwise operations for C++11 strong enum class. This casts e into Flag_T and returns value after bitwise operation
 /// Use these function as <pre>flag = bitwise::Or<MyEnum>(MyEnum::val1, flag);</pre>
-namespace bitwise {
-template <typename Enum>
-static inline base::type::EnumType And(Enum e, base::type::EnumType flag) {
-  return static_cast<base::type::EnumType>(flag) & static_cast<base::type::EnumType>(e);
-}
-template <typename Enum>
-static inline base::type::EnumType Not(Enum e, base::type::EnumType flag) {
-  return static_cast<base::type::EnumType>(flag) & ~(static_cast<base::type::EnumType>(e));
-}
-template <typename Enum>
-static inline base::type::EnumType Or(Enum e, base::type::EnumType flag) {
-  return static_cast<base::type::EnumType>(flag) | static_cast<base::type::EnumType>(e);
-}
-}  // namespace bitwise
-template <typename Enum>
-static inline void addFlag(Enum e, base::type::EnumType* flag) {
-  *flag = base::utils::bitwise::Or<Enum>(e, *flag);
-}
-template <typename Enum>
-static inline void removeFlag(Enum e, base::type::EnumType* flag) {
-  *flag = base::utils::bitwise::Not<Enum>(e, *flag);
-}
-template <typename Enum>
-static inline bool hasFlag(Enum e, base::type::EnumType flag) {
-  return base::utils::bitwise::And<Enum>(e, flag) > 0x0;
-}
 }  // namespace utils
 namespace threading {
 #if ELPP_THREADING_ENABLED
@@ -1607,9 +1580,7 @@ class LogFormat : public Loggable {
     return m_flags;
   }
 
-  inline bool hasFlag(base::FormatFlags flag) const {
-    return base::utils::hasFlag(flag, m_flags);
-  }
+  bool hasFlag(base::FormatFlags flag) const;
 
   virtual void log(el::base::type::ostream_t& os) const {
     os << m_format;
@@ -1624,9 +1595,7 @@ class LogFormat : public Loggable {
   /// @brief Updates %level from format. This is so that we dont have to do it at log-writing-time. It uses m_format and m_level
   virtual void updateFormatSpec(void) ELPP_FINAL;
 
-  inline void addFlag(base::FormatFlags flag) {
-    base::utils::addFlag(flag, &m_flags);
-  }
+  void addFlag(base::FormatFlags flag);
 
  private:
   Level m_level;
@@ -1671,7 +1640,7 @@ class CustomFormatSpecifier {
 ///   * el::Configuration confEnabledInfo(el::Level::Info, el::ConfigurationType::Enabled, "true");
 ///   * el::Configuration confMaxLogFileSizeInfo(el::Level::Info, el::ConfigurationType::MaxLogFileSize, "2048");
 ///   * el::Configuration confFilenameInfo(el::Level::Info, el::ConfigurationType::Filename, "/var/log/my.log");
-class Configuration : public Loggable {
+class Configuration final: public Loggable {
  public:
   Configuration(const Configuration& c);
   Configuration& operator=(const Configuration& c);
@@ -1901,7 +1870,7 @@ typedef std::unordered_map<std::string, FileStreamPtr> LogStreamsReferenceMap;
 /// This is to perform faster while writing logs using correct configurations.
 ///
 /// This is thread safe and final class containing non-virtual destructor (means nothing should inherit this class)
-class TypedConfigurations : public base::threading::ThreadSafe {
+class TypedConfigurations final: public base::threading::ThreadSafe {
  public:
   /// @brief Constructor to initialize (construct) the object off el::Configurations
   /// @param configurations Configurations pointer/reference to base this typed configurations off.
@@ -2030,7 +1999,7 @@ class TypedConfigurations : public base::threading::ThreadSafe {
   }
 };
 /// @brief Class that keeps record of current line hit for occasional logging
-class HitCounter {
+class HitCounter final {
  public:
   HitCounter(void) :
     m_filename(""),
@@ -2115,7 +2084,7 @@ class HitCounter {
   std::size_t m_hitCounts;
 };
 /// @brief Repository for hit counters used across the application
-class RegisteredHitCounters : public base::utils::RegistryWithPred<base::HitCounter, base::HitCounter::Predicate> {
+class RegisteredHitCounters final: public base::utils::RegistryWithPred<base::HitCounter, base::HitCounter::Predicate> {
  public:
   /// @brief Validates counter for every N, i.e, registers new if does not exist otherwise updates original one
   /// @return True if validation resulted in triggering hit. Meaning logs should be written everytime true is returned
@@ -2210,7 +2179,7 @@ typedef std::shared_ptr<LogBuilder> LogBuilderPtr;
 /// @brief Represents a logger holding ID and configurations we need to write logs
 ///
 /// @detail This class does not write logs itself instead its used by writer to read configuations from.
-class Logger : public base::threading::ThreadSafe, public Loggable {
+class Logger final: public base::threading::ThreadSafe, public Loggable {
  public:
   Logger(const std::string& id, base::LogStreamsReferenceMap* logStreamsReference);
   Logger(const std::string& id, const Configurations& configurations, base::LogStreamsReferenceMap* logStreamsReference);
@@ -2344,7 +2313,7 @@ inline void FUNCTION_NAME(const T&);
 };
 namespace base {
 /// @brief Loggers repository
-class RegisteredLoggers : public base::utils::Registry<Logger, std::string> {
+class RegisteredLoggers final: public base::utils::Registry<Logger, std::string> {
  public:
   explicit RegisteredLoggers(const LogBuilderPtr& defaultLogBuilder);
 
@@ -2414,7 +2383,7 @@ class RegisteredLoggers : public base::utils::Registry<Logger, std::string> {
   void unsafeFlushAll(void);
 };
 /// @brief Represents registries for verbose logging
-class VRegistry : base::NoCopy, public base::threading::ThreadSafe {
+class VRegistry final: base::NoCopy, public base::threading::ThreadSafe {
  public:
   explicit VRegistry(base::type::VerboseLevel level, base::type::EnumType* pFlags);
 
@@ -2441,9 +2410,7 @@ class VRegistry : base::NoCopy, public base::threading::ThreadSafe {
   void setFromArgs(const base::utils::CommandLineArgs* commandLineArgs);
 
   /// @brief Whether or not vModules enabled
-  inline bool vModulesEnabled(void) {
-    return !base::utils::hasFlag(LoggingFlag::DisableVModules, *m_pFlags);
-  }
+  bool vModulesEnabled(void);
 
  private:
   base::type::VerboseLevel m_level;
@@ -2548,7 +2515,7 @@ class IWorker {
 };
 #endif // ELPP_ASYNC_LOGGING
 /// @brief Easylogging++ management storage
-class Storage : base::NoCopy, public base::threading::ThreadSafe {
+class Storage final: base::NoCopy, public base::threading::ThreadSafe {
  public:
 #if ELPP_ASYNC_LOGGING
   Storage(const LogBuilderPtr& defaultLogBuilder, base::IWorker* asyncDispatchWorker);
@@ -2592,17 +2559,11 @@ class Storage : base::NoCopy, public base::threading::ThreadSafe {
     return &m_commandLineArgs;
   }
 
-  inline void addFlag(LoggingFlag flag) {
-    base::utils::addFlag(flag, &m_flags);
-  }
+  void addFlag(LoggingFlag flag);
 
-  inline void removeFlag(LoggingFlag flag) {
-    base::utils::removeFlag(flag, &m_flags);
-  }
+  void removeFlag(LoggingFlag flag);
 
-  inline bool hasFlag(LoggingFlag flag) const {
-    return base::utils::hasFlag(flag, m_flags);
-  }
+  bool hasFlag(LoggingFlag flag) const;
 
   inline base::type::EnumType flags(void) const {
     return m_flags;
@@ -2723,7 +2684,7 @@ class Storage : base::NoCopy, public base::threading::ThreadSafe {
 };
 extern ELPP_EXPORT base::type::StoragePointer elStorage;
 #define ELPP el::base::elStorage
-class DefaultLogDispatchCallback : public LogDispatchCallback {
+class DefaultLogDispatchCallback final: public LogDispatchCallback {
  protected:
   void handle(const LogDispatchData* data);
  private:
@@ -2762,7 +2723,7 @@ class AsyncDispatchWorker : public base::IWorker, public base::threading::Thread
 #endif  // ELPP_ASYNC_LOGGING
 }  // namespace base
 namespace base {
-class DefaultLogBuilder : public LogBuilder {
+class DefaultLogBuilder final: public LogBuilder {
  public:
   base::type::string_t build(const LogMessage* logMessage, bool appendNewLine) const;
 };

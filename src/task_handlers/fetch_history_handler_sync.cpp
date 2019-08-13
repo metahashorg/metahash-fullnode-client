@@ -42,7 +42,7 @@ BGN_TRY {
     CHK_PRM(syncSingleton() != nullptr, "Sync not set");
     const torrent_node_lib::Sync &sync = *syncSingleton();
     
-    const std::vector<torrent_node_lib::TransactionInfo> txs = sync.getTxsForAddress(torrent_node_lib::Address(address), beginTx, countTxs);
+    const std::vector<torrent_node_lib::TransactionInfo> txs = sync.getTxsForAddress(torrent_node_lib::Address(address), beginTx, countTxs, countTxs);
     
     addressesInfoToJson(address, txs, sync.getBlockchain(), 0, false, JsonVersion::V1, m_writer.getDoc());
 } END_TRY_RET();

@@ -10,6 +10,8 @@ struct BlockHeader;
 class BlockChainReadInterface : public common::no_copyable, common::no_moveable {
 public:
     
+    virtual BlockHeader getBlock(const std::vector<unsigned char> &hash) const = 0;
+    
     virtual BlockHeader getBlock(const std::string &hash) const = 0;
     
     virtual BlockHeader getBlock(size_t blockNumber) const = 0;

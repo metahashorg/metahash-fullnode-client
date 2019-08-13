@@ -18,6 +18,8 @@ public:
     
     virtual void join() = 0;
     
+    virtual void abort() = 0;
+    
     virtual ~Statistics() = default;
     
 public:
@@ -39,6 +41,8 @@ public:
     
     void join() override;
     
+    void abort() override;
+    
     ~StatisticsEmpty() override;
     
 public:
@@ -55,9 +59,24 @@ extern std::unique_ptr<Statistics> statistics;
 
 void setStatistics(std::unique_ptr<Statistics> &&newStatistics);
 
-void startStatistics();
+struct StatisticGuard {
+    friend StatisticGuard startStatistics();
+private:
+    
+    StatisticGuard(bool);
+    
+public:
+    
+    StatisticGuard() = default;
+    
+    ~StatisticGuard();
+    
+    bool joined = true;
+    
+    void join();
+};
 
-void joinStatistics();
+[[nodiscard]] StatisticGuard startStatistics();
 
 }
 

@@ -33,7 +33,7 @@ protected:
     void routine();
     void routine_2();
     bool save_block(unsigned int number, const std::string& dump);
-    bool save_block(unsigned int number, const std::string_view& hash, const std::string_view& dump);
+    bool save_block(unsigned int number, const std::string& hash, const std::string_view& dump);
     bool update_number(unsigned int number);
 
     bool core_addr_verification(const torrent_node_lib::BlockInfo& bi, const std::string& prev_hash);

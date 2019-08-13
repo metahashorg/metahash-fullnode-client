@@ -8,6 +8,7 @@
 #include <map>
 #include <thread>
 #include <mutex>
+#include <atomic>
 
 namespace torrent_node_lib {
 
@@ -54,6 +55,8 @@ public:
     
     void join() override;
     
+    void abort() override;
+    
     ~StatisticsServer() override;
     
 public:
@@ -81,10 +84,11 @@ private:
     const std::string latencyFile;
     const std::string version;
     
+    std::atomic<bool> aborted = false;
+    
     std::thread workThread;
     
     mutable std::mutex blockMutex;
-    std::vector<BlockStatistic> statBlocks;
     BlockStatistic lastBlock;
     
     RequestsStat requestStat;
