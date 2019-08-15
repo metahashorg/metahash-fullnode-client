@@ -4,6 +4,7 @@
 #include "send_tx_handler.h"
 #include "generate_handler.h"
 #include "fetch_balance_handler.h"
+#include "fetch_balances_handler.h"
 #include "fetch_history_handler.h"
 #include "get_block_by_hash_handler.h"
 #include "get_block_by_number_handler.h"
@@ -41,6 +42,7 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_hand
     { std::pair<std::string, UseLocalDatabase>("get-dump-block-by-hash", false),    perform<get_dump_block_by_hash> },
     { std::pair<std::string, UseLocalDatabase>("get-tx", false),                    perform<get_tx_handler> },
     { std::pair<std::string, UseLocalDatabase>("fetch-balance", false),             perform<fetch_balance_handler> },
+    { std::pair<std::string, UseLocalDatabase>("fetch-balances", false),            perform<fetch_balances_handler> },
     { std::pair<std::string, UseLocalDatabase>("fetch-history", false),             perform<fetch_history_handler> },
     { std::pair<std::string, UseLocalDatabase>("status", false),                    perform<status_handler> },
     { std::pair<std::string, UseLocalDatabase>("fetch-transaction", false),         perform<fetch_transaction_handler> },
@@ -50,6 +52,7 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_hand
     { std::pair<std::string, UseLocalDatabase>("create-tx", true),                  perform<create_tx_handler> },
     { std::pair<std::string, UseLocalDatabase>("create-tx2", true),                 perform<create_tx_handler_v2> },
     { std::pair<std::string, UseLocalDatabase>("fetch-balance", true),              perform<fetch_balance_handler_sync> }, // +
+    { std::pair<std::string, UseLocalDatabase>("fetch-balances", true),             perform<fetch_balances_handler> }, // +
     { std::pair<std::string, UseLocalDatabase>("fetch-history", true),              perform<fetch_history_handler_sync> }, // +
     { std::pair<std::string, UseLocalDatabase>("send-tx", true),                    perform<send_tx_handler_sync> }, // +
     { std::pair<std::string, UseLocalDatabase>("get-count-blocks", true),           perform<get_count_blocks_handler_sync> }, // +

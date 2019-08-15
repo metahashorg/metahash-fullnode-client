@@ -7,6 +7,7 @@
 #include "http_json_rpc_request.h"
 #include "common/string_utils.h"
 #include "cpplib_open_ssl_decor/crypto.h"
+#include "utils.h"
 #include "task_handlers/utils.h"
 
 bool send_tx_handler::prepare_params()
@@ -140,7 +141,7 @@ int send_tx_handler::check_params()
 
         CHK_PRM(m_reader.get_value(*params, "address", m_address), "address field not found");
         CHK_PRM(!m_address.empty(), "address field not found")
-        CHK_PRM(m_address.compare(0, 2, "0x") == 0, "address field must be in hex format")
+        CHK_PRM(utils::validate_address(m_address), "address is invalid")
         CHK_PRM(storage::keys::peek(m_address, m_keys), "failed on get keys")
 
         return 1;
@@ -156,7 +157,7 @@ int send_tx_handler::check_params_1()
         CHK_PRM(params, "params field not found")
 
         CHK_PRM(m_reader.get_value(*params, "to", m_to), "to field not found");
-        CHK_PRM(m_to.compare(0, 2, "0x") == 0, "to field must be in hex format")
+        CHK_PRM(utils::validate_address(m_to), "reciever address is invalid")
         //CHK_PRM(m_reader.get_value(*params, "sign", m_sign) && !m_sign.empty(), "sign field not found")
 
         auto jValue = m_reader.get("value", *params);

@@ -2,7 +2,6 @@
 #include "settings/settings.h"
 #include "utils.h"
 #include "common/convertStrings.h"
-//#include "cpplib_open_ssl_decor/crypto.h"
 
 create_tx_base_handler::create_tx_base_handler(http_session_ptr session)
     : base_network_handler(settings::server::get_proxy(), session)
@@ -20,10 +19,10 @@ bool create_tx_base_handler::check_params() {
         CHK_PRM(params, "params field not found")
 
         CHK_PRM(m_reader.get_value(*params, "address", m_address)  &&!m_address.empty(), "address field not found")
-        CHK_PRM(m_address.compare(0, 2, "0x") == 0, "address field must be in hex format")
+        CHK_PRM(utils::validate_address(m_address), "payer address is invalid")
 
         CHK_PRM(m_reader.get_value(*params, "to", m_to)  &&!m_to.empty(), "to field not found")
-        CHK_PRM(m_to.compare(0, 2, "0x") == 0, "to field must be in hex format")
+        CHK_PRM(utils::validate_address(m_to), "reciever address is invalid")
 
         auto jValue = m_reader.get("value", *params);
         CHK_PRM(jValue, "value field not found")

@@ -32,7 +32,7 @@ std::string transactionsToJson(const RequestId &requestId, const std::vector<tor
 
 void addressesInfoToJson(const std::string &address, const std::vector<torrent_node_lib::TransactionInfo> &infos, const torrent_node_lib::BlockChainReadInterface &blockchain, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
-void balanceInfoToJson(const std::string &address, const torrent_node_lib::BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
+void balanceInfoToJson(const std::string &address, const torrent_node_lib::BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc, bool array);
 
 void blockHeaderToJson(const torrent_node_lib::BlockHeader &bh, const std::vector<torrent_node_lib::TransactionInfo> &signatures, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 

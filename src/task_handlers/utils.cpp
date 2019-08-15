@@ -258,6 +258,11 @@ namespace utils
         }
     }
 
+    bool validate_address(const std::string& value)
+    {
+        return value.size() == 26*2 && value.compare(0, 2, "0x") == 0 && value.compare(2, 2, "00") == 0 && CRYPTO_check_address(value);
+    }
+
     // Timer
     Timer::~Timer() {
         if (m_thr.joinable()) {

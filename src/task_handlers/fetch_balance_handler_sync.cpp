@@ -32,6 +32,6 @@ BGN_TRY {
     
     const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(address));
     
-    balanceInfoToJson(address, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.getDoc());
+    balanceInfoToJson(address, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.getDoc(), false);
 } END_TRY_RET();
 }

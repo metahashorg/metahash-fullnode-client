@@ -3,8 +3,18 @@
 
 namespace string_utils
 {
-size_t get_size(const char*  val) noexcept {
+size_t get_size(const char* val) noexcept {
     return strlen(val);
+}
+
+size_t get_size(char* val) noexcept {
+    return strlen(val);
+}
+
+void check_size(size_t&) {
+}
+
+void str_append_unsafe(std::string&) {
 }
 
 namespace {

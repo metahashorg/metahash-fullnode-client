@@ -1,6 +1,6 @@
 #include "addr_validate_handler.h"
 
-#include "cpplib_open_ssl_decor/crypto.h"
+#include "utils.h"
 
 bool addr_validate_handler::prepare_params()
 {
@@ -12,7 +12,6 @@ bool addr_validate_handler::prepare_params()
         CHK_PRM(params, "params field not found")
 
         CHK_PRM(m_reader.get_value(*params, "address", m_address)  &&!m_address.empty(), "address field not found")
-        CHK_PRM(m_address.compare(0, 2, "0x") == 0, "address field must be in hex format")
 
         return true;
     }
@@ -23,9 +22,7 @@ void addr_validate_handler::execute()
 {
     BGN_TRY
     {
-        CHK_PRM(m_address.compare(2, 2, "00") == 0, "address not valid")
-        CHK_PRM(m_address.size() == 26*2, "address not valid")
-        CHK_PRM(CRYPTO_check_address(m_address), "address not valid");
+        CHK_PRM(utils::validate_address(m_address), "address not valid")
         m_writer.add_result("validate", "ok");
     }
     END_TRY

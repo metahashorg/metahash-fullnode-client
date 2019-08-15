@@ -5,117 +5,202 @@
 #include <cstring>
 #include <vector>
 
+#include <iostream>
+
 namespace string_utils
 {
 
-size_t get_size(const char*  val) noexcept;
+size_t get_size(const char* val) noexcept;
+size_t get_size(char* val) noexcept;
 
 template <typename T>
 size_t get_size(const T& val) noexcept {
     return val.size();
 }
 
-template <typename T1, typename T2>
-std::string str_concat(const T1& v1, const T2& v2) noexcept {
-    std::string res;
-    res.reserve(get_size(v1) + get_size(v2));
-    res.append(v1);
-    res.append(v2);
-    return res;
-}
+void check_size(size_t& size);
 
-template <typename T1, typename T2, typename T3>
-std::string str_concat(const T1& v1, const T2& v2, const T3& v3) noexcept {
-    std::string res;
-    res.reserve(get_size(v1) + get_size(v2) + get_size(v3));
-    res.append(v1);
-    res.append(v2);
-    res.append(v3);
-    return res;
-}
-
-template <typename T1, typename T2, typename T3, typename T4>
-std::string str_concat(const T1& v1, const T2& v2, const T3& v3, const T4& v4) noexcept {
-    std::string res;
-    res.reserve(get_size(v1) + get_size(v2) + get_size(v3) + get_size(v4));
-    res.append(v1);
-    res.append(v2);
-    res.append(v3);
-    res.append(v4);
-    return res;
-}
-
-template <typename T1, typename T2, typename T3, typename T4, typename T5>
-std::string str_concat(const T1& v1, const T2& v2, const T3& v3, const T4& v4, const T5& v5) noexcept {
-    std::string res;
-    res.reserve(get_size(v1) + get_size(v2) + get_size(v3) + get_size(v4) + get_size(v5));
-    res.append(v1);
-    res.append(v2);
-    res.append(v3);
-    res.append(v4);
-    res.append(v5);
-    return res;
-}
-
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
-std::string str_concat(const T1& v1, const T2& v2, const T3& v3, const T4& v4, const T5& v5, const T6& v6) noexcept {
-    std::string res;
-    res.reserve(get_size(v1) + get_size(v2) + get_size(v3) + get_size(v4) + get_size(v5) + get_size(v6));
-    res.append(v1);
-    res.append(v2);
-    res.append(v3);
-    res.append(v4);
-    res.append(v5);
-    res.append(v6);
-    return res;
-}
-
-template <typename T1, typename T2>
-void str_append(std::string& res, const T1& v1, const T2& v2) noexcept {
-    size_t sz = get_size(v1) + get_size(v2);
-    if (res.capacity() < sz) {
-        res.reserve(sz);
+template<typename T, typename... args>
+void check_size(size_t& size, const T& v, args... Targs) {
+    size_t sz = get_size(v);
+    // overflow
+    if (std::numeric_limits<size_t>::max() - size < sz) {
+        size = 0;
+        return;
     }
-    res.append(v1);
-    res.append(v2);
+    size += sz;
+    check_size(size, Targs...);
 }
 
-template <typename T1, typename T2, typename T3>
-void str_append(std::string& res, const T1& v1, const T2& v2, const T3& v3) noexcept {
-    size_t sz = get_size(v1) + get_size(v2) + get_size(v3);
-    if (res.capacity() < sz) {
-        res.reserve(sz);
+void str_append_unsafe(std::string& str);
+
+template<typename T, typename... args>
+void str_append_unsafe(std::string& str, const T& v, args... Targs) {
+    str.append(v);
+    str_append_unsafe(str, Targs...);
+}
+
+template <typename... args>
+void str_append(std::string& res, args... Targs) noexcept {
+    size_t sz = 0;
+    check_size(sz, Targs...);
+    if (sz != 0) {
+        if (res.capacity() < sz) {
+            res.reserve(sz);
+        }
+        str_append_unsafe(res, Targs...);
     }
-
-    res.append(v1);
-    res.append(v2);
-    res.append(v3);
 }
 
-template <typename T1, typename T2, typename T3, typename T4>
-void str_append(std::string& res, const T1& v1, const T2& v2, const T3& v3, const T4& v4) noexcept {
-    size_t sz = get_size(v1) + get_size(v2) + get_size(v3) + get_size(v4);
-    if (res.capacity() < sz) {
-        res.reserve(sz);
-    }
-    res.append(v1);
-    res.append(v2);
-    res.append(v3);
-    res.append(v4);
+template <typename... args>
+std::string str_concat(args... Targs) noexcept {
+    std::string res;
+    str_append(res, Targs...);
+    return res;
 }
 
-template <typename T1, typename T2, typename T3, typename T4, typename T5>
-void str_append(std::string& res, const T1& v1, const T2& v2, const T3& v3, const T4& v4, const T5& v5) noexcept {
-    size_t sz = get_size(v1) + get_size(v2) + get_size(v3) + get_size(v4) + get_size(v5);
-    if (res.capacity() < sz) {
-        res.reserve(sz);
-    }
-    res.append(v1);
-    res.append(v2);
-    res.append(v3);
-    res.append(v4);
-    res.append(v5);
-}
+//template <typename T1, typename T2>
+//std::string str_concat(const T1& v1, const T2& v2) noexcept {
+//    std::string res;
+//    size_t sz = 0;
+//    check_size(sz, v1, v2);
+//    if (sz != 0) {
+//        if (res.capacity() < sz) {
+//            res.reserve(sz);
+//        }
+//        res.append(v1);
+//        res.append(v2);
+//    }
+//    return res;
+//}
+
+//template <typename T1, typename T2, typename T3>
+//std::string str_concat(const T1& v1, const T2& v2, const T3& v3) noexcept {
+//    std::string res;
+//    size_t sz = 0;
+//    check_size(sz, v1, v2, v3);
+//    if (sz != 0) {
+//        if (res.capacity() < sz) {
+//            res.reserve(sz);
+//        }
+//        res.append(v1);
+//        res.append(v2);
+//        res.append(v3);
+//    }
+//    return res;
+//}
+
+//template <typename T1, typename T2, typename T3, typename T4>
+//std::string str_concat(const T1& v1, const T2& v2, const T3& v3, const T4& v4) noexcept {
+//    std::string res;
+//    size_t sz = 0;
+//    check_size(sz, v1, v2, v3, v4);
+//    if (sz != 0) {
+//        if (res.capacity() < sz) {
+//            res.reserve(sz);
+//        }
+//        res.append(v1);
+//        res.append(v2);
+//        res.append(v3);
+//        res.append(v4);
+//    }
+//    return res;
+//}
+
+//template <typename T1, typename T2, typename T3, typename T4, typename T5>
+//std::string str_concat(const T1& v1, const T2& v2, const T3& v3, const T4& v4, const T5& v5) noexcept {
+//    std::string res;
+//    size_t sz = 0;
+//    check_size(sz, v1, v2, v3, v4, v5);
+//    if (sz != 0) {
+//        if (res.capacity() < sz) {
+//            res.reserve(sz);
+//        }
+//        res.append(v1);
+//        res.append(v2);
+//        res.append(v3);
+//        res.append(v4);
+//        res.append(v5);
+//    }
+//    return res;
+//}
+
+//template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+//std::string str_concat(const T1& v1, const T2& v2, const T3& v3, const T4& v4, const T5& v5, const T6& v6) noexcept {
+//    std::string res;
+//    size_t sz = 0;
+//    check_size(sz, v1, v2, v3, v4, v5, v6);
+//    if (sz != 0) {
+//        if (res.capacity() < sz) {
+//            res.reserve(sz);
+//        }
+//        res.append(v1);
+//        res.append(v2);
+//        res.append(v3);
+//        res.append(v4);
+//        res.append(v5);
+//        res.append(v6);
+//    }
+//    return res;
+//}
+
+//template <typename T1, typename T2>
+//void str_append(std::string& res, const T1& v1, const T2& v2) noexcept {
+//    size_t sz = 0;
+//    check_size(sz, v1, v2);
+//    if (sz != 0) {
+//        if (res.capacity() < sz) {
+//            res.reserve(sz);
+//        }
+//        res.append(v1);
+//        res.append(v2);
+//    }
+//}
+
+//template <typename T1, typename T2, typename T3>
+//void str_append(std::string& res, const T1& v1, const T2& v2, const T3& v3) noexcept {
+//    size_t sz = 0;
+//    check_size(sz, v1, v2, v3);
+//    if (sz != 0) {
+//        if (res.capacity() < sz) {
+//            res.reserve(sz);
+//        }
+//        res.append(v1);
+//        res.append(v2);
+//        res.append(v3);
+//    }
+//}
+
+//template <typename T1, typename T2, typename T3, typename T4>
+//void str_append(std::string& res, const T1& v1, const T2& v2, const T3& v3, const T4& v4) noexcept {
+//    size_t sz = 0;
+//    check_size(sz, v1, v2, v3, v4);
+//    if (sz != 0) {
+//        if (res.capacity() < sz) {
+//            res.reserve(sz);
+//        }
+//        res.append(v1);
+//        res.append(v2);
+//        res.append(v3);
+//        res.append(v4);
+//    }
+//}
+
+//template <typename T1, typename T2, typename T3, typename T4, typename T5>
+//void str_append(std::string& res, const T1& v1, const T2& v2, const T3& v3, const T4& v4, const T5& v5) noexcept {
+//    size_t sz = 0;
+//    check_size(sz, v1, v2, v3, v4, v5);
+//    if (sz != 0) {
+//        if (res.capacity() < sz) {
+//            res.reserve(sz);
+//        }
+//        res.append(v1);
+//        res.append(v2);
+//        res.append(v3);
+//        res.append(v4);
+//        res.append(v5);
+//    }
+//}
 
 std::string bin2hex(const std::vector<unsigned char>& src);
 void bin2hex(const unsigned char* buf, size_t size, char* res);
@@ -127,57 +212,6 @@ std::string to_lower(const std::string &str);
 std::string to_upper(const std::string &str);
 
 std::string to_lower(const char* buf, size_t size);
-
-//void get_size(size_t& size) {
-//}
-
-//template<typename... args>
-//void get_size(size_t& size, const char* v, args... Fargs) {
-//    size += strlen(v);
-//    get_size(size, Fargs...);
-//}
-
-//void get_size(size_t& size, std::string_view& v, const char*& c) {
-//    size += v.size();
-//    get_size(size, c);
-//}
-
-//template<typename T, typename... args>
-//void get_size(size_t& size, const T& v, args... Fargs) {
-//    size += v.size();
-//    get_size(size, Fargs...);
-//}
-
-//void string_append(std::string& str) {
-//}
-
-//template<typename... args>
-//void string_append(std::string& str, const char* v, args... Fargs) {
-//    str.append(v);
-//    string_append(str, Fargs...);
-//}
-
-//void string_append(std::string& str, std::string_view& v, const char*& c) {
-//    str.append(v.data(), v.size());
-//    string_append(str, c);
-//}
-
-//template<typename T, typename... args>
-//void string_append(std::string& str, const T& v, args... Fargs) {
-//    str.append(v.data(), v.size());
-//    string_append(str, Fargs...);
-//}
-
-//template<typename T, typename... args>
-//std::string concat(const T& value, args... Fargs)
-//{
-//    std::string result;
-//    size_t size(0);
-//    get_size(size, Fargs...);
-//    result.reserve(size);
-//    string_append(result, Fargs...);
-//    return result;
-//}
 
 }
 

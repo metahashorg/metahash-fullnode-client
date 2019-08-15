@@ -43,6 +43,7 @@ add_executable(${PROJECT_NAME}
     task_handlers/generate_handler.cpp
     task_handlers/addr_validate_handler.cpp
     task_handlers/fetch_balance_handler.cpp
+    task_handlers/fetch_balances_handler.cpp
     task_handlers/fetch_history_handler.cpp
     task_handlers/get_tx_handler.cpp
     task_handlers/get_dump_block_by_hash_handler.cpp

@@ -171,7 +171,7 @@ std::string transactionsToJson(const RequestId &requestId, const std::vector<Tra
     return jsonToString(doc, isFormat);
 }
 
-void balanceInfoToJson(const std::string &address, const BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc) {
+void balanceInfoToJson(const std::string &address, const BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc, bool array) {
     const bool isStringValue = version == JsonVersion::V2;
     
     auto &allocator = doc.GetAllocator();
@@ -195,7 +195,16 @@ void balanceInfoToJson(const std::string &address, const BalanceInfo &balance, s
         resultValue.AddMember("countForgedOps", intOrString(balance.forged->countOp, isStringValue, allocator), allocator);
         resultValue.AddMember("forged", intOrString(balance.forged->forged, isStringValue, allocator), allocator);
     }
-    doc.AddMember("result", resultValue, allocator);
+    if (array) {
+        auto result = doc.FindMember("result");
+        if (result == doc.MemberEnd()) {
+            doc.AddMember("result", rapidjson::Value(rapidjson::kArrayType), allocator);
+            result = doc.FindMember("result");
+        }
+        result->value.GetArray().PushBack(resultValue, allocator);
+    } else {
+        doc.AddMember("result", resultValue, allocator);
+    }
 }
 
 static rapidjson::Value blockHeaderToJson(const BlockHeader &bh, const std::vector<TransactionInfo> &signatures, rapidjson::Document::AllocatorType &allocator, const JsonVersion &version) {

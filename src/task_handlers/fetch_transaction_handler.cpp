@@ -3,6 +3,7 @@
 #include "extensions/tracking_history.h"
 #include "common/string_utils.h"
 #include "common/convertStrings.h"
+#include "utils.h"
 
 extern ext::tracking_history g_track_his;
 
@@ -25,7 +26,7 @@ bool fetch_transaction_handler::prepare_params()
 
         CHK_PRM(m_reader.get_value(*params, "address", m_addr), "address field not found")
         CHK_PRM(!m_addr.empty(), "address is empty")
-        CHK_PRM(m_addr.compare(0, 2, "0x") == 0, "address field incorrect format")
+        CHK_PRM(utils::validate_address(m_addr), "address is invalid")
 
         CHK_PRM(m_reader.get_value(*params, "data", m_data), "data field not found")
         CHK_PRM(!m_data.empty(), "data is empty")

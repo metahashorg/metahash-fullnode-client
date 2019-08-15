@@ -4,6 +4,7 @@
 #include "../generate_json.h"
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
+#include "utils.h"
 
 fetch_balance_handler::fetch_balance_handler(http_session_ptr session)
     : base_network_handler(settings::server::get_tor(), session)
@@ -22,7 +23,7 @@ bool fetch_balance_handler::prepare_params()
 
         CHK_PRM(m_reader.get_value(*params, "address", m_addr), "address field not found")
         CHK_PRM(!m_addr.empty(), "address is empty")
-        CHK_PRM(m_addr.compare(0, 2, "0x") == 0, "address field incorrect format")
+        CHK_PRM(utils::validate_address(m_addr), "address is invalid")
 
         if (!settings::system::useLocalDatabase) {
             m_writer.add_param("address", m_addr.c_str());
@@ -39,7 +40,7 @@ void fetch_balance_handler::execute() {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();
             const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(m_addr));
-            balanceInfoToJson(m_addr, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.getDoc());
+            balanceInfoToJson(m_addr, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.getDoc(), false);
         } else {
             base_network_handler::execute();
         }
