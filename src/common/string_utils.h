@@ -18,7 +18,7 @@ size_t get_size(const T& val) noexcept {
     return val.size();
 }
 
-void check_size(size_t& size);
+void check_size(size_t& size) noexcept;
 
 template<typename T, typename... args>
 void check_size(size_t& size, const T& v, args... Targs) {
@@ -32,7 +32,7 @@ void check_size(size_t& size, const T& v, args... Targs) {
     check_size(size, Targs...);
 }
 
-void str_append_unsafe(std::string& str);
+void str_append_unsafe(std::string& str) noexcept;
 
 template<typename T, typename... args>
 void str_append_unsafe(std::string& str, const T& v, args... Targs) {

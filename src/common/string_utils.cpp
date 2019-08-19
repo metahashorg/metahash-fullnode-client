@@ -11,10 +11,10 @@ size_t get_size(char* val) noexcept {
     return strlen(val);
 }
 
-void check_size(size_t&) {
+void check_size(size_t&) noexcept {
 }
 
-void str_append_unsafe(std::string&) {
+void str_append_unsafe(std::string&) noexcept {
 }
 
 namespace {
