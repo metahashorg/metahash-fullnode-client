@@ -20,7 +20,6 @@
 
 #include "common/network_utils.h"
 #include "StatisticsServer.h"
-#include "extensions/tracking_history.h"
 #include "cmake_modules/GitSHA1.h"
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
