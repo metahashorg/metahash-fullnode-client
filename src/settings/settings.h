@@ -67,6 +67,8 @@ namespace settings
         static unsigned int blocks_cache_recv_count;
         static bool blocks_cache_block_verification;
         static std::vector<std::string> cores;
+        static bool history_cache_enable;
+        static std::vector<std::string> history_cache_addrs;
     };
 
     struct statistic {
@@ -74,11 +76,6 @@ namespace settings
         static std::string statisticGroup;
         static std::string statisticServer;
         static std::string latencyFile;
-    };
-
-    struct extensions {
-        static bool use_tracking_history;
-        static std::string tracking_history_folder;
     };
 
     void read(const std::string &pathToConfig);

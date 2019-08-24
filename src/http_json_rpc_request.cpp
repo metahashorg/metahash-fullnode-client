@@ -528,3 +528,8 @@ json_response_type* http_json_rpc_request::get_response()
 {
     return m_response.get();
 }
+
+const std::string& http_json_rpc_request::get_id()
+{
+    return m_id;
+}

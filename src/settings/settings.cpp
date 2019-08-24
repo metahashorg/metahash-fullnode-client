@@ -60,10 +60,8 @@ namespace settings
     unsigned int system::blocks_cache_recv_count = 100;
     bool system::blocks_cache_block_verification = true;
     std::vector<std::string> system::cores;
-
-    // extensions
-    bool extensions::use_tracking_history = {false};
-    std::string extensions::tracking_history_folder  = { "./history_tracking" };
+    bool system::history_cache_enable = {false};
+    std::vector<std::string> system::history_cache_addrs;
 
     void read(const std::string &pathToConfig) {
         pt::ptree tree;
@@ -133,15 +131,23 @@ namespace settings
             system::cores.emplace_back(string_utils::to_lower(v.second.data()));
         }
 
+        system::history_cache_enable = tree.get<bool>("system.history_cache_enable", false);
+
+        boost::property_tree::ptree hist_addrs;
+        hist_addrs = tree.get_child("system.history_cache_addresses", hist_addrs);
+        for (auto &v : hist_addrs) {
+            system::history_cache_addrs.emplace_back(string_utils::to_lower(v.second.data()));
+        }
+        if (system::history_cache_addrs.empty()) {
+            system::history_cache_enable = false;
+        }
+
         if (tree.find("statistic") != tree.not_found()) {
             statistic::statisticNetwork = tree.get<std::string>("statistic.network");
             statistic::statisticGroup = tree.get<std::string>("statistic.group");
             statistic::statisticServer = tree.get<std::string>("statistic.server");
             statistic::latencyFile = tree.get<std::string>("statistic.latency_file");
         }
-
-        extensions::use_tracking_history = tree.get<bool>("extensions.use_tracking_history", false);
-        extensions::tracking_history_folder = tree.get<std::string>("extensions.tracking_history_folder", "./history_tracking");
     }
 
     std::string getConfigPath(boost::program_options::variables_map& vm) {

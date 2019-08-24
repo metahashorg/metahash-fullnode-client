@@ -1,5 +1,5 @@
-#ifndef AUTO_CACHE_H
-#define AUTO_CACHE_H
+#ifndef BLOCKS_CACHE_H
+#define BLOCKS_CACHE_H
 
 #include <thread>
 #include <mutex>
@@ -48,4 +48,4 @@ private:
     std::unique_ptr<const leveldb::FilterPolicy> m_dbpolicy;
 };
 
-#endif // AUTO_CACHE_H
+#endif // BLOCKS_CACHE_H

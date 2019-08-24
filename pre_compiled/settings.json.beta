@@ -38,11 +38,8 @@
     "0x0069fce976a40fbd2c894f1fe635255fc16c80bfe17ce65f5e",
     "0x007fce3c1e56c67f963428b3dcdfc4400408918b843d1652ec",
     "0x00a88a888d16a23991e73b4081b745eec0f56cdc7063baa360",
-    "0x00f3dc22cbe3519ce94e9bf12145d61789da0bfd26bbdf7999"]
- },
- "extensions":
- {
-  "use_tracking_history": false,
-  "tracking_history_folder": "./tracking_history"
+    "0x00f3dc22cbe3519ce94e9bf12145d61789da0bfd26bbdf7999"],
+  "history_cache_enable": true,
+  "history_cache_addresses": []
  }
 }

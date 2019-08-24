@@ -52,6 +52,7 @@ public:
 
     std::string get_result();
     json_response_type* get_response();
+    const std::string& get_id();
 
 protected:
     void on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps);

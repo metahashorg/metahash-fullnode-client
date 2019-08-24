@@ -7,9 +7,11 @@
 #include "common/stopProgram.h"
 #include "connection_pool.h"
 #include "cache/blocks_cache.h"
+#include "cache/history_cache.h"
 
 std::unique_ptr<socket_pool> g_conn_pool;
 std::unique_ptr<blocks_cache> g_cache;
+std::unique_ptr<history_cache> g_hist_cache;
 
 
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
@@ -57,6 +59,7 @@ void http_server::run()
     
     g_conn_pool = std::make_unique<socket_pool>();
     g_cache = std::make_unique<blocks_cache>();
+    g_hist_cache = std::make_unique<history_cache>();
 
     m_run = true;
     std::vector<std::unique_ptr<std::thread> > threads;
@@ -77,6 +80,10 @@ void http_server::run()
         g_cache->start();
     }
 
+    if (settings::system::history_cache_enable) {
+        g_hist_cache->start();
+    }
+
     for (std::size_t i = 0; i < threads.size(); ++i) {
         threads[i]->join();
     }
@@ -85,6 +92,7 @@ void http_server::run()
     LOGINFO << "Service stoped";
 
     g_cache->stop();
+    g_hist_cache->stop();
     g_conn_pool->stop_monitor();
 }
 

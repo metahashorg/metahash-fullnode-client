@@ -30,7 +30,6 @@ namespace po = boost::program_options;
 namespace bs = boost::system;
 
 std::unique_ptr<http_server> g_server;
-ext::tracking_history g_track_his;
 
 void signal_catcher(int sig);
 
@@ -167,17 +166,10 @@ int main(int argc, char* argv[])
             syncSingleton()->synchronize(2);
         }
 
-        if (settings::extensions::use_tracking_history) {
-            if (g_track_his.init()) {
-                g_track_his.run();
-            }
-        }
-
         common::Thread ip_lookup(lookup_best_ip);
 
         runServerThread.join();
 
-        g_track_his.stop();
         ip_lookup.join();
 
         statGuard.join();
