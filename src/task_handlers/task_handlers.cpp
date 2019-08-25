@@ -6,6 +6,7 @@
 #include "fetch_balance_handler.h"
 #include "fetch_balances_handler.h"
 #include "fetch_history_handler.h"
+#include "fetch_history_filter_handler.h"
 #include "get_block_by_hash_handler.h"
 #include "get_block_by_number_handler.h"
 #include "get_blocks_handler.h"
@@ -44,6 +45,7 @@ const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_hand
     { std::pair<std::string, UseLocalDatabase>("fetch-balance", false),             perform<fetch_balance_handler> },
     { std::pair<std::string, UseLocalDatabase>("fetch-balances", false),            perform<fetch_balances_handler> },
     { std::pair<std::string, UseLocalDatabase>("fetch-history", false),             perform<fetch_history_handler> },
+    { std::pair<std::string, UseLocalDatabase>("fetch-history-filter", false),      perform<fetch_history_filter_handler> },
     { std::pair<std::string, UseLocalDatabase>("status", false),                    perform<status_handler> },
     { std::pair<std::string, UseLocalDatabase>("fetch-transaction", false),         perform<fetch_transaction_handler> },
     { std::pair<std::string, UseLocalDatabase>("validate", false),                  perform<addr_validate_handler> },
