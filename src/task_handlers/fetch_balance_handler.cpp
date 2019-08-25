@@ -16,10 +16,10 @@ bool fetch_balance_handler::prepare_params()
 {
     BGN_TRY
     {
-        CHK_PRM(m_id, "id field not found")
+        CHK_REQ(m_id, "id field not found")
 
         auto params = m_reader.get_params();
-        CHK_PRM(params, "params field not found")
+        CHK_REQ(params, "params field not found")
 
         CHK_PRM(m_reader.get_value(*params, "address", m_addr), "address field not found")
         CHK_PRM(!m_addr.empty(), "address is empty")

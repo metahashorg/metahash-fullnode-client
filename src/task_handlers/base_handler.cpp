@@ -8,7 +8,8 @@ bool base_handler::prepare(const std::string& params)
         m_duration.start();
 
         CHK_PARSE(m_reader.parse(params.c_str()),
-                string_utils::str_concat("Parse error: ", std::to_string(m_reader.get_parse_error().Code())));
+                string_utils::str_concat("Parse json error (", std::to_string(m_reader.get_parse_error()),
+                                         "): ", m_reader.get_parse_error_str()));
 
         m_id = m_reader.get_id();
         m_writer.set_id(m_id);

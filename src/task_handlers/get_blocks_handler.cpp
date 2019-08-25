@@ -10,10 +10,10 @@ bool get_blocks_handler::prepare_params()
 {
     BGN_TRY
     {
-        CHK_PRM(m_id, "id field not found")
+        CHK_REQ(m_id, "id field not found")
 
         auto params = m_reader.get_params();
-        CHK_PRM(params, "params field not found")
+        CHK_REQ(params, "params field not found")
 
         mh_count_t countBlocks(0);
         CHK_PRM(m_reader.get_value(*params, "countBlocks", countBlocks), "'countBlocks' field not found")

@@ -89,7 +89,8 @@ void status_handler::execute()
                     json_rpc_reader reader;
                     if (!reader.parse(result.data())) {
                         m_writer.add_result("blocks_count",
-                                            string_utils::str_concat("parse error: ", std::to_string(reader.get_parse_error().Code())));
+                                            string_utils::str_concat("parse error (", std::to_string(reader.get_parse_error()),
+                                                                     "): ", reader.get_parse_error_str()));
                         break;
                     }
                     auto tmp = reader.get_error();

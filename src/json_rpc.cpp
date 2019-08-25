@@ -1,4 +1,5 @@
 #include "json_rpc.h"
+#include "rapidjson/error/en.h"
 #include <sstream>
 
 #include "log.h"
@@ -15,17 +16,19 @@ json_rpc_reader::~json_rpc_reader()
 
 bool json_rpc_reader::parse(const char* json)
 {
-    try
-    {
+    try {
         m_error = m_doc.Parse(json);
         return !m_error.IsError();
-    }
-    catch (const std::exception& e)
-    {
+    } catch (const std::exception& e) {
         LOGERR << "JsonReader parse error: " << e.what();
         m_error.Set(rapidjson::ParseErrorCode::kParseErrorTermination);
         return false;
     }
+}
+
+const char* json_rpc_reader::get_parse_error_str() const
+{
+    return rapidjson::GetParseError_En(m_error.Code());
 }
 
 const std::string_view json_rpc_reader::stringify(const rapidjson::Value* value /*= nullptr*/) const
@@ -141,19 +144,19 @@ void json_rpc_writer::set_result(const rapidjson::Value& value)
     get_value(m_doc, "result", value.GetType()).CopyFrom(value, m_doc.GetAllocator());
 }
 
-void json_rpc_writer::set_error(int code, const std::string& message)
-{
-    set_error(code, message.c_str());
-}
-
 void json_rpc_writer::set_error(int code, const char* message)
 {
-    rapidjson::Value err(rapidjson::kObjectType);
-    err.AddMember("code", rapidjson::kNumberType, m_doc.GetAllocator());
-    err["code"].SetInt(code);
-    err.AddMember("message", rapidjson::kStringType, m_doc.GetAllocator());
-    err["message"].SetString(message, m_doc.GetAllocator());
-    get_value(m_doc, "error", rapidjson::kObjectType) = err;
+    rapidjson::Value& err = get_value(m_doc, "error", rapidjson::kObjectType);
+    get_value(err, "code", rapidjson::kNumberType).SetInt(code);
+    get_value(err, "message", rapidjson::kStringType).SetString(message, m_doc.GetAllocator());
+//    rapidjson::Value err(rapidjson::kObjectType);
+//    err.AddMember("code", code, m_doc.GetAllocator());
+//    err.AddMember("code", rapidjson::kNumberType, m_doc.GetAllocator());
+//    err["code"].SetInt(code);
+//    err.AddMember("message", rapidjson::Value(message, m_doc.GetAllocator()).Move(), m_doc.GetAllocator());
+//    err.AddMember("message", rapidjson::kStringType, m_doc.GetAllocator());
+//    err["message"].SetString(message, m_doc.GetAllocator());
+//    get_value(m_doc, "error", rapidjson::kObjectType) = err;
 }
 
 void json_rpc_writer::set_error(const rapidjson::Value& value)

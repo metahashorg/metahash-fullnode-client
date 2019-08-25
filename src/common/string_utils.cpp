@@ -3,11 +3,11 @@
 
 namespace string_utils
 {
-size_t get_size(const char* val) noexcept {
+size_t get_size(const char* val) {
     return strlen(val);
 }
 
-size_t get_size(char* val) noexcept {
+size_t get_size(char* val) {
     return strlen(val);
 }
 

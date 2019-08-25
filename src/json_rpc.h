@@ -28,7 +28,8 @@ public:
     bool parse(const char* json);
     const std::string_view stringify(const rapidjson::Value* value = nullptr) const;
 
-    inline bool	is_valid() const { return !m_error.IsError(); }
+    inline rapidjson::ParseErrorCode get_parse_error() const { return m_error.Code(); };
+    const char* get_parse_error_str() const;
 
     json_rpc_id get_id();
     const std::string_view get_method() const;
@@ -36,8 +37,6 @@ public:
     const rapidjson::Value* get_result() const;
     const rapidjson::Value* get_params() const;
     const rapidjson::Value* get(const char* name, const rapidjson::Value& root) const;
-
-    inline rapidjson::ParseResult get_parse_error() const { return m_error; };
 
     template <typename T>
     bool get_value(const rapidjson::Value& root, const char* name, T& value) const
@@ -100,7 +99,6 @@ public:
     
     bool is_error() const;
     void set_error(const rapidjson::Value& value);
-    void set_error(int code, const std::string& message);
     void set_error(int code, const char* message);
 
     template <typename T>

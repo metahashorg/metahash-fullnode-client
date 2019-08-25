@@ -26,7 +26,7 @@ public:
 
     asio::io_context& get_io_context();
 
-    void send_json(const std::string& data);
+    void send_json(const char* data, size_t size);
 
 protected:
     void process_request();

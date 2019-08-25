@@ -135,12 +135,11 @@ void blocks_cache::routine()
         unsigned int count_blocks = 0;
         handler_result res;
         std::string json;
-        std::string_view dump;
         json_rpc_reader reader;
         const rapidjson::Value* tmp;
         std::chrono::system_clock::time_point tp;
 
-        json_response_type* response = nullptr;
+        const json_response_type* response;
         boost::asio::io_context ctx;
 
         http_json_rpc_request_ptr gcb = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
@@ -167,7 +166,7 @@ void blocks_cache::routine()
                 goto next;
             }
             if (!reader.parse(response->get().body().c_str())) {
-                LOGERR << "Cache. Could not parse get-count-blocks: " << reader.get_parse_error().Code();
+                LOGERR << "Cache. Could not parse get-count-blocks (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
                 goto next;
             }
             tmp = reader.get_result();
@@ -259,7 +258,7 @@ void blocks_cache::routine_2()
         uint64_t blk_size, sz_prev = 0;
         size_t resp_size = 0;
 
-        json_response_type* response = nullptr;
+        const json_response_type* response;
         boost::asio::io_context ctx;
 
         torrent_node_lib::BlockInfo bi, bi_prev;
@@ -284,7 +283,7 @@ void blocks_cache::routine_2()
                     break;
                 }
                 if (!reader.parse(response->get().body().c_str())) {
-                    LOGERR << "Cache. Could not parse get-count-blocks: " << reader.get_parse_error().Code();
+                    LOGERR << "Cache. Could not parse get-count-blocks (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
                     break;
                 }
                 tmp = reader.get_result();
@@ -343,7 +342,7 @@ void blocks_cache::routine_2()
                 goto wait;
             }
             if (!reader.parse(response->get().body().c_str())) {
-                LOGERR << "Cache. Could not parse get-blocks: " << reader.get_parse_error().Code();
+                LOGERR << "Cache. Could not parse get-blocks (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
                 goto wait;
             }
             tmp = reader.get_error();
@@ -501,7 +500,7 @@ void blocks_cache::routine_2()
                                 break;
                             }
                             if (!reader.parse(response->get().body().c_str())) {
-                                LOGERR << "Cache. Could not parse get-block-by-number: " << reader.get_parse_error().Code();
+                                LOGERR << "Cache. Could not parse get-block-by-number (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
                                 break;
                             }
                             tmp = reader.get_error();

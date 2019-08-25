@@ -50,8 +50,8 @@ public:
     void execute();
     void execute_async(http_json_rpc_execute_callback callback);
 
-    std::string_view get_result();
-    json_response_type* get_response();
+    const std::string_view get_result();
+    const json_response_type* get_response();
     const std::string& get_id();
 
 protected:

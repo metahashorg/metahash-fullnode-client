@@ -139,7 +139,7 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
             LOGINFO << "json-rpc[" << m_id << "] Rerun request";
             execute_async(m_callback);
         } else {
-            m_result.set_error(-32603, string_utils::str_concat("Json-rpc error ", std::to_string(e.value()), " : ", e.message()));
+            m_result.set_error(-32603, string_utils::str_concat("Json-rpc error ", std::to_string(e.value()), " : ", e.message()).c_str());
             m_result.add_error_data("when", from);
             m_result.add_error_data("host", m_host);
             perform_callback();
@@ -267,7 +267,7 @@ void http_json_rpc_request::on_request_timeout()
             m_rerun = true;
         } else {
             m_result.set_error(-32603,
-                string_utils::str_concat("Json-rpc timeout ", std::to_string(settings::system::jrpc_timeout), " ms"));
+                string_utils::str_concat("Json-rpc timeout ", std::to_string(settings::system::jrpc_timeout), " ms").c_str());
             m_result.add_error_data("host", m_host);
             perform_callback();
         }
@@ -287,13 +287,6 @@ void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::
         m_connect_timer.start(std::chrono::milliseconds(settings::system::jrpc_conn_timeout), [self](){
             self->on_connect_timeout();
         });
-
-//        asio::socket_base::reuse_address reuseaddr(true);
-//        if (is_ssl()) {
-//            m_ssl_socket.lowest_layer().set_option(reuseaddr);
-//        } else {
-//            m_socket.set_option(reuseaddr);
-//        }
 
         asio::async_connect(is_ssl() ? m_ssl_socket.lowest_layer() : m_socket, eps,
             [self](const boost::system::error_code& e, const tcp::endpoint& ep){ self->on_connect(e, ep); });
@@ -322,7 +315,7 @@ void http_json_rpc_request::on_connect_timeout()
             m_rerun = true;
         } else {
             m_result.set_error(-32603,
-                string_utils::str_concat("Json-rpc connection timeout ", std::to_string(settings::system::jrpc_conn_timeout), " ms"));
+                string_utils::str_concat("Json-rpc connection timeout ", std::to_string(settings::system::jrpc_conn_timeout), " ms").c_str());
             m_result.add_error_data("host", m_host);
             perform_callback();
         }
@@ -350,8 +343,11 @@ void http_json_rpc_request::on_connect(const boost::system::error_code& e, const
                 self->on_handshake(e);
             });
         } else {
+#ifdef _DEBUG_
             LOGDEBUG << "json-rpc[" << m_id << "] Send request: " << m_host << " <<< " << m_req.body().c_str();
-
+#else
+            LOGDEBUG << "json-rpc[" << m_id << "] Send request: " << m_host << " " << m_req.body().size() << " bytes";
+#endif
             http::async_write(m_socket, m_req, [self](const boost::system::error_code& e, std::size_t){
                 self->on_write(e);
             });
@@ -369,9 +365,9 @@ void http_json_rpc_request::on_handshake(const boost::system::error_code& e)
         }
 
 #ifdef _DEBUG_
-        LOGDEBUG << "json-rpc[" << m_id << "] Send request: " << m_host << " <<< " << m_req.body().c_str();
+        LOGDEBUG << "json-rpc[" << m_id << "] Send ssl request: " << m_host << " <<< " << m_req.body().c_str();
 #else
-        LOGDEBUG << "json-rpc[" << m_id << "] Send request: " << m_host << " " << m_req.body().size() << " bytes";
+        LOGDEBUG << "json-rpc[" << m_id << "] Send ssl request: " << m_host << " " << m_req.body().size() << " bytes";
 #endif
 
         auto self = shared_from_this();
@@ -443,7 +439,7 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
         if (!succ) {
             if (status != http::status::ok) {
                 m_result.set_error(-32603,
-                    string_utils::str_concat("Incorrect response http status: ", std::to_string(static_cast<unsigned>(status))));
+                    string_utils::str_concat("Incorrect response http status: ", std::to_string(static_cast<unsigned>(status))).c_str());
                 LOGERR << "json-rpc[" << m_id << "] Response json parse error: " << m_result.get_doc().GetParseError();
             }
         } else {
@@ -473,7 +469,7 @@ void http_json_rpc_request::perform_callback()
     JRPC_END()
 }
 
-std::string_view http_json_rpc_request::get_result()
+const std::string_view http_json_rpc_request::get_result()
 {
     JRPC_BGN
     {
@@ -532,7 +528,7 @@ void http_json_rpc_request::close(bool force)
     JRPC_END()
 }
 
-json_response_type* http_json_rpc_request::get_response()
+const json_response_type* http_json_rpc_request::get_response()
 {
     return m_response.get();
 }

@@ -147,7 +147,7 @@ void history_cache::routine()
         rapidjson::Value::ConstValueIterator arr_it;
         std::chrono::system_clock::time_point tp;
 
-        json_response_type* response = nullptr;
+        const json_response_type* response = nullptr;
         boost::asio::io_context ctx;
 
         http_json_rpc_request_ptr fetch_history = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
@@ -182,7 +182,7 @@ void history_cache::routine()
                     continue;
                 }
                 if (!reader.parse(response->get().body().c_str())) {
-                    LOGERR << "History cache. Could not parse fetch-balance (" << v.addr << "): " << reader.get_parse_error().Code();
+                    LOGERR << "History cache. Could not parse fetch-balance (" << v.addr << "): " << reader.get_parse_error() << " " << reader.get_parse_error_str();
                     continue;
                 }
                 tmp = reader.get_error();
@@ -231,7 +231,7 @@ void history_cache::routine()
                         continue;
                     }
                     if (!reader.parse(response->get().body().c_str())) {
-                        LOGERR << "History cache. Could not parse fetch-history (" << v.addr << "): " << reader.get_parse_error().Code();
+                        LOGERR << "History cache. Could not parse fetch-history (" << v.addr << "): " << reader.get_parse_error() << " " << reader.get_parse_error_str();
                         continue;
                     }
                     tmp = const_cast<rapidjson::Value*>(reader.get_error());

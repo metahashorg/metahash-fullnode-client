@@ -8,10 +8,10 @@ bool fetch_balance_handler_sync::prepare_params()
 {
     BGN_TRY
     {
-        CHK_PRM(m_id, "id field not found")
+        CHK_REQ(m_id, "id field not found")
         
         auto params = m_reader.get_params();
-        CHK_PRM(params, "params field not found")
+        CHK_REQ(params, "params field not found")
         
         std::string addr;
         CHK_PRM(m_reader.get_value(*params, "address", addr), "address field not found")

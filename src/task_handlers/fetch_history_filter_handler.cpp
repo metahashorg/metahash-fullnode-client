@@ -21,10 +21,10 @@ bool fetch_history_filter_handler::prepare_params()
 {
     BGN_TRY
     {
-        CHK_PRM(m_id, "id field not found")
+        CHK_REQ(m_id, "id field not found")
 
         auto params = m_reader.get_params();
-        CHK_PRM(params, "params field not found")
+        CHK_REQ(params, "params field not found")
 
         CHK_PRM(m_reader.get_value(*params, "address", m_addr), "address field not found")
         CHK_PRM(!m_addr.empty(), "address is empty")
@@ -54,7 +54,7 @@ bool fetch_history_filter_handler::prepare_params()
                           const_cast<rapidjson::Value&>(it->value), m_writer.get_allocator());
         }
 
-        CHK_PRM(res.MemberBegin() != res.MemberEnd(), "key is not recognized")
+        CHK_PRM(res.MemberBegin() != res.MemberEnd(), "filters is not recognized")
 
         m_writer.add_param("address", m_addr.c_str());
         m_writer.get_params()->AddMember("filters", res, m_writer.get_allocator());

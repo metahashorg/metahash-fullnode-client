@@ -24,10 +24,10 @@ bool get_dump_block_by_hash::prepare_params()
 {
     BGN_TRY
     {
-        CHK_PRM(m_id, "id field not found")
+        CHK_REQ(m_id, "id field not found")
 
         auto params = m_reader.get_params();
-        CHK_PRM(params, "params field not found")
+        CHK_REQ(params, "params field not found")
 
         CHK_PRM(m_reader.get_value(*params, "hash", m_hash), "hash field not found")
         CHK_PRM(!m_hash.empty(), "hash is empty")

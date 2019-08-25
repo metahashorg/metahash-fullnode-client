@@ -84,7 +84,8 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request)
         json_rpc_reader reader;
 
         CHK_PRM(reader.parse(request->get_result().data()),
-                string_utils::str_concat("fetch-balane response parse error: ", std::to_string(reader.get_parse_error().Code())).c_str())
+                string_utils::str_concat("fetch-balane response parse error (", std::to_string(reader.get_parse_error()),
+                                         "): ", reader.get_parse_error_str()))
 
         auto err = reader.get_error();
         auto res = reader.get_result();
@@ -129,10 +130,10 @@ int send_tx_handler::check_params()
 {
     BGN_TRY
     {
-        CHK_PRM(m_id, "id field not found")
+        CHK_REQ(m_id, "id field not found")
 
         auto params = m_reader.get_params();
-        CHK_PRM(params, "params field not found")
+        CHK_REQ(params, "params field not found")
 
         m_reader.get_value(*params, "transaction", m_transaction);
         if (m_transaction.empty()) {

@@ -10,11 +10,11 @@
 namespace string_utils
 {
 
-size_t get_size(const char* val) noexcept;
-size_t get_size(char* val) noexcept;
+size_t get_size(const char* val);
+size_t get_size(char* val);
 
 template <typename T>
-size_t get_size(const T& val) noexcept {
+size_t get_size(const T& val) {
     return val.size();
 }
 
@@ -41,7 +41,7 @@ void str_append_unsafe(std::string& str, const T& v, args... Targs) {
 }
 
 template <typename... args>
-void str_append(std::string& res, args... Targs) noexcept {
+void str_append(std::string& res, args... Targs) {
     size_t sz = 0;
     check_size(sz, Targs...);
     if (sz != 0) {
@@ -53,7 +53,7 @@ void str_append(std::string& res, args... Targs) noexcept {
 }
 
 template <typename... args>
-std::string str_concat(args... Targs) noexcept {
+std::string str_concat(args... Targs) {
     std::string res;
     str_append(res, Targs...);
     return res;

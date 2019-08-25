@@ -25,7 +25,6 @@ void base_network_handler::execute()
 {
     BGN_TRY
     {
-        // TODO rid of std::string copying
         m_request->set_path(m_reader.get_method().data());
         m_request->set_body(m_writer.stringify().data());
         if (!m_session) {
@@ -48,7 +47,7 @@ void base_network_handler::process_response(json_rpc_reader &reader)
 {
     if (const rapidjson::Value* err = reader.get_error()) {
         m_writer.set_error(*err);
-    } else if (auto res = reader.get_result()) {
+    } else if (const rapidjson::Value* res = reader.get_result()) {
         m_writer.set_result(*res);
     } else {
         CHK_PRM(false, "No occur result or error");
@@ -86,7 +85,8 @@ void base_network_handler::on_complete()
         m_writer.reset();
         json_rpc_reader reader;
         CHK_PRM(reader.parse(m_request->get_result().data()),
-                string_utils::str_concat("Invalid response json: ", std::to_string(reader.get_parse_error().Code())))
+                string_utils::str_concat("Invalid response json, parse error (", std::to_string(reader.get_parse_error()),
+                                         "): ", reader.get_parse_error_str()))
         CHK_PRM(reader.get_error() || reader.get_result(), "No occur result or error")
 
         process_response(reader);
@@ -97,5 +97,6 @@ void base_network_handler::on_complete()
 
 void base_network_handler::send_response()
 {
-    m_session->send_json(m_writer.stringify().data());
+    std::string_view result = m_writer.stringify();
+    m_session->send_json(result.data(), result.size());
 }
