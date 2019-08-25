@@ -48,11 +48,11 @@ BGN_TRY {
     const torrent_node_lib::BlockHeader bh = sync.getBlockchain().getBlock(hash);
     
     if (!bh.blockNumber.has_value()) {
-        return genErrorResponse(-32603, "block " + hash + " has not found", m_writer.getDoc());
+        return genErrorResponse(-32603, "block " + hash + " has not found", m_writer.get_doc());
     }
 
     if (!settings::system::allowStateBlocks && bh.isStateBlock()) {
-        return genErrorResponse(-32603, "block " + hash + " is state block and has been ignored", m_writer.getDoc());
+        return genErrorResponse(-32603, "block " + hash + " is state block and has been ignored", m_writer.get_doc());
     }
     
     torrent_node_lib::BlockHeader nextBh = sync.getBlockchain().getBlock(*bh.blockNumber + 1);
@@ -62,10 +62,10 @@ BGN_TRY {
         signs = nextBi.getBlockSignatures();
     }
     if (type == 0 || type == 4) {
-        blockHeaderToJson(bh, signs, false, JsonVersion::V1, m_writer.getDoc());
+        blockHeaderToJson(bh, signs, false, JsonVersion::V1, m_writer.get_doc());
     } else {
         const torrent_node_lib::BlockInfo bi = sync.getFullBlock(bh, beginTx, countTxs);
-        blockInfoToJson(bi, signs, type, false, JsonVersion::V1, m_writer.getDoc());
+        blockInfoToJson(bi, signs, type, false, JsonVersion::V1, m_writer.get_doc());
     }
 } END_TRY_RET();
 }

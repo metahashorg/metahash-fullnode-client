@@ -57,7 +57,7 @@ bool send_tx_handler::prepare_params()
 
                     auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), m_session->get_io_context());
                     request->set_path("fetch-balance");
-                    request->set_body(writer.stringify());
+                    request->set_body(writer.stringify().data());
 
                     auto self = shared_from(this);
                     request->execute_async([self, request](){ self->on_get_balance(request); });
@@ -83,7 +83,7 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request)
     {
         json_rpc_reader reader;
 
-        CHK_PRM(reader.parse(request->get_result()),
+        CHK_PRM(reader.parse(request->get_result().data()),
                 string_utils::str_concat("fetch-balane response parse error: ", std::to_string(reader.get_parse_error().Code())).c_str())
 
         auto err = reader.get_error();

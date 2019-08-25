@@ -56,16 +56,16 @@ bool get_block_by_hash_handler::prepare_params()
                 bi.header.blockNumber = std::stoi(num);
                 bi.header.countTxs = bi.txs.size();
                 if (!settings::system::allowStateBlocks && bi.header.isStateBlock()) {
-                    genErrorResponse(-32603, "block " + m_hash + " is a state block and was ignored", m_writer.getDoc());
+                    genErrorResponse(-32603, "block " + m_hash + " is a state block and was ignored", m_writer.get_doc());
                     return false;
                 }
                 switch (m_type) {
                 case 0:
                 case 4:
-                    blockHeaderToJson(bi.header, {}, false, JsonVersion::V1, m_writer.getDoc());
+                    blockHeaderToJson(bi.header, {}, false, JsonVersion::V1, m_writer.get_doc());
                     break;
                 default:
-                    blockInfoToJson(bi, {}, m_type, false, JsonVersion::V1, m_writer.getDoc());
+                    blockInfoToJson(bi, {}, m_type, false, JsonVersion::V1, m_writer.get_doc());
                     break;
                 }
                 m_from_cache = true;
@@ -93,11 +93,11 @@ void get_block_by_hash_handler::execute()
             const torrent_node_lib::BlockHeader bh = sync.getBlockchain().getBlock(m_hash);
 
             if (!settings::system::allowStateBlocks && bh.isStateBlock()) {
-                return genErrorResponse(-32603, "block " + m_hash + " is a state block and was ignored", m_writer.getDoc());
+                return genErrorResponse(-32603, "block " + m_hash + " is a state block and was ignored", m_writer.get_doc());
             }
 
             if (!bh.blockNumber.has_value()) {
-                return genErrorResponse(-32603, "block " + m_hash + " has not found", m_writer.getDoc());
+                return genErrorResponse(-32603, "block " + m_hash + " has not found", m_writer.get_doc());
             }
 
             torrent_node_lib::BlockHeader nextBh = sync.getBlockchain().getBlock(*bh.blockNumber + 1);
@@ -107,10 +107,10 @@ void get_block_by_hash_handler::execute()
                 signs = nextBi.getBlockSignatures();
             }
             if (m_type == 0 || m_type == 4) {
-                blockHeaderToJson(bh, signs, false, JsonVersion::V1, m_writer.getDoc());
+                blockHeaderToJson(bh, signs, false, JsonVersion::V1, m_writer.get_doc());
             } else {
                 const torrent_node_lib::BlockInfo bi = sync.getFullBlock(bh, m_beginTx, m_countTxs);
-                blockInfoToJson(bi, signs, m_type, false, JsonVersion::V1, m_writer.getDoc());
+                blockInfoToJson(bi, signs, m_type, false, JsonVersion::V1, m_writer.get_doc());
             }
         } else {
             base_network_handler::execute();

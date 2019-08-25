@@ -21,6 +21,6 @@ BGN_TRY {
     
     const size_t countBlocks = sync.getBlockchain().countBlocks();
     
-    genCountBlockJson(countBlocks, false, JsonVersion::V1, m_writer.getDoc());
+    genCountBlockJson(countBlocks, false, JsonVersion::V1, m_writer.get_doc());
 } END_TRY_RET();
 }

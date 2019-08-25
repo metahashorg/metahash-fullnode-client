@@ -82,12 +82,12 @@ void status_handler::execute()
                 request->set_path("get-count-blocks");
                 request->set_body("{\"id\":1}");
                 request->execute();
-                std::string result = request->get_result();
+                std::string_view result = request->get_result();
                 m_writer.add_result("blocks_count", "n/a");
                 for (;;) {
                     if (result.empty()) break;
                     json_rpc_reader reader;
-                    if (!reader.parse(result)) {
+                    if (!reader.parse(result.data())) {
                         m_writer.add_result("blocks_count",
                                             string_utils::str_concat("parse error: ", std::to_string(reader.get_parse_error().Code())));
                         break;
@@ -136,7 +136,7 @@ void status_handler::execute()
                 closedir(dirp);
             }
             m_writer.add_result("count", arr.Size());
-            m_writer.get_value(m_writer.getDoc(), "result", rapidjson::Type::kObjectType).AddMember("keys", arr, m_writer.get_allocator());
+            m_writer.get_value(m_writer.get_doc(), "result", rapidjson::Type::kObjectType).AddMember("keys", arr.Move(), m_writer.get_allocator());
             break;
         }
 

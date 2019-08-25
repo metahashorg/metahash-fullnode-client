@@ -44,6 +44,6 @@ BGN_TRY {
     
     const std::vector<torrent_node_lib::TransactionInfo> txs = sync.getTxsForAddress(torrent_node_lib::Address(address), beginTx, countTxs, countTxs);
     
-    addressesInfoToJson(address, txs, sync.getBlockchain(), 0, false, JsonVersion::V1, m_writer.getDoc());
+    addressesInfoToJson(address, txs, sync.getBlockchain(), 0, false, JsonVersion::V1, m_writer.get_doc());
 } END_TRY_RET();
 }

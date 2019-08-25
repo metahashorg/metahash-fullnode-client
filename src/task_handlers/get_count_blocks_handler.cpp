@@ -29,7 +29,7 @@ void get_count_blocks_handler::execute()
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();
             const size_t countBlocks = sync.getBlockchain().countBlocks();
-            genCountBlockJson(countBlocks, false, JsonVersion::V1, m_writer.getDoc());
+            genCountBlockJson(countBlocks, false, JsonVersion::V1, m_writer.get_doc());
         } else {
             base_network_handler::execute();
         }

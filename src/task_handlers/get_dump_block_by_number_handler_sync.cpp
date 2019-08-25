@@ -50,16 +50,16 @@ BGN_TRY {
         
         CHECK(!res.empty(), "block " + std::to_string(number) + " not found");
         if (isHex) {
-            genBlockDumpJson(res, false, m_writer.getDoc());
+            genBlockDumpJson(res, false, m_writer.get_doc());
         } else {
             //return res;
         }
     } catch (const common::exception &e) {
-        genErrorResponse(-32603, e, m_writer.getDoc());
+        genErrorResponse(-32603, e, m_writer.get_doc());
     } catch (const std::exception &e) {
-        genErrorResponse(-32603, e.what(), m_writer.getDoc());
+        genErrorResponse(-32603, e.what(), m_writer.get_doc());
     } catch (...) {
-        genErrorResponse(-32603, "Unknown error", m_writer.getDoc());
+        genErrorResponse(-32603, "Unknown error", m_writer.get_doc());
     }
 } END_TRY_RET();
 }

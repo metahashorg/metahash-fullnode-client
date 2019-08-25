@@ -41,16 +41,16 @@ public:
     http_json_rpc_request(const std::string& host, asio::io_context& execute_context);
     virtual ~http_json_rpc_request();
 
-    void set_path(const std::string& path);
-    void set_body(const std::string& body);
-    void set_host(const std::string& host);
+    void set_path(const char* path);
+    void set_body(const char* body);
+    void set_host(const char* host);
 
     void reset_attempts();
 
     void execute();
     void execute_async(http_json_rpc_execute_callback callback);
 
-    std::string get_result();
+    std::string_view get_result();
     json_response_type* get_response();
     const std::string& get_id();
 

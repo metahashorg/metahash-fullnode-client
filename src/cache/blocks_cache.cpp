@@ -137,7 +137,7 @@ void blocks_cache::routine()
         std::string json;
         std::string_view dump;
         json_rpc_reader reader;
-        rapidjson::Value* tmp = nullptr;
+        const rapidjson::Value* tmp;
         std::chrono::system_clock::time_point tp;
 
         json_response_type* response = nullptr;
@@ -154,7 +154,7 @@ void blocks_cache::routine()
             tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(30);
 
             ctx.restart();
-            gcb->set_host(settings::server::get_tor());
+            gcb->set_host(settings::server::get_tor().c_str());
             gcb->reset_attempts();
             gcb->execute();
             response = gcb->get_response();
@@ -166,7 +166,7 @@ void blocks_cache::routine()
                 LOGERR << "Cache. Could not get get-count-blocks";
                 goto next;
             }
-            if (!reader.parse(response->get().body())) {
+            if (!reader.parse(response->get().body().c_str())) {
                 LOGERR << "Cache. Could not parse get-count-blocks: " << reader.get_parse_error().Code();
                 goto next;
             }
@@ -187,8 +187,8 @@ void blocks_cache::routine()
                 ctx.restart();
                 json.clear();
                 string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-dump-block-by-number\", \"params\":{\"number\":", std::to_string(m_nextblock), ", \"compress\":true}}");
-                gdbn->set_body(json);
-                gdbn->set_host(settings::server::get_tor());
+                gdbn->set_body(json.c_str());
+                gdbn->set_host(settings::server::get_tor().c_str());
                 gdbn->reset_attempts();
                 gdbn->execute();
                 response = gdbn->get_response();
@@ -196,7 +196,7 @@ void blocks_cache::routine()
                     LOGERR << "Cache. Could not get get-dump-block-by-number";
                     goto next;
                 }
-                if (reader.parse(response->get().body())) {
+                if (reader.parse(response->get().body().c_str())) {
                     tmp = reader.get_error();
                     if (tmp) {
                         LOGERR << "Cache. get-count-blocks error: " << reader.stringify(tmp);
@@ -236,9 +236,9 @@ void blocks_cache::routine_2()
         std::string decompressed;
 //        std::string_view dump;
         json_rpc_reader reader;
-        rapidjson::Value* tmp = nullptr;
-        rapidjson::Value::MemberIterator it;
-        rapidjson::Value::Array::ValueIterator arr_it;
+        const rapidjson::Value* tmp = nullptr;
+        rapidjson::Value::ConstMemberIterator it;
+        rapidjson::Value::Array::ConstValueIterator arr_it;
         std::chrono::system_clock::time_point tp;
 
         struct block_info {
@@ -283,7 +283,7 @@ void blocks_cache::routine_2()
                     LOGERR << "Cache. Could not get get-count-blocks";
                     break;
                 }
-                if (!reader.parse(response->get().body())) {
+                if (!reader.parse(response->get().body().c_str())) {
                     LOGERR << "Cache. Could not parse get-count-blocks: " << reader.get_parse_error().Code();
                     break;
                 }
@@ -329,8 +329,8 @@ void blocks_cache::routine_2()
                 ", \"type\": \"forP2P\", \"direction\": \"forward\"}}");
 
             ctx.restart();
-            get_blocks->set_host(settings::server::get_tor());
-            get_blocks->set_body(json);
+            get_blocks->set_host(settings::server::get_tor().c_str());
+            get_blocks->set_body(json.c_str());
             get_blocks->reset_attempts();
             get_blocks->execute();
             response = get_blocks->get_response();
@@ -342,7 +342,7 @@ void blocks_cache::routine_2()
                 LOGERR << "Cache. Could not get get-blocks";
                 goto wait;
             }
-            if (!reader.parse(response->get().body())) {
+            if (!reader.parse(response->get().body().c_str())) {
                 LOGERR << "Cache. Could not parse get-blocks: " << reader.get_parse_error().Code();
                 goto wait;
             }
@@ -416,8 +416,8 @@ void blocks_cache::routine_2()
             json.append("]}}");
 
             ctx.restart();
-            get_dumps->set_host(settings::server::get_tor());
-            get_dumps->set_body(json);
+            get_dumps->set_host(settings::server::get_tor().c_str());
+            get_dumps->set_body(json.c_str());
             get_dumps->reset_attempts();
             get_dumps->execute();
             response = get_dumps->get_response();
@@ -430,7 +430,7 @@ void blocks_cache::routine_2()
                 goto wait;
             }
 
-            if (reader.parse(response->get().body())) {
+            if (reader.parse(response->get().body().c_str())) {
                 tmp = reader.get_error();
                 if (tmp) {
                     LOGERR << "Cache. get-dumps-blocks-by-hash got error: " << reader.stringify(tmp);
@@ -487,8 +487,8 @@ void blocks_cache::routine_2()
                                                      std::to_string(iter->number-1), "}}");
 
                             ctx.restart();
-                            get_block->set_host(settings::server::get_tor());
-                            get_block->set_body(json);
+                            get_block->set_host(settings::server::get_tor().c_str());
+                            get_block->set_body(json.c_str());
                             get_block->reset_attempts();
                             get_block->execute();
                             response = get_block->get_response();
@@ -500,7 +500,7 @@ void blocks_cache::routine_2()
                                 LOGERR << "Cache. Could not get get-block-by-number";
                                 break;
                             }
-                            if (!reader.parse(response->get().body())) {
+                            if (!reader.parse(response->get().body().c_str())) {
                                 LOGERR << "Cache. Could not parse get-block-by-number: " << reader.get_parse_error().Code();
                                 break;
                             }

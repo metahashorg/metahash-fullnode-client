@@ -61,7 +61,7 @@ void fetch_balances_handler::execute() {
             const torrent_node_lib::Sync &sync = *syncSingleton();
             for (const auto& v: m_addrs) {
                 const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(v));
-                balanceInfoToJson(v, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.getDoc(), true);
+                balanceInfoToJson(v, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.get_doc(), true);
             }
         } else {
             base_network_handler::execute();

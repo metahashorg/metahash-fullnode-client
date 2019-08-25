@@ -190,7 +190,7 @@ void http_session::process_post_request()
         // if "id" not provided it means it is notification
 
         if (reader.parse(m_req.body().c_str())) {
-            auto it = post_handlers.find(std::make_pair(reader.get_method(), settings::system::useLocalDatabase));
+            auto it = post_handlers.find(std::make_pair(reader.get_method().data(), settings::system::useLocalDatabase));
             if (it == post_handlers.end()) {
                 LOGERR << "Incorrect service method: " << reader.get_method();
 
@@ -247,7 +247,8 @@ void http_session::process_get_request()
             if (!params.empty()) {
                 json_utils::to_json(params, *writer.get_params(), writer.get_allocator());
             }
-            auto res = it->second(shared_from_this(), writer.stringify());
+            std::string_view t = writer.stringify();
+            auto res = it->second(shared_from_this(), std::string(t.data(), t.size()));
             // async operation
             if (!res)
                 return;

@@ -142,7 +142,7 @@ void history_cache::routine()
         std::string json;
 
         json_rpc_reader reader;
-        rapidjson::Value* tmp = nullptr;
+        const rapidjson::Value* tmp;
         rapidjson::Value::ConstMemberIterator it;
         rapidjson::Value::ConstValueIterator arr_it;
         std::chrono::system_clock::time_point tp;
@@ -168,8 +168,8 @@ void history_cache::routine()
                 string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-balance\", \"params\":{\"address\":\"", v.addr, "\"}}");
 
                 ctx.restart();
-                fetch_balance->set_host(settings::server::get_tor());
-                fetch_balance->set_body(json);
+                fetch_balance->set_host(settings::server::get_tor().c_str());
+                fetch_balance->set_body(json.c_str());
                 fetch_balance->reset_attempts();
                 fetch_balance->execute();
                 response = fetch_balance->get_response();
@@ -181,7 +181,7 @@ void history_cache::routine()
                     LOGERR << "History cache. Could not get fetch-balance (" << v.addr << ")";
                     continue;
                 }
-                if (!reader.parse(response->get().body())) {
+                if (!reader.parse(response->get().body().c_str())) {
                     LOGERR << "History cache. Could not parse fetch-balance (" << v.addr << "): " << reader.get_parse_error().Code();
                     continue;
                 }
@@ -217,8 +217,8 @@ void history_cache::routine()
                     string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-history\", \"params\":{\"address\":\"", v.addr, "\", \"beginTx\":", std::to_string(v.begin),",\"countTxs\":10}}");
 
                     ctx.restart();
-                    fetch_history->set_host(settings::server::get_tor());
-                    fetch_history->set_body(json);
+                    fetch_history->set_host(settings::server::get_tor().c_str());
+                    fetch_history->set_body(json.c_str());
                     fetch_history->reset_attempts();
                     fetch_history->execute();
                     response = fetch_history->get_response();
@@ -230,16 +230,16 @@ void history_cache::routine()
                         LOGERR << "History cache. Could not get fetch-history (" << v.addr << ")";
                         continue;
                     }
-                    if (!reader.parse(response->get().body())) {
+                    if (!reader.parse(response->get().body().c_str())) {
                         LOGERR << "History cache. Could not parse fetch-history (" << v.addr << "): " << reader.get_parse_error().Code();
                         continue;
                     }
-                    tmp = reader.get_error();
+                    tmp = const_cast<rapidjson::Value*>(reader.get_error());
                     if (tmp != nullptr) {
                         LOGERR << "History cache. Got error from fetch-history ("  << v.addr << "): " << reader.stringify(tmp);
                         continue;
                     }
-                    tmp = reader.get_result();
+                    tmp = const_cast<rapidjson::Value*>(reader.get_result());
                     if (tmp == nullptr) {
                         LOGERR << "History cache. Did not find result in fetch-history (" << v.addr << ")";
                         continue;

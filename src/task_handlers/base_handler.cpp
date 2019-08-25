@@ -7,7 +7,7 @@ bool base_handler::prepare(const std::string& params)
     {
         m_duration.start();
 
-        CHK_PARSE(m_reader.parse(params),
+        CHK_PARSE(m_reader.parse(params.c_str()),
                 string_utils::str_concat("Parse error: ", std::to_string(m_reader.get_parse_error().Code())));
 
         m_id = m_reader.get_id();
@@ -26,9 +26,9 @@ bool base_handler::prepare(const std::string& params)
             }
         }
 #ifdef _DEBUG_
-        LOGDEBUG << "Prepared json " << complete << pending << ":" << m_writer.stringify();
+        LOGDEBUG << "Prepared json succ " << complete << ", pending " << pending << ":" << m_writer.stringify();
 #else
-        LOGDEBUG << "Prepared json " << complete << pending;
+        LOGDEBUG << "Prepared json succ " << complete << ", pending " << pending;
 #endif
         return complete;
     }

@@ -3,8 +3,6 @@
 
 #include "log.h"
 
-#include "rapidjson/writer.h"
-
 // json_rpc_reader
 
 json_rpc_reader::json_rpc_reader()
@@ -15,11 +13,11 @@ json_rpc_reader::~json_rpc_reader()
 {
 }
 
-bool json_rpc_reader::parse(const std::string& json)
+bool json_rpc_reader::parse(const char* json)
 {
     try
     {
-        m_error = m_doc.Parse(json.c_str());
+        m_error = m_doc.Parse(json);
         return !m_error.IsError();
     }
     catch (const std::exception& e)
@@ -30,72 +28,66 @@ bool json_rpc_reader::parse(const std::string& json)
     }
 }
 
-std::string json_rpc_reader::stringify(rapidjson::Value* value /*= nullptr*/)
+const std::string_view json_rpc_reader::stringify(const rapidjson::Value* value /*= nullptr*/) const
 {
-    rapidjson::StringBuffer buf;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+    m_buf.Clear();
+    rapidjson::Writer<rapidjson::StringBuffer> writer(m_buf);
     if (!value)
         value = &m_doc;
     value->Accept(writer);
-    return buf.GetString();
+    return std::string_view(m_buf.GetString(), m_buf.GetSize());
 }
 
 json_rpc_id json_rpc_reader::get_id()
 {
     json_rpc_id res(0);
-    rapidjson::Value* id = get("id", m_doc);
-    if (id)
-    {
-        if (id->IsString())
-        {
+    const rapidjson::Value* id = get("id", m_doc);
+    if (id) {
+        if (id->IsString()) {
             res = static_cast<json_rpc_id>(std::stoi(id->GetString()));
-        }
-        else if (id->IsInt())
-        {
+        } else if (id->IsInt()) {
             res = static_cast<json_rpc_id>(id->GetInt());
-        }
-        else if (id->IsUint())
-        {
+        } else if (id->IsUint()) {
             res = id->GetUint();
         }
     }
     return res;
 }
 
-std::string json_rpc_reader::get_method()
+const std::string_view json_rpc_reader::get_method() const
 {
-    std::string res;
+    std::string_view res;
     get_value(m_doc, "method", res);
     return res;
 }
 
-rapidjson::Value* json_rpc_reader::get_error()
+const rapidjson::Value* json_rpc_reader::get_error() const
 {
-return get("error", m_doc);
+    return get("error", m_doc);
 }
 
-rapidjson::Value* json_rpc_reader::get_result()
+const rapidjson::Value* json_rpc_reader::get_result() const
 {
     return get("result", m_doc);
 }
 
-rapidjson::Value* json_rpc_reader::get_params()
+const rapidjson::Value* json_rpc_reader::get_params() const
 {
     return get("params", m_doc);
 }
 
-rapidjson::Value* json_rpc_reader::get(const std::string& name, rapidjson::Value& root)
+const rapidjson::Value* json_rpc_reader::get(const char* name, const rapidjson::Value& root) const
 {
     if (!root.IsObject()) {
         return nullptr;
     }
-    auto p = root.FindMember(name);
+    rapidjson::Value::ConstMemberIterator p = root.FindMember(name);
     if (p == root.MemberEnd())
         return nullptr;
     return &p->value;
 }
 
-bool json_rpc_reader::get_value(rapidjson::Value& root, const char* name, std::string_view& value) const
+bool json_rpc_reader::get_value(const rapidjson::Value& root, const char* name, std::string_view& value) const
 {
     if (!root.IsObject()) {
         return false;
@@ -109,7 +101,7 @@ bool json_rpc_reader::get_value(rapidjson::Value& root, const char* name, std::s
     return false;
 }
 
-rapidjson::Document& json_rpc_reader::get_doc()
+const rapidjson::Document& json_rpc_reader::get_doc() const
 {
     return m_doc;
 }
@@ -125,11 +117,11 @@ json_rpc_writer::~json_rpc_writer()
 {
 }
 
-bool json_rpc_writer::parse(const std::string& json)
+bool json_rpc_writer::parse(const char* json)
 {
     try
     {
-        m_doc.Parse(json.c_str());
+        m_doc.Parse(json);
         return !m_doc.HasParseError();
     }
     catch (const std::exception& e)
@@ -139,12 +131,12 @@ bool json_rpc_writer::parse(const std::string& json)
     }
 }
 
-void json_rpc_writer::set_method(const std::string& value)
+void json_rpc_writer::set_method(const char* value)
 {
     get_value(m_doc, "method", rapidjson::kStringType).SetString(value, m_doc.GetAllocator());
 }
 
-void json_rpc_writer::set_result(rapidjson::Value& value)
+void json_rpc_writer::set_result(const rapidjson::Value& value)
 {
     get_value(m_doc, "result", value.GetType()).CopyFrom(value, m_doc.GetAllocator());
 }
@@ -164,7 +156,7 @@ void json_rpc_writer::set_error(int code, const char* message)
     get_value(m_doc, "error", rapidjson::kObjectType) = err;
 }
 
-void json_rpc_writer::set_error(rapidjson::Value& value)
+void json_rpc_writer::set_error(const rapidjson::Value& value)
 {
     get_value(m_doc, "error", value.GetType()).CopyFrom(value, m_doc.GetAllocator());
 }
@@ -177,17 +169,17 @@ void json_rpc_writer::set_id(json_rpc_id value)
         get_value(m_doc, "id", rapidjson::kNumberType).Set<json_rpc_id>(value);
 }
 
-std::string json_rpc_writer::stringify(rapidjson::Value* value /*= nullptr*/)
+const std::string_view json_rpc_writer::stringify(const rapidjson::Value* value /*= nullptr*/)
 {
-    rapidjson::StringBuffer buf;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+    m_buf.Clear();
+    rapidjson::Writer<rapidjson::StringBuffer> writer(m_buf);
     if (!value)
         value = &m_doc;
     value->Accept(writer);
-    return buf.GetString();
+    return std::string_view(m_buf.GetString(), m_buf.GetSize());
 }
 
-rapidjson::Value& json_rpc_writer::get_value(rapidjson::Value& root, const std::string& name, rapidjson::Type Type)
+rapidjson::Value& json_rpc_writer::get_value(rapidjson::Value& root, const char* name, rapidjson::Type Type)
 {
     if (!root.IsObject()) {
         root.SetObject();
@@ -225,26 +217,25 @@ bool json_rpc_writer::is_error() const
 rapidjson::Value* json_rpc_writer::get_params()
 {
     auto p = m_doc.FindMember("params");
-    if (p == m_doc.MemberEnd())
-    {
-	return &get_value(m_doc, "params", rapidjson::kObjectType);
+    if (p == m_doc.MemberEnd()) {
+        return &get_value(m_doc, "params", rapidjson::kObjectType);
     }
     return &p->value;
 }
 
-rapidjson::Value* json_rpc_writer::new_value(const std::string& name)
+rapidjson::Document& json_rpc_writer::get_doc()
 {
-    return new rapidjson::Value(name, m_doc.GetAllocator());
+    return m_doc;
 }
 
-void json_rpc_writer::push_back(rapidjson::Value& array, rapidjson::Value& value)
+rapidjson::Document::AllocatorType& json_rpc_writer::get_allocator()
 {
-    array.PushBack(value, m_doc.GetAllocator());
-}
+    return m_doc.GetAllocator();
+};
 
 namespace json_utils
 {
-    bool val2str(rapidjson::Value* value, std::string& result)
+    bool val2str(const rapidjson::Value* value, std::string& result)
     {
         result.clear();
 

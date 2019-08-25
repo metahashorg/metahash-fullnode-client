@@ -25,8 +25,9 @@ void base_network_handler::execute()
 {
     BGN_TRY
     {
-        m_request->set_path(m_reader.get_method());
-        m_request->set_body(m_writer.stringify());
+        // TODO rid of std::string copying
+        m_request->set_path(m_reader.get_method().data());
+        m_request->set_body(m_writer.stringify().data());
         if (!m_session) {
             m_async_execute = false;
         }
@@ -34,7 +35,7 @@ void base_network_handler::execute()
         if (!m_async_execute) {
             m_request->execute();
             m_writer.reset();
-            m_writer.parse(m_request->get_result());
+            m_writer.parse(m_request->get_result().data());
         } else {
             auto self = shared_from(this);
             m_request->execute_async([self](){ self->on_complete(); });
@@ -45,7 +46,7 @@ void base_network_handler::execute()
 
 void base_network_handler::process_response(json_rpc_reader &reader)
 {
-    if (auto err = reader.get_error()) {
+    if (const rapidjson::Value* err = reader.get_error()) {
         m_writer.set_error(*err);
     } else if (auto res = reader.get_result()) {
         m_writer.set_result(*res);
@@ -53,11 +54,25 @@ void base_network_handler::process_response(json_rpc_reader &reader)
         CHK_PRM(false, "No occur result or error");
     }
 
-    rapidjson::Document& doc = reader.get_doc();
-    for (auto& m : doc.GetObject()) {
-        std::string name = m.name.GetString();
-        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-        if (std::find(json_rpc_service.begin(), json_rpc_service.end(), name) != json_rpc_service.end()) {
+    bool skip = true;
+    const rapidjson::Document& doc = reader.get_doc();
+    for (const auto& m : doc.GetObject()) {
+//        std::string name = m.name.GetString();
+//        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+//        if (std::find(json_rpc_service.begin(), json_rpc_service.end(), name) != json_rpc_service.end()) {
+//            continue;
+//        }
+        skip = false;
+        for (const auto& v: json_rpc_service){
+            if (v.size() != m.name.GetStringLength()) {
+                continue;
+            }
+            if (v.compare(m.name.GetString()) == 0) {
+                skip = true;
+                break;
+            }
+        }
+        if (skip) {
             continue;
         }
         m_writer.add_value(m.name.GetString(), m.value);
@@ -70,7 +85,7 @@ void base_network_handler::on_complete()
     {
         m_writer.reset();
         json_rpc_reader reader;
-        CHK_PRM(reader.parse(m_request->get_result()),
+        CHK_PRM(reader.parse(m_request->get_result().data()),
                 string_utils::str_concat("Invalid response json: ", std::to_string(reader.get_parse_error().Code())))
         CHK_PRM(reader.get_error() || reader.get_result(), "No occur result or error")
 
@@ -82,5 +97,5 @@ void base_network_handler::on_complete()
 
 void base_network_handler::send_response()
 {
-    m_session->send_json(m_writer.stringify());
+    m_session->send_json(m_writer.stringify().data());
 }

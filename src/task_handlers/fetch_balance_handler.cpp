@@ -40,7 +40,7 @@ void fetch_balance_handler::execute() {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();
             const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(m_addr));
-            balanceInfoToJson(m_addr, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.getDoc(), false);
+            balanceInfoToJson(m_addr, balance, sync.getBlockchain().countBlocks(), false, JsonVersion::V1, m_writer.get_doc(), false);
         } else {
             base_network_handler::execute();
         }

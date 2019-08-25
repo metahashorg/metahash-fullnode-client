@@ -34,7 +34,7 @@ http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_c
     //m_req.set(http::field::user_agent, "metahash.service");
     m_req.set(http::field::content_type, "application/json");
 
-    set_path(path);
+    set_path(path.c_str());
 
     m_ssl_ctx.set_default_verify_paths();
     m_ssl_ctx.set_verify_mode(ssl::verify_fail_if_no_peer_cert);
@@ -49,21 +49,29 @@ http_json_rpc_request::~http_json_rpc_request()
     close();
 }
 
-void http_json_rpc_request::set_path(const std::string& path)
+void http_json_rpc_request::set_path(const char* path)
 {
     JRPC_BGN
     {
+        if (path == nullptr) {
+            return;
+        }
         m_id = path;
         m_duration.set_message("json-rpc[" + m_id + "]");
-        std::string target = path;
-        if (target[0] != '/')
-            target.insert(target.begin(), '/');
-        m_req.target(target);
+        if (*path != '/') {
+            m_req.target(string_utils::str_concat("/", path));
+        } else {
+            m_req.target(path);
+        }
+//        std::string target = path;
+//        if (target[0] != '/')
+//            target.insert(target.begin(), '/');
+//        m_req.target(target);
     }
     JRPC_END()
 }
 
-void http_json_rpc_request::set_body(const std::string& body)
+void http_json_rpc_request::set_body(const char* body)
 {
     JRPC_BGN
     {
@@ -78,7 +86,7 @@ void http_json_rpc_request::set_body(const std::string& body)
     JRPC_END()
 }
 
-void http_json_rpc_request::set_host(const std::string& host)
+void http_json_rpc_request::set_host(const char* host)
 {
     JRPC_BGN
     {
@@ -431,12 +439,12 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
             LOGWARN << "json-rpc[" << m_id << "] Incorrect response http status: " << status;
         }
 
-        const bool succ = m_result.parse(m_response->get().body());
+        const bool succ = m_result.parse(m_response->get().body().c_str());
         if (!succ) {
             if (status != http::status::ok) {
                 m_result.set_error(-32603,
                     string_utils::str_concat("Incorrect response http status: ", std::to_string(static_cast<unsigned>(status))));
-                LOGERR << "json-rpc[" << m_id << "] Response json parse error: " << m_result.getDoc().GetParseError();
+                LOGERR << "json-rpc[" << m_id << "] Response json parse error: " << m_result.get_doc().GetParseError();
             }
         } else {
 #ifdef _DEBUG_
@@ -465,7 +473,7 @@ void http_json_rpc_request::perform_callback()
     JRPC_END()
 }
 
-std::string http_json_rpc_request::get_result()
+std::string_view http_json_rpc_request::get_result()
 {
     JRPC_BGN
     {

@@ -5,6 +5,7 @@
 #include <vector>
 #include <string.h>
 #include "rapidjson/document.h"
+#include "rapidjson/writer.h"
 
 static const char json_rpc_ver[] = "2.0";
 
@@ -14,7 +15,7 @@ using json_rpc_id = uint32_t;
 
 namespace json_utils
 {
-    bool val2str(rapidjson::Value* value, std::string& resut);
+    bool val2str(const rapidjson::Value* value, std::string& resut);
     void to_json(const std::string_view& param_list, rapidjson::Value& out, rapidjson::Document::AllocatorType& allocator);
 }
 
@@ -24,26 +25,26 @@ public:
     json_rpc_reader();
     ~json_rpc_reader();
 
-    bool parse(const std::string& json);
-    std::string stringify(rapidjson::Value* value = nullptr);
+    bool parse(const char* json);
+    const std::string_view stringify(const rapidjson::Value* value = nullptr) const;
 
     inline bool	is_valid() const { return !m_error.IsError(); }
 
     json_rpc_id get_id();
-    std::string get_method();
-    rapidjson::Value* get_error();
-    rapidjson::Value* get_result();
-    rapidjson::Value* get_params();
-    rapidjson::Value* get(const std::string& name, rapidjson::Value& root);
+    const std::string_view get_method() const;
+    const rapidjson::Value* get_error() const;
+    const rapidjson::Value* get_result() const;
+    const rapidjson::Value* get_params() const;
+    const rapidjson::Value* get(const char* name, const rapidjson::Value& root) const;
 
-    inline rapidjson::ParseResult get_parse_error() { return m_error; };
+    inline rapidjson::ParseResult get_parse_error() const { return m_error; };
 
     template <typename T>
-    bool get_value(rapidjson::Value& root, const std::string& name, T& value) const
+    bool get_value(const rapidjson::Value& root, const char* name, T& value) const
     {
         if (!root.IsObject())
             return false;
-        auto v = root.FindMember(name);
+        rapidjson::Value::ConstMemberIterator v = root.FindMember(name);
         if (v != root.MemberEnd() && v->value.Is<T>())
         {
             value = v->value.Get<T>();
@@ -51,12 +52,13 @@ public:
         }
         return false;
     }
-    bool get_value(rapidjson::Value& root, const char* name, std::string_view& value) const;
-    rapidjson::Document& get_doc();
+    bool get_value(const rapidjson::Value& root, const char* name, std::string_view& value) const;
+    const rapidjson::Document& get_doc() const;
 
 protected:
     rapidjson::ParseResult  m_error;
-    rapidjson::Document     m_doc;
+    mutable rapidjson::Document m_doc;
+    mutable rapidjson::StringBuffer m_buf;
 };
 
 
@@ -66,16 +68,17 @@ public:
     json_rpc_writer();
     ~json_rpc_writer();
 
-    bool parse(const std::string& json);
+    bool parse(const char* json);
     void reset();
 
-    std::string stringify(rapidjson::Value* value = nullptr);
+    const std::string_view stringify(const rapidjson::Value* value = nullptr);
 
-    void set_method(const std::string& value);
-    void set_result(rapidjson::Value& value);
+    void set_id(json_rpc_id value);
+    void set_method(const char* value);
+    void set_result(const rapidjson::Value& value);
 
     template <typename T>
-    void add_result(const std::string& name, T value)
+    void add_result(const char* name, T value)
     {
         rapidjson::Value& result = get_value(m_doc, "result", rapidjson::kObjectType);
         rapidjson::Value& param = get_value(result, name, rapidjson::kNullType);
@@ -83,37 +86,25 @@ public:
     }
 
     template <typename T>
-    void add_param(const std::string& name, T value)
+    void add_param(const char* name, T value)
     {
         rapidjson::Value& params = get_value(m_doc, "params", rapidjson::kObjectType);
         rapidjson::Value& param = get_value(params, name, rapidjson::kNullType);
         param.Set<T>(value, m_doc.GetAllocator());
     }
     
-    template <typename T>
-    void add(const std::string& name, T value)
-    {
-        rapidjson::Value& val = get_value(m_doc, name, rapidjson::kNullType);
-        val.Set<T>(value, m_doc.GetAllocator());
-    }
-
-    void add_value(const std::string& name, rapidjson::Value& value)
+    void add_value(const char* name, const rapidjson::Value& value)
     {
         get_value(m_doc, name, rapidjson::kNullType).CopyFrom(value, m_doc.GetAllocator());
     }
     
-    rapidjson::Value* get_params();
-    rapidjson::Value* new_value(const std::string& name);
-    void push_back(rapidjson::Value& array, rapidjson::Value& value);
-    
-    rapidjson::Document::AllocatorType& get_allocator() { return m_doc.GetAllocator(); };
-
-    void set_error(rapidjson::Value& value);
+    bool is_error() const;
+    void set_error(const rapidjson::Value& value);
     void set_error(int code, const std::string& message);
     void set_error(int code, const char* message);
 
     template <typename T>
-    void add_error_data(const std::string& name, T value)
+    void add_error_data(const char* name, T value)
     {
         rapidjson::Value& err = get_value(m_doc, "error", rapidjson::kObjectType);
         rapidjson::Value& data = get_value(err, "data", rapidjson::kObjectType);
@@ -121,16 +112,13 @@ public:
         param.Set<T>(value, m_doc.GetAllocator());
     }
 
-    void set_id(json_rpc_id value);
+    rapidjson::Value* get_params();
+    rapidjson::Value& get_value(rapidjson::Value& root, const char* name, rapidjson::Type Type);
 
-    bool is_error() const;
+    rapidjson::Document& get_doc();
+    rapidjson::Document::AllocatorType& get_allocator();
 
-    rapidjson::Value& get_value(rapidjson::Value& root, const std::string& name, rapidjson::Type Type);
-
-    rapidjson::Document& getDoc() {
-        return m_doc;
-    }
-    
 protected:
     rapidjson::Document m_doc;
+    rapidjson::StringBuffer m_buf;
 };

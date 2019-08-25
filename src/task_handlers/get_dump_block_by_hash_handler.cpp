@@ -41,7 +41,7 @@ bool get_dump_block_by_hash::prepare_params()
             if (g_cache->get_block_by_hash(m_hash, num, dump)) {
                  std::string hexdump;
                  string_utils::bin2hex(dump, hexdump);
-                 genBlockDumpJson(hexdump, false, m_writer.getDoc());
+                 genBlockDumpJson(hexdump, false, m_writer.get_doc());
                  m_from_cache = true;
                  return true;
             }
@@ -76,16 +76,16 @@ void get_dump_block_by_hash::execute()
 
                 CHECK(!res.empty(), "block " + m_hash + " not found");
                 if (m_isHex) {
-                    genBlockDumpJson(res, false, m_writer.getDoc());
+                    genBlockDumpJson(res, false, m_writer.get_doc());
                 } else {
                     //return res;
                 }
             } catch (const common::exception &e) {
-                genErrorResponse(-32603, e, m_writer.getDoc());
+                genErrorResponse(-32603, e, m_writer.get_doc());
             } catch (const std::exception &e) {
-                genErrorResponse(-32603, e.what(), m_writer.getDoc());
+                genErrorResponse(-32603, e.what(), m_writer.get_doc());
             } catch (...) {
-                genErrorResponse(-32603, "Unknown error", m_writer.getDoc());
+                genErrorResponse(-32603, "Unknown error", m_writer.get_doc());
             }
         } else {
             base_network_handler::execute();

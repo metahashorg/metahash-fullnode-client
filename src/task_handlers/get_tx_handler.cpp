@@ -44,7 +44,7 @@ void get_tx_handler::execute()
             const torrent_node_lib::TransactionInfo tx = sync.getTransaction(std::string(hash2.begin(), hash2.end()));
 
             transactionToJson(tx, sync.getBlockchain(), sync.getBlockchain().countBlocks(), sync.getKnownBlock(),
-                              false, JsonVersion::V1, m_writer.getDoc());
+                              false, JsonVersion::V1, m_writer.get_doc());
         } else {
             base_network_handler::execute();
         }
