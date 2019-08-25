@@ -12,6 +12,8 @@ using       tcp     = boost::asio::ip::tcp;
 namespace   beast   = boost::beast;
 namespace   http    = boost::beast::http;
 
+class json_rpc_reader;
+
 class http_session: public std::enable_shared_from_this<http_session>
 {
 public:
@@ -31,6 +33,8 @@ public:
 protected:
     void process_request();
     void process_post_request();
+    void process_single_request(const json_rpc_reader& reader);
+    void process_batch_request(const json_rpc_reader& reader);
     void process_get_request();
 
     void send_response(http::response<http::string_body>& response);

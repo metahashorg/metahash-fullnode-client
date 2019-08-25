@@ -182,45 +182,79 @@ void http_session::process_post_request()
             return;
         }
 
-        std::string_view json;
         json_rpc_reader reader;
-        json_rpc_writer writer;
 
         // TODO
         // Add batch load
 
         if (reader.parse(m_req.body().c_str())) {
-            const std::string_view method = reader.get_method();
-            if (method.data() == nullptr) {
-                LOGERR << "Method is not provided";
-                writer.set_id(reader.get_id());
-                writer.set_error(-32600, "JSON method is not provided");
-                json = writer.stringify();
+            if (reader.get_doc().IsObject()) {
+                process_single_request(reader);
+            } else if (reader.get_doc().IsArray()) {
+                process_batch_request(reader);
             } else {
-                auto it = post_handlers.find(std::make_pair(method.data(), settings::system::useLocalDatabase));
-                if (it == post_handlers.end()) {
-                    LOGERR << "Incorrect service method: " << method;
-
-                    writer.set_id(reader.get_id());
-                    writer.set_error(-32601, string_utils::str_concat("Method '", method, "' does not exist").c_str());
-                    json = writer.stringify();
-                } else {
-                    auto res = it->second(shared_from_this(), m_req.body());
-                    // async operation
-                    if (!res)
-                        return;
-                    json = res.message;
-//                    json.append(res.message);
-                }
+                LOGERR << "Unrecognized JSON type " << reader.get_doc().GetType();
+                json_rpc_writer writer;
+                writer.set_id(reader.get_id());
+                writer.set_error(-32600, "Unrecognized JSON type");
+                std::string_view json = writer.stringify();
+                send_json(json.data(), json.size());
             }
         } else {
             LOGERR << "Parse json error (" << reader.get_parse_error() << "): " << reader.get_parse_error_str() << ". Body: " << std::endl << m_req.body();
+            json_rpc_writer writer;
             writer.set_error(-32700, string_utils::str_concat(
                              "Parse json error (", std::to_string(reader.get_parse_error()),
                              "): ", reader.get_parse_error_str()).c_str());
-            json = writer.stringify();
+            std::string_view json = writer.stringify();
+            send_json(json.data(), json.size());
         }
+    }
+    HTTP_SESS_END
+}
 
+void http_session::process_single_request(const json_rpc_reader& reader)
+{
+    HTTP_SESS_BGN
+    {
+        std::string_view json;
+        json_rpc_writer writer;
+        const std::string_view method = reader.get_method();
+        if (method.data() == nullptr) {
+            LOGERR << "Method is not provided";
+            writer.set_id(reader.get_id());
+            writer.set_error(-32600, "JSON method is not provided");
+            json = writer.stringify();
+        } else {
+            auto it = post_handlers.find(std::make_pair(method.data(), settings::system::useLocalDatabase));
+            if (it == post_handlers.end()) {
+                LOGERR << "Incorrect service method: " << method;
+
+                writer.set_id(reader.get_id());
+                writer.set_error(-32601, string_utils::str_concat("Method '", method, "' does not exist").c_str());
+                json = writer.stringify();
+            } else {
+                auto res = it->second(shared_from_this(), m_req.body());
+                // async operation
+                if (!res)
+                    return;
+                json = res.message;
+//                    json.append(res.message);
+            }
+        }
+        send_json(json.data(), json.size());
+    }
+    HTTP_SESS_END
+}
+
+void http_session::process_batch_request(const json_rpc_reader& reader)
+{
+    HTTP_SESS_BGN
+    {
+        json_rpc_writer writer;
+        writer.set_id(reader.get_id());
+        writer.set_error(-32600, "Batch processing not implemented. Please contact dev-team.");
+        std::string_view json = writer.stringify();
         send_json(json.data(), json.size());
     }
     HTTP_SESS_END

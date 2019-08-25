@@ -41,7 +41,7 @@ const std::string_view json_rpc_reader::stringify(const rapidjson::Value* value 
     return std::string_view(m_buf.GetString(), m_buf.GetSize());
 }
 
-json_rpc_id json_rpc_reader::get_id()
+json_rpc_id json_rpc_reader::get_id() const
 {
     json_rpc_id res(0);
     const rapidjson::Value* id = get("id", m_doc);
