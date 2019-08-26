@@ -6,8 +6,8 @@
 class get_dump_block_by_hash_handler_sync : public base_sync_handler
 {
 public:
-    get_dump_block_by_hash_handler_sync(http_session_ptr session)
-        : base_sync_handler(session) {
+    get_dump_block_by_hash_handler_sync(session_context_ptr ctx)
+        : base_sync_handler(ctx) {
         m_duration.set_message(__func__);
     }
     virtual ~get_dump_block_by_hash_handler_sync() override {}

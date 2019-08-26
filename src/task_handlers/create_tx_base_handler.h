@@ -3,13 +3,13 @@
 
 #include <string>
 #include "network_handler.h"
-#include "http_session_ptr.h"
+#include "http_session_context_ptr.h"
 #include "../wallet_storage/wallet_storage.h"
 
 class create_tx_base_handler : public base_network_handler
 {
 public:
-    create_tx_base_handler(http_session_ptr session);
+    create_tx_base_handler(session_context_ptr ctx);
     virtual ~create_tx_base_handler() override { }
 
 protected:

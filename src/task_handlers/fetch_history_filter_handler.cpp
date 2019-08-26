@@ -11,8 +11,8 @@ const std::vector<const char*> fetch_history_filter_handler::key_str = {
     "isTest",
     "isDelegate"};
 
-fetch_history_filter_handler::fetch_history_filter_handler(http_session_ptr session)
-    : base_network_handler(settings::server::get_tor(), session)
+fetch_history_filter_handler::fetch_history_filter_handler(session_context_ptr ctx)
+    : base_network_handler(settings::server::get_tor(), ctx)
 {
     m_duration.set_message(__func__);
 }

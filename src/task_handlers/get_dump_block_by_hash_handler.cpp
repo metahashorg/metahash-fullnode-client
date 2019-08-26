@@ -10,8 +10,8 @@
 
 extern std::unique_ptr<blocks_cache> g_cache;
 
-get_dump_block_by_hash::get_dump_block_by_hash(http_session_ptr session)
-    : base_network_handler(settings::server::get_tor(), session)
+get_dump_block_by_hash::get_dump_block_by_hash(session_context_ptr ctx)
+    : base_network_handler(settings::server::get_tor(), ctx)
     , m_fromByte(0)
     , m_toByte(std::numeric_limits<size_t>::max())
     , m_isHex(true)

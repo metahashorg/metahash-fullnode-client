@@ -31,6 +31,8 @@ add_executable(${PROJECT_NAME}
     http_server.cpp
     http_json_rpc_request.cpp
     json_rpc.cpp
+    http_session_context.cpp
+    json_batch_request.cpp
     http_session.cpp
     nslookup.cpp
     

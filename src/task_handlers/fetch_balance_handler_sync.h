@@ -7,7 +7,7 @@ class fetch_balance_handler_sync : public base_sync_handler
 {
 public:
     
-    fetch_balance_handler_sync(http_session_ptr session): base_sync_handler(session) {
+    fetch_balance_handler_sync(session_context_ptr ctx): base_sync_handler(ctx) {
         m_duration.set_message(__func__);
     }
     virtual ~fetch_balance_handler_sync() override {}

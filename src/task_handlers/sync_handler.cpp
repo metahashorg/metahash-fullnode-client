@@ -2,8 +2,8 @@
 
 #include <memory>
 
-base_sync_handler::base_sync_handler(http_session_ptr session) 
-    : base_handler(session)
+base_sync_handler::base_sync_handler(session_context_ptr ctx)
+    : base_handler(ctx)
 {}
 
 void base_sync_handler::execute() {

@@ -6,7 +6,7 @@
 class send_tx_handler_sync : public create_tx_base_handler
 {
 public:
-    send_tx_handler_sync(http_session_ptr session): create_tx_base_handler(session) {}
+    send_tx_handler_sync(session_context_ptr ctx): create_tx_base_handler(ctx) {}
     virtual ~send_tx_handler_sync() override {}
 
 protected:

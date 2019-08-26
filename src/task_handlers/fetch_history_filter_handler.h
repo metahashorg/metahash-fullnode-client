@@ -8,7 +8,7 @@ class fetch_history_filter_handler : public base_network_handler
     static const std::vector<const char*> key_str;
 
 public:
-    fetch_history_filter_handler(http_session_ptr session);
+    fetch_history_filter_handler(session_context_ptr ctx);
     virtual ~fetch_history_filter_handler() override {}
 
 protected:

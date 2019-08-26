@@ -1,8 +1,8 @@
 #include "get_last_txs_handler.h"
 #include "settings/settings.h"
 
-get_last_txs_handler::get_last_txs_handler(http_session_ptr session)
-    : base_network_handler(settings::server::get_tor(), session) {
+get_last_txs_handler::get_last_txs_handler(session_context_ptr ctx)
+    : base_network_handler(settings::server::get_tor(), ctx) {
     m_duration.set_message(__func__);
 }
 

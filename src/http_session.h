@@ -1,10 +1,12 @@
-#ifndef HTTP_SESSION_H
-#define HTTP_SESSION_H
+#ifndef __HTTP_SESSION_H__
+#define __HTTP_SESSION_H__
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/asio/ip/tcp.hpp>
+
+#include "http_session_context.h"
 
 namespace   asio    = boost::asio;
 namespace   ip      = boost::asio::ip;
@@ -14,7 +16,7 @@ namespace   http    = boost::beast::http;
 
 class json_rpc_reader;
 
-class http_session: public std::enable_shared_from_this<http_session>
+class http_session: public session_context
 {
 public:
     http_session() = delete;
@@ -22,13 +24,13 @@ public:
     http_session& operator=(http_session session) = delete;
 
     http_session(tcp::socket&& socket);
-    ~http_session();
+    virtual ~http_session() override;
 
     void run();
 
-    asio::io_context& get_io_context();
+    asio::io_context& get_io_context() override;
 
-    void send_json(const char* data, size_t size);
+    void send_json(const char* data, size_t size) override;
 
 protected:
     void process_request();
@@ -53,4 +55,4 @@ private:
     bool                             m_http_keep_alive;
 };
 
-#endif // HTTP_SESSION_H
+#endif // __HTTP_SESSION_H__

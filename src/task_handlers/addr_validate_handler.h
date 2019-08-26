@@ -6,8 +6,8 @@
 class addr_validate_handler : public base_handler
 {
 public:
-    addr_validate_handler(http_session_ptr session)
-        : base_handler(session) {
+    addr_validate_handler(session_context_ptr ctx)
+        : base_handler(ctx) {
         m_duration.set_message(__func__);
     }
     

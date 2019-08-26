@@ -6,7 +6,7 @@
 class fetch_history_handler : public base_network_handler
 {
 public:
-    fetch_history_handler(http_session_ptr session);
+    fetch_history_handler(session_context_ptr ctx);
     virtual ~fetch_history_handler() override {}
 
     virtual void execute() override;

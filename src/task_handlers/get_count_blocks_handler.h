@@ -6,7 +6,7 @@
 class get_count_blocks_handler : public base_network_handler
 {
 public:
-    get_count_blocks_handler(http_session_ptr session);
+    get_count_blocks_handler(session_context_ptr ctx);
     virtual ~get_count_blocks_handler() override {}
 
     virtual void execute() override;

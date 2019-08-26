@@ -6,7 +6,7 @@
 class fetch_balances_handler : public base_network_handler
 {
 public:
-    fetch_balances_handler(http_session_ptr session);
+    fetch_balances_handler(session_context_ptr ctx);
     virtual ~fetch_balances_handler() override {}
 
     virtual void execute() override;

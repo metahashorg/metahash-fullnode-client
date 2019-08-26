@@ -6,7 +6,7 @@
 class get_dump_block_by_hash : public base_network_handler
 {
 public:
-    get_dump_block_by_hash(http_session_ptr session);
+    get_dump_block_by_hash(session_context_ptr ctx);
     virtual ~get_dump_block_by_hash() override {}
 
     virtual void execute() override;

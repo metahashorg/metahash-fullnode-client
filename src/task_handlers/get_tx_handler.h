@@ -6,7 +6,7 @@
 class get_tx_handler : public base_network_handler
 {
 public:
-    get_tx_handler(http_session_ptr session);
+    get_tx_handler(session_context_ptr ctx);
     virtual ~get_tx_handler() override {}
 
     virtual void execute() override;

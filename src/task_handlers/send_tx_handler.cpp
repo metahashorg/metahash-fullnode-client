@@ -55,7 +55,7 @@ bool send_tx_handler::prepare_params()
                     writer.set_id(1);
                     writer.add_param("address", m_address);
 
-                    auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), m_session->get_io_context());
+                    auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), m_context->get_io_context());
                     request->set_path("fetch-balance");
                     request->set_body(writer.stringify().data());
 

@@ -7,8 +7,8 @@
 
 extern std::unique_ptr<history_cache> g_hist_cache;
 
-fetch_transaction_handler::fetch_transaction_handler(http_session_ptr session)
-    : base_handler(session)
+fetch_transaction_handler::fetch_transaction_handler(session_context_ptr ctx)
+    : base_handler(ctx)
 {
     m_duration.set_message(__func__);
 }

@@ -6,7 +6,7 @@
 class get_dump_block_by_number : public base_network_handler
 {
 public:
-    get_dump_block_by_number(http_session_ptr session);
+    get_dump_block_by_number(session_context_ptr ctx);
     virtual ~get_dump_block_by_number() override {}
 
     virtual void execute() override;

@@ -4,12 +4,12 @@
 #include <memory>
 #include "common/string_utils.h"
 
-base_network_handler::base_network_handler(const std::string &host, http_session_ptr session) 
-    : base_handler(session)
+base_network_handler::base_network_handler(const std::string &host, session_context_ptr session_ctx)
+    : base_handler(session_ctx)
 {
     boost::asio::io_context* ctx = nullptr;
-    if (session) {
-        ctx = &session->get_io_context();
+    if (session_ctx) {
+        ctx = &session_ctx->get_io_context();
     } else {
         m_ioctx.reset(new boost::asio::io_context());
         ctx = m_ioctx.get();
@@ -27,7 +27,7 @@ void base_network_handler::execute()
     {
         m_request->set_path(m_reader.get_method().data());
         m_request->set_body(m_writer.stringify().data());
-        if (!m_session) {
+        if (!m_context) {
             m_async_execute = false;
         }
         m_result.pending = m_async_execute;
@@ -98,5 +98,5 @@ void base_network_handler::on_complete()
 void base_network_handler::send_response()
 {
     std::string_view result = m_writer.stringify();
-    m_session->send_json(result.data(), result.size());
+    m_context->send_json(result.data(), result.size());
 }

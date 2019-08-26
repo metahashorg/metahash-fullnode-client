@@ -6,17 +6,20 @@
 #include "common/string_utils.h"
 #include "common/log.h"
 #include <boost/exception/all.hpp>
-
+#include "json_batch_request.h"
 
 #define HTTP_SESS_BGN try
 
-#define HTTP_SESS_END \
+#define HTTP_SESS_END(ret) \
     catch (boost::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);\
+        ret;\
     } catch (std::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what();\
+        ret;\
     } catch (...) {\
         LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";\
+        ret;\
     }
 
 http_session::http_session(tcp::socket&& socket) :
@@ -39,7 +42,7 @@ void http_session::run()
         m_req.body().clear();
         m_buf.consume(m_buf.size());
 
-        auto self = shared_from_this();
+        auto self = shared_from(this);
         http::async_read(m_socket, m_buf, m_req, [self](beast::error_code ec, std::size_t bytes_transferred)
         {
             if (!ec && bytes_transferred > 0)
@@ -51,7 +54,7 @@ void http_session::run()
             }
         });
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 asio::io_context& http_session::get_io_context()
@@ -104,7 +107,7 @@ void http_session::process_request()
             break;
         }
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 void http_session::send_bad_response(http::status status, const char* error)
@@ -120,7 +123,7 @@ void http_session::send_bad_response(http::status status, const char* error)
         }
         send_response(response);
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 void http_session::send_json(const char* data, size_t size)
@@ -134,7 +137,7 @@ void http_session::send_json(const char* data, size_t size)
         response.body().assign(data, size);
         send_response(response);
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 void http_session::send_response(http::response<http::string_body>& response)
@@ -169,7 +172,7 @@ void http_session::send_response(http::response<http::string_body>& response)
             close();
         }
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 void http_session::process_post_request()
@@ -183,10 +186,6 @@ void http_session::process_post_request()
         }
 
         json_rpc_reader reader;
-
-        // TODO
-        // Add batch load
-
         if (reader.parse(m_req.body().c_str())) {
             if (reader.get_doc().IsObject()) {
                 process_single_request(reader);
@@ -196,7 +195,7 @@ void http_session::process_post_request()
                 LOGERR << "Unrecognized JSON type " << reader.get_doc().GetType();
                 json_rpc_writer writer;
                 writer.set_id(reader.get_id());
-                writer.set_error(-32600, "Unrecognized JSON type");
+                writer.set_error(-32600, string_utils::str_concat("Unrecognized JSON type ", std::to_string(reader.get_doc().GetType())).c_str());
                 std::string_view json = writer.stringify();
                 send_json(json.data(), json.size());
             }
@@ -210,7 +209,7 @@ void http_session::process_post_request()
             send_json(json.data(), json.size());
         }
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 void http_session::process_single_request(const json_rpc_reader& reader)
@@ -226,6 +225,11 @@ void http_session::process_single_request(const json_rpc_reader& reader)
             writer.set_error(-32600, "JSON method is not provided");
             json = writer.stringify();
         } else {
+            // skip notifications
+            if (!reader.get("id", reader.get_doc())) {
+                LOGWARN << "Notification has recieved";
+                return;
+            }
             auto it = post_handlers.find(std::make_pair(method.data(), settings::system::useLocalDatabase));
             if (it == post_handlers.end()) {
                 LOGERR << "Incorrect service method: " << method;
@@ -234,7 +238,7 @@ void http_session::process_single_request(const json_rpc_reader& reader)
                 writer.set_error(-32601, string_utils::str_concat("Method '", method, "' does not exist").c_str());
                 json = writer.stringify();
             } else {
-                auto res = it->second(shared_from_this(), m_req.body());
+                auto res = it->second(shared_from(this), m_req.body());
                 // async operation
                 if (!res)
                     return;
@@ -244,20 +248,16 @@ void http_session::process_single_request(const json_rpc_reader& reader)
         }
         send_json(json.data(), json.size());
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 void http_session::process_batch_request(const json_rpc_reader& reader)
 {
     HTTP_SESS_BGN
     {
-        json_rpc_writer writer;
-        writer.set_id(reader.get_id());
-        writer.set_error(-32600, "Batch processing not implemented. Please contact dev-team.");
-        std::string_view json = writer.stringify();
-        send_json(json.data(), json.size());
+        std::make_shared<batch_json_request>(shared_from(this))->process(reader);
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 void http_session::process_get_request()
@@ -293,7 +293,7 @@ void http_session::process_get_request()
                 json_utils::to_json(params, *writer.get_params(), writer.get_allocator());
             }
             std::string_view t = writer.stringify();
-            auto res = it->second(shared_from_this(), std::string(t.data(), t.size()));
+            auto res = it->second(shared_from(this), std::string(t.data(), t.size()));
             // async operation
             if (!res)
                 return;
@@ -301,7 +301,7 @@ void http_session::process_get_request()
         }
         send_json(json.c_str(), json.size());
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 void http_session::close()
@@ -312,7 +312,7 @@ void http_session::close()
         m_socket.shutdown(tcp::socket::shutdown_both, ec);
         m_socket.close(ec);
     }
-    HTTP_SESS_END
+    HTTP_SESS_END()
 }
 
 bool http_session::keep_alive()

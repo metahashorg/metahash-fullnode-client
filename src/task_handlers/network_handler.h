@@ -14,7 +14,7 @@ class io_context;
 class base_network_handler : public base_handler
 {
 public:
-    base_network_handler(const std::string& host, http_session_ptr session);
+    base_network_handler(const std::string& host, session_context_ptr session_ctx);
     virtual ~base_network_handler() override;
 
     virtual void execute() override;

@@ -6,7 +6,7 @@
 class get_last_txs_handler : public base_network_handler
 {
 public:
-    get_last_txs_handler(http_session_ptr session);
+    get_last_txs_handler(session_context_ptr ctx);
     virtual ~get_last_txs_handler() override {}
 
 protected:

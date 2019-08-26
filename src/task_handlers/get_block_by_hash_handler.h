@@ -6,7 +6,7 @@
 class get_block_by_hash_handler : public base_network_handler
 {
 public:
-    get_block_by_hash_handler(http_session_ptr session);
+    get_block_by_hash_handler(session_context_ptr ctx);
     virtual ~get_block_by_hash_handler() override {}
 
     virtual void execute() override;

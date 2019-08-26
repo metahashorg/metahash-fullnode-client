@@ -6,8 +6,8 @@
 class send_tx_handler : public create_tx_base_handler
 {
 public:
-    send_tx_handler(http_session_ptr session)
-        : create_tx_base_handler(session) {}
+    send_tx_handler(session_context_ptr ctx)
+        : create_tx_base_handler(ctx) {}
     virtual ~send_tx_handler() override {}
 
 protected:

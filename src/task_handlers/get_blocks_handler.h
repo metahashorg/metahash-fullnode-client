@@ -6,7 +6,7 @@
 class get_blocks_handler : public base_network_handler
 {
 public:
-    get_blocks_handler(http_session_ptr session);
+    get_blocks_handler(session_context_ptr ctx);
     virtual ~get_blocks_handler() override {}
 
 protected:

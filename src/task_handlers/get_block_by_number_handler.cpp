@@ -10,8 +10,8 @@
 
 extern std::unique_ptr<blocks_cache> g_cache;
 
-get_block_by_number_handler::get_block_by_number_handler(http_session_ptr session)
-    : base_network_handler(settings::server::get_tor(), session)
+get_block_by_number_handler::get_block_by_number_handler(session_context_ptr ctx)
+    : base_network_handler(settings::server::get_tor(), ctx)
     , m_number(0)
     , m_type(0)
     , m_countTxs(0)

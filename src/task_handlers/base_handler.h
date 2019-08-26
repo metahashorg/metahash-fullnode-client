@@ -2,7 +2,7 @@
 #define __BASE_HANDLER_H__
 
 #include <memory>
-#include "http_session_ptr.h"
+#include "http_session_context_ptr.h"
 #include "json_rpc.h"
 #include "exception/except.h"
 #include "time_duration.h"
@@ -20,8 +20,8 @@ struct handler_result
 
 class base_handler: public std::enable_shared_from_this<base_handler> {
 public:
-    base_handler(http_session_ptr session)
-        : m_session(session)
+    base_handler(session_context_ptr ctx)
+        : m_context(ctx)
         , m_duration(false)
     {}
 
@@ -53,14 +53,14 @@ protected:
     handler_result          m_result;
     json_rpc_reader         m_reader;
     json_rpc_writer         m_writer;
-    http_session_ptr        m_session;
+    session_context_ptr     m_context;
     utils::time_duration    m_duration;
 };
 
 template <class T>
-static handler_result perform(http_session_ptr session, const std::string& params) {
+static handler_result perform(session_context_ptr ctx, const std::string& params) {
     try {
-        std::shared_ptr<T> obj = std::make_shared<T>(session);
+        std::shared_ptr<T> obj = std::make_shared<T>(ctx);
         if (obj->prepare(params)) {
             obj->execute();
         }
@@ -73,26 +73,5 @@ static handler_result perform(http_session_ptr session, const std::string& param
         return handler_result();
     }
 }
-
-//template <class T>
-//class Perform {
-//public:
-
-//    static handler_result perform(http_session_ptr session, const std::string& params) {
-//        try {
-//            std::shared_ptr<T> obj = std::make_shared<T>(session);
-//            if (obj->prepare(params))
-//                obj->execute();
-//            return obj->result();
-//        } catch (std::exception& ex) {
-//            LOGERR << __PRETTY_FUNCTION__ << " exception: " << ex.what();
-//            return handler_result();
-//        } catch (...) {
-//            LOGERR << __PRETTY_FUNCTION__ << " unhandled exception";
-//            return handler_result();
-//        }
-//    }
-
-//};
 
 #endif // __BASE_HANDLER_H__

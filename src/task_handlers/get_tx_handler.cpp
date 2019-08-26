@@ -6,8 +6,8 @@
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
 
-get_tx_handler::get_tx_handler(http_session_ptr session)
-    : base_network_handler(settings::server::get_tor(), session) {
+get_tx_handler::get_tx_handler(session_context_ptr ctx)
+    : base_network_handler(settings::server::get_tor(), ctx) {
     m_duration.set_message(__func__);
 }
 

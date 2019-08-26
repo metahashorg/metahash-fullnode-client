@@ -6,7 +6,7 @@
 class fetch_transaction_handler : public base_handler
 {
 public:
-    fetch_transaction_handler(http_session_ptr session);
+    fetch_transaction_handler(session_context_ptr ctx);
     virtual ~fetch_transaction_handler() override {}
 
     virtual void execute() override;

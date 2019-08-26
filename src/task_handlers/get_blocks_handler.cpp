@@ -1,8 +1,8 @@
 #include "get_blocks_handler.h"
 #include "settings/settings.h"
 
-get_blocks_handler::get_blocks_handler(http_session_ptr session)
-    : base_network_handler(settings::server::get_tor(), session) {
+get_blocks_handler::get_blocks_handler(session_context_ptr ctx)
+    : base_network_handler(settings::server::get_tor(), ctx) {
     m_duration.set_message(__func__);
 }
 

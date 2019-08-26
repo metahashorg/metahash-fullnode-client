@@ -7,7 +7,7 @@
 
 class base_sync_handler : public base_handler {
 public:
-    base_sync_handler(http_session_ptr session);
+    base_sync_handler(session_context_ptr ctx);
     
     virtual ~base_sync_handler() override { }
     

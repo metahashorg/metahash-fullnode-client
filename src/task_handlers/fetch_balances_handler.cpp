@@ -6,8 +6,8 @@
 #include "../sync/BlockChainReadInterface.h"
 #include "utils.h"
 
-fetch_balances_handler::fetch_balances_handler(http_session_ptr session)
-    : base_network_handler(settings::server::get_tor(), session)
+fetch_balances_handler::fetch_balances_handler(session_context_ptr ctx)
+    : base_network_handler(settings::server::get_tor(), ctx)
 {
     m_duration.set_message(__func__);
 }

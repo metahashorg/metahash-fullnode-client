@@ -11,7 +11,7 @@ class status_handler : public base_handler
     };
 
 public:
-    status_handler(http_session_ptr session): base_handler(session) {
+    status_handler(session_context_ptr ctx): base_handler(ctx) {
         m_duration.set_message(__func__);
     }
     virtual ~status_handler() override {}
