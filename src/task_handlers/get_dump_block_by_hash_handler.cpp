@@ -18,6 +18,7 @@ get_dump_block_by_hash::get_dump_block_by_hash(session_context_ptr ctx)
     , m_from_cache(false)
 {
     m_duration.set_message(__func__);
+    m_name = __func__;
 }
 
 bool get_dump_block_by_hash::prepare_params()
@@ -54,7 +55,7 @@ bool get_dump_block_by_hash::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void get_dump_block_by_hash::execute()
@@ -91,5 +92,5 @@ void get_dump_block_by_hash::execute()
             base_network_handler::execute();
         }
     }
-    END_TRY_RET()
+    END_TRY()
 }

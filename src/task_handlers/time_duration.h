@@ -8,7 +8,7 @@ namespace utils {
 class time_duration {
 public:
     time_duration(bool _start);
-    time_duration(bool _start, std::string message);
+    time_duration(bool _start, const std::string& message);
     ~time_duration();
 
     void start();

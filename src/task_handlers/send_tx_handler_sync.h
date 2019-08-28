@@ -6,7 +6,10 @@
 class send_tx_handler_sync : public create_tx_base_handler
 {
 public:
-    send_tx_handler_sync(session_context_ptr ctx): create_tx_base_handler(ctx) {}
+    send_tx_handler_sync(session_context_ptr ctx)
+        : create_tx_base_handler(ctx) {
+        m_name = __func__;
+    }
     virtual ~send_tx_handler_sync() override {}
 
 protected:

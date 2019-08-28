@@ -10,6 +10,7 @@ fetch_balance_handler::fetch_balance_handler(session_context_ptr ctx)
     : base_network_handler(settings::server::get_tor(), ctx)
 {
     m_duration.set_message(__func__);
+    m_name = __func__;
 }
 
 bool fetch_balance_handler::prepare_params()
@@ -30,7 +31,7 @@ bool fetch_balance_handler::prepare_params()
         }
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void fetch_balance_handler::execute() {
@@ -45,5 +46,5 @@ void fetch_balance_handler::execute() {
             base_network_handler::execute();
         }
     }
-    END_TRY_RET()
+    END_TRY()
 }

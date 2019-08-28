@@ -7,7 +7,10 @@ class send_tx_handler : public create_tx_base_handler
 {
 public:
     send_tx_handler(session_context_ptr ctx)
-        : create_tx_base_handler(ctx) {}
+        : create_tx_base_handler(ctx) {
+        m_duration.set_message(__func__);
+        m_name = __func__;
+    }
     virtual ~send_tx_handler() override {}
 
 protected:

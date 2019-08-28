@@ -24,7 +24,7 @@ bool create_tx_handler::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void create_tx_handler::execute()
@@ -56,5 +56,5 @@ void create_tx_handler_v2::make_json()
         m_writer.add_result("sign", m_sign);
         m_writer.add_result("hash", m_hash);
     }
-    END_TRY
+    END_TRY()
 }

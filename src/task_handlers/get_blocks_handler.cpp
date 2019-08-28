@@ -4,6 +4,7 @@
 get_blocks_handler::get_blocks_handler(session_context_ptr ctx)
     : base_network_handler(settings::server::get_tor(), ctx) {
     m_duration.set_message(__func__);
+    m_name = __func__;
 }
 
 bool get_blocks_handler::prepare_params()
@@ -38,5 +39,5 @@ bool get_blocks_handler::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }

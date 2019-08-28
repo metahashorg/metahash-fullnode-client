@@ -9,6 +9,7 @@ public:
     addr_validate_handler(session_context_ptr ctx)
         : base_handler(ctx) {
         m_duration.set_message(__func__);
+        m_name = __func__;
     }
     
     virtual ~addr_validate_handler() override {}

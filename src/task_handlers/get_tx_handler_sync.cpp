@@ -19,7 +19,7 @@ bool get_tx_handler_sync::prepare_params()
                 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void get_tx_handler_sync::executeImpl() {
@@ -31,5 +31,5 @@ BGN_TRY {
     const torrent_node_lib::TransactionInfo tx = sync.getTransaction(std::string(hash2.begin(), hash2.end()));
     
     transactionToJson(tx, sync.getBlockchain(), sync.getBlockchain().countBlocks(), sync.getKnownBlock(), false, JsonVersion::V1, m_writer.get_doc());
-} END_TRY_RET();
+} END_TRY();
 }

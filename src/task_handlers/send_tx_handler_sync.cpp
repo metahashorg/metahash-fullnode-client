@@ -30,7 +30,7 @@ bool send_tx_handler_sync::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void send_tx_handler_sync::process_response(json_rpc_reader &reader)
@@ -53,5 +53,5 @@ void send_tx_handler_sync::process_response(json_rpc_reader &reader)
             this->m_writer.set_result(*params);
         }
     }
-    END_TRY_RET();
+    END_TRY();
 }

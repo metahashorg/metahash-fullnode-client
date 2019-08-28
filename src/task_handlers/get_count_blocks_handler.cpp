@@ -9,6 +9,7 @@ get_count_blocks_handler::get_count_blocks_handler(session_context_ptr ctx)
     : base_network_handler(settings::server::get_tor(), ctx)
 {
     m_duration.set_message(__func__);
+    m_name = __func__;
 }
 
 bool get_count_blocks_handler::prepare_params()
@@ -18,7 +19,7 @@ bool get_count_blocks_handler::prepare_params()
         CHK_REQ(m_id, "id field not found")
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void get_count_blocks_handler::execute()
@@ -34,5 +35,5 @@ void get_count_blocks_handler::execute()
             base_network_handler::execute();
         }
     }
-    END_TRY
+    END_TRY()
 }

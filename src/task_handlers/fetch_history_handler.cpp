@@ -12,6 +12,7 @@ fetch_history_handler::fetch_history_handler(session_context_ptr ctx)
     , m_beginTx(0)
 {
     m_duration.set_message(__func__);
+    m_name = __func__;
 }
 
 bool fetch_history_handler::prepare_params()
@@ -57,7 +58,7 @@ bool fetch_history_handler::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void fetch_history_handler::execute()
@@ -73,5 +74,5 @@ void fetch_history_handler::execute()
             base_network_handler::execute();
         }
     }
-    END_TRY_RET();
+    END_TRY();
 }

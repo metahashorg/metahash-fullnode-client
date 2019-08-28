@@ -33,7 +33,7 @@ bool status_handler::prepare_params()
         }
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void status_handler::execute()
@@ -146,5 +146,5 @@ void status_handler::execute()
             break;
         }
     }
-    END_TRY
+    END_TRY()
 }

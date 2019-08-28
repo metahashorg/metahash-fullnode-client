@@ -31,7 +31,7 @@ bool get_dump_block_by_hash_handler_sync::prepare_params()
         
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void get_dump_block_by_hash_handler_sync::executeImpl() {
@@ -57,5 +57,5 @@ BGN_TRY {
     } catch (...) {
         genErrorResponse(-32603, "Unknown error", m_writer.get_doc());
     }
-} END_TRY_RET();
+} END_TRY();
 }

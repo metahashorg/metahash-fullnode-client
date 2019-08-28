@@ -15,7 +15,7 @@ bool addr_validate_handler::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void addr_validate_handler::execute()
@@ -25,5 +25,5 @@ void addr_validate_handler::execute()
         CHK_PRM(utils::validate_address(m_address), "address not valid")
         m_writer.add_result("validate", "ok");
     }
-    END_TRY
+    END_TRY()
 }

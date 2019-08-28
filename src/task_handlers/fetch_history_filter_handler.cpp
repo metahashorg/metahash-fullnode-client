@@ -15,6 +15,7 @@ fetch_history_filter_handler::fetch_history_filter_handler(session_context_ptr c
     : base_network_handler(settings::server::get_tor(), ctx)
 {
     m_duration.set_message(__func__);
+    m_name = __func__;
 }
 
 bool fetch_history_filter_handler::prepare_params()
@@ -61,7 +62,7 @@ bool fetch_history_filter_handler::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 //void fetch_history_filter_handler::execute()
@@ -77,5 +78,5 @@ bool fetch_history_filter_handler::prepare_params()
 //            base_network_handler::execute();
 //        }
 //    }
-//    END_TRY_RET();
+//    END_TRY();
 //}

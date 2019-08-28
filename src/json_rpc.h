@@ -31,6 +31,7 @@ public:
     inline rapidjson::ParseErrorCode get_parse_error() const { return m_error.Code(); };
     const char* get_parse_error_str() const;
 
+    bool has_id() const;
     json_rpc_id get_id() const;
     const std::string_view get_method() const;
     const rapidjson::Value* get_error() const;

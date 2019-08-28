@@ -17,6 +17,7 @@ get_block_by_hash_handler::get_block_by_hash_handler(session_context_ptr ctx)
     , m_from_cache(false)
 {
     m_duration.set_message(__func__);
+    m_name = __func__;
 }
 
 bool get_block_by_hash_handler::prepare_params()
@@ -75,7 +76,7 @@ bool get_block_by_hash_handler::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void get_block_by_hash_handler::execute()
@@ -116,7 +117,7 @@ void get_block_by_hash_handler::execute()
             base_network_handler::execute();
         }
     }
-    END_TRY_RET()
+    END_TRY()
 }
 
 void get_block_by_hash_handler::process_response(json_rpc_reader &reader)

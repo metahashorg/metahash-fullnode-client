@@ -27,6 +27,11 @@ http_session::http_session(tcp::socket&& socket) :
     m_http_ver(11),
     m_http_keep_alive(false)
 {
+    boost::system::error_code ec;
+    const tcp::endpoint& ep = m_socket.remote_endpoint(ec);
+    if (!ec) {
+        string_utils::str_append(m_remote_ep, ep.address().to_string(ec), ":", std::to_string(ep.port()));
+    }
 }
 
 http_session::~http_session()
@@ -69,13 +74,7 @@ void http_session::process_request()
         m_http_keep_alive = false;
 
         if (!check_auth(m_req)) {
-            boost::system::error_code ec;
-            const tcp::endpoint& ep = m_socket.remote_endpoint(ec);
-            if (ec) {
-                LOGWARN << "Unknown client has not passed authentication";
-            } else {
-                LOGWARN << ep.address().to_string(ec) << ":" << ep.port() << " has not passed authentication";
-            }
+            LOGERR << "[" << m_remote_ep << "] Could not passed authentication";
             send_bad_response(http::status::unauthorized, "Access Denied");
             return;
         }
@@ -95,6 +94,8 @@ void http_session::process_request()
             break;
         }
 
+        LOGINFO << "[" << m_remote_ep << "] New " << m_req.method_string() << " request";
+
         switch(m_req.method()) {
         case http::verb::post:
             process_post_request();
@@ -103,7 +104,7 @@ void http_session::process_request()
             process_get_request();
             break;
         default:
-            send_bad_response(http::status::bad_request, "Incorrect HTTP Method");
+            send_bad_response(http::status::bad_request, "Incorrect HTTP method");
             break;
         }
     }
@@ -152,7 +153,6 @@ void http_session::send_response(http::response<http::string_body>& response)
         strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S %Z", &tm);
 
         response.set(http::field::date, buf);
-        //response.set(http::field::server, "metahash.service");
         response.set(http::field::content_length, response.body().size());
         if (settings::service::keep_alive) {
             if (m_http_ver == 10) {
@@ -163,10 +163,13 @@ void http_session::send_response(http::response<http::string_body>& response)
         } else {
             response.set(http::field::connection, "close");
         }
+
+        LOGINFO << "[" << m_remote_ep << "] Send response " << response.result();
+
         boost::system::error_code ec;
         http::write(m_socket, response, ec);
         if (ec) {
-            LOGERR << __PRETTY_FUNCTION__ << " Error: " << ec.message();
+            LOGERR << "[" << m_remote_ep << "] Socket write error: " << ec.message();
         }
         if (!keep_alive()) {
             close();
@@ -192,19 +195,19 @@ void http_session::process_post_request()
             } else if (reader.get_doc().IsArray()) {
                 process_batch_request(reader);
             } else {
-                LOGERR << "Unrecognized JSON type " << reader.get_doc().GetType();
+                LOGERR << "[" << m_remote_ep << "] Unrecognized json type " << reader.get_doc().GetType();
                 json_rpc_writer writer;
                 writer.set_id(reader.get_id());
-                writer.set_error(-32600, string_utils::str_concat("Unrecognized JSON type ", std::to_string(reader.get_doc().GetType())).c_str());
+                writer.set_error(-32600, string_utils::str_concat("Unrecognized json type ", std::to_string(reader.get_doc().GetType())).c_str());
                 std::string_view json = writer.stringify();
                 send_json(json.data(), json.size());
             }
         } else {
-            LOGERR << "Parse json error (" << reader.get_parse_error() << "): " << reader.get_parse_error_str() << ". Body: " << std::endl << m_req.body();
+            LOGERR << "[" << m_remote_ep << "] Parse json error " << reader.get_parse_error() << ": " << reader.get_parse_error_str();
             json_rpc_writer writer;
             writer.set_error(-32700, string_utils::str_concat(
-                             "Parse json error (", std::to_string(reader.get_parse_error()),
-                             "): ", reader.get_parse_error_str()).c_str());
+                             "Parse json error ", std::to_string(reader.get_parse_error()),
+                             ": ", reader.get_parse_error_str()).c_str());
             std::string_view json = writer.stringify();
             send_json(json.data(), json.size());
         }
@@ -216,28 +219,28 @@ void http_session::process_single_request(const json_rpc_reader& reader)
 {
     HTTP_SESS_BGN
     {
+        LOGINFO << "[" << m_remote_ep << "] Process single request";
+
         std::string_view json;
         json_rpc_writer writer;
         const std::string_view method = reader.get_method();
         if (method.data() == nullptr) {
-            LOGERR << "Method is not provided";
             writer.set_id(reader.get_id());
-            writer.set_error(-32600, "JSON method is not provided");
+            writer.set_error(-32600, "Json method is not provided");
             json = writer.stringify();
         } else {
-            // skip notifications
-            if (!reader.get("id", reader.get_doc())) {
-                LOGWARN << "Notification has recieved";
+            if (!reader.has_id()) {
+                LOGWARN << "[" << m_remote_ep << "] Notification has recieved";
                 return;
             }
             auto it = post_handlers.find(std::make_pair(method.data(), settings::system::useLocalDatabase));
             if (it == post_handlers.end()) {
-                LOGERR << "Incorrect service method: " << method;
-
+                LOGERR << "[" << m_remote_ep << "] Method \"" << method << "\" does not exist";
                 writer.set_id(reader.get_id());
                 writer.set_error(-32601, string_utils::str_concat("Method '", method, "' does not exist").c_str());
                 json = writer.stringify();
             } else {
+                LOGINFO << "[" << m_remote_ep << "] Process single request";
                 auto res = it->second(shared_from(this), m_req.body());
                 // async operation
                 if (!res)
@@ -283,7 +286,7 @@ void http_session::process_get_request()
         json_rpc_writer writer;
         auto it = get_handlers.find(method);
         if (it == get_handlers.end()) {
-            LOGWARN << "Incorrect service method " << method;
+            LOGWARN << "[" << m_remote_ep << "] Method \"" << method << "\" does not exist";
             writer.set_id(1);
             writer.set_error(-32601, string_utils::str_concat("Method '", method, "' does not exist").c_str());
             json = writer.stringify();
@@ -333,4 +336,9 @@ bool http_session::check_auth(const http::request<http::string_body>& req)
         return field->value().compare(settings::service::auth_key) == 0;
     }
     return false;
+}
+
+const std::string& http_session::get_remote_ep() const
+{
+    return m_remote_ep;
 }

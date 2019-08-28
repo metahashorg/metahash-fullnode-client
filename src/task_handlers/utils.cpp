@@ -325,7 +325,7 @@ namespace utils
             start();
     }
 
-    time_duration::time_duration(bool _start, std::string message):
+    time_duration::time_duration(bool _start, const std::string& message):
         m_run(false),
         m_msg(message)
     {

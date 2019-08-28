@@ -56,40 +56,27 @@ public:
 
 #define BGN_TRY try
 
-#define END_TRY_RET_PARAM(ret, param) \
+#define END_TRY(param) \
     catch (invalid_param& ex) {\
-        LOGERR << "Error: " << ex.what() << " (" << __FILE__ << " : " << __LINE__ << ")";\
-        this->m_writer.reset();\
-        this->m_writer.set_error(ex.get_code(), ex.what());\
+        LOGERR << "[" << get_name() << "] Error: " << ex.what() << " (" << __FILE__ << " : " << __LINE__ << ")";\
+        m_writer.reset();\
+        m_writer.set_error(ex.get_code(), ex.what());\
         if (ex.additional()) {\
-            this->m_writer.add_error_data("description", ex.additional()); }\
+            m_writer.add_error_data("description", ex.additional()); }\
         param;\
-        return ret;\
     } catch (const std::string& ex) {\
-        LOGERR << "String Exception: \"" << ex << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
-        this->m_writer.reset();\
-        this->m_writer.set_error(-32602, ex.c_str());\
+        LOGERR << "[" << get_name() << "] String Exception: \"" << ex << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
+        m_writer.reset();\
+        m_writer.set_error(-32602, ex.c_str());\
         param;\
-        return ret;\
     } catch (std::exception& ex) {\
-        LOGERR << "STD Exception: \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
-        this->m_writer.reset();\
-        this->m_writer.set_error(-32603, ex.what());\
+        LOGERR << "[" << get_name() << "] STD Exception: \"" << ex.what() << "\" (" << __FILE__ << " : " << __LINE__ << ")";\
+        m_writer.reset();\
+        m_writer.set_error(-32603, ex.what());\
         param;\
-        return ret;\
     } catch(...) {\
-        LOGERR << "Unknown exception: (" << __FILE__ << " : " << __LINE__ << ")";\
-        this->m_writer.reset();\
-        this->m_writer.set_error(-32603, "Unknown exception");\
+        LOGERR << "[" << get_name() << "] Unknown exception: (" << __FILE__ << " : " << __LINE__ << ")";\
+        m_writer.reset();\
+        m_writer.set_error(-32603, "Unknown exception");\
         param;\
-        return ret;\
     }
-
-#define END_TRY_RET(ret)\
-    END_TRY_RET_PARAM(ret, )
-
-#define END_TRY_PARAM(param)\
-    END_TRY_RET_PARAM(,param)
-
-#define END_TRY\
-    END_TRY_RET()

@@ -11,7 +11,7 @@ bool generate_handler::prepare_params()
         CHK_REQ(m_id, "id field not found")
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void generate_handler::execute()
@@ -36,5 +36,5 @@ void generate_handler::execute()
         m_writer.add_result("pub_key", bin2hex(wallet.public_key_buf));
         m_writer.add_result("prv_key", bin2hex(wallet.private_key_buf));
     }
-    END_TRY
+    END_TRY()
 }

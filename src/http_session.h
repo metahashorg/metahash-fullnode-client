@@ -47,12 +47,15 @@ protected:
 
     bool check_auth(const http::request<http::string_body>& req);
 
+    const std::string& get_remote_ep() const override;
+
 private:
     tcp::socket                      m_socket;
     beast::flat_buffer               m_buf{ 8192 };
     http::request<http::string_body> m_req;
     unsigned                         m_http_ver;
     bool                             m_http_keep_alive;
+    std::string                      m_remote_ep;
 };
 
 #endif // __HTTP_SESSION_H__

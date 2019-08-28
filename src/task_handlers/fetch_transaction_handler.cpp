@@ -11,6 +11,7 @@ fetch_transaction_handler::fetch_transaction_handler(session_context_ptr ctx)
     : base_handler(ctx)
 {
     m_duration.set_message(__func__);
+    m_name = __func__;
 }
 
 bool fetch_transaction_handler::prepare_params()
@@ -33,7 +34,7 @@ bool fetch_transaction_handler::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void fetch_transaction_handler::execute()
@@ -70,5 +71,5 @@ void fetch_transaction_handler::execute()
         }
         m_writer.set_result(arr);
     }
-    END_TRY_RET();
+    END_TRY();
 }

@@ -8,7 +8,9 @@ create_tx_base_handler::create_tx_base_handler(session_context_ptr ctx)
     , m_fee(0)
     , m_value(0)
     , m_nonce(0)
-{}
+{
+    m_name = __func__;
+}
 
 
 bool create_tx_base_handler::check_params() {
@@ -43,7 +45,7 @@ bool create_tx_base_handler::check_params() {
         return true;
 
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 bool create_tx_base_handler::build_request(bool create_hash /*= false*/)
@@ -64,7 +66,7 @@ bool create_tx_base_handler::build_request(bool create_hash /*= false*/)
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void create_tx_base_handler::make_json()
@@ -88,5 +90,5 @@ void create_tx_base_handler::make_json()
         std::cout << "create-tx json: " << m_writer.stringify() << std::endl;
 #endif
     }
-    END_TRY
+    END_TRY()
 }

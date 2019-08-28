@@ -10,6 +10,7 @@ public:
     fetch_history_handler_sync(session_context_ptr ctx)
         : base_sync_handler(ctx) {
         m_duration.set_message(__func__);
+        m_name = __func__;
     }
     virtual ~fetch_history_handler_sync() override {}
 

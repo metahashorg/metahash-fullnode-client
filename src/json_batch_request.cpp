@@ -20,6 +20,11 @@ boost::asio::io_context& batch_json_request::get_io_context()
     return m_ctx->get_io_context();
 }
 
+const std::string& batch_json_request::get_remote_ep() const
+{
+    return m_ctx->get_remote_ep();
+}
+
 void batch_json_request::send_json(const char* data, size_t)
 {
     std::lock_guard<std::mutex> lock(m_lock);
@@ -29,9 +34,12 @@ void batch_json_request::send_json(const char* data, size_t)
         writer.reset();
         writer.set_id(0);
         writer.set_error(-32603, "Could not parse json response");
-        LOGERR << "Could not parse json response: \n" << data;
+        LOGERR << "[" << get_remote_ep() << "] Could not parse json response: \n" << data;
     }
     m_result.PushBack(writer.get_doc(), m_result.GetAllocator());
+
+    LOGINFO << "[" << get_remote_ep() << "] Completed request " << m_result.Size() << "/" << m_size;
+
     if (m_size == m_result.Size()) {
         std::string_view json = writer.stringify(&m_result);
         m_ctx->send_json(json.data(), json.size());
@@ -43,6 +51,8 @@ void batch_json_request::process(const json_rpc_reader& reader)
     std::lock_guard<std::mutex> lock(m_lock);
 
     m_size = reader.get_doc().GetArray().Size();
+
+    LOGINFO << "[" << get_remote_ep() << "] Process batch requests: " << m_size;
 
     std::string_view json, method;
     json_rpc_writer writer;
@@ -77,9 +87,8 @@ void batch_json_request::process(const json_rpc_reader& reader)
             m_result.PushBack(writer.get_doc(), m_result.GetAllocator());
             continue;
         }
-        if (!tmp.get("id", tmp.get_doc())) {
-            // skip notifications
-            LOGWARN << "Notification has recieved";
+        if (!tmp.has_id()) {
+            LOGWARN << "[" << get_remote_ep() << "] Notification has recieved";
             m_size--;
             continue;
         }
@@ -99,6 +108,8 @@ void batch_json_request::process(const json_rpc_reader& reader)
             }
         }
     }
+
+    LOGINFO << "[" << get_remote_ep() << "] Completed requests " << m_result.Size() << "/" << m_size;
 
     if (m_size == m_result.Size()) {
         json = writer.stringify(&m_result);

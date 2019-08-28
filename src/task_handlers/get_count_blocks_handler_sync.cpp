@@ -11,7 +11,7 @@ bool get_count_blocks_handler_sync::prepare_params()
         CHK_REQ(m_id, "id field not found")
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void get_count_blocks_handler_sync::executeImpl() {
@@ -22,5 +22,5 @@ BGN_TRY {
     const size_t countBlocks = sync.getBlockchain().countBlocks();
     
     genCountBlockJson(countBlocks, false, JsonVersion::V1, m_writer.get_doc());
-} END_TRY_RET();
+} END_TRY();
 }

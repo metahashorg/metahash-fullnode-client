@@ -7,6 +7,7 @@
 base_network_handler::base_network_handler(const std::string &host, session_context_ptr session_ctx)
     : base_handler(session_ctx)
 {
+    m_name = __func__;
     boost::asio::io_context* ctx = nullptr;
     if (session_ctx) {
         ctx = &session_ctx->get_io_context();
@@ -31,6 +32,7 @@ void base_network_handler::execute()
             m_async_execute = false;
         }
         m_result.pending = m_async_execute;
+        LOGINFO << "[" << get_name() << "] Async execute " << m_async_execute;
         if (!m_async_execute) {
             m_request->execute();
             m_writer.reset();
@@ -40,7 +42,7 @@ void base_network_handler::execute()
             m_request->execute_async([self](){ self->on_complete(); });
         }
     }
-    END_TRY
+    END_TRY()
 }
 
 void base_network_handler::process_response(json_rpc_reader &reader)
@@ -82,6 +84,7 @@ void base_network_handler::on_complete()
 {
     BGN_TRY
     {
+        LOGINFO << "[" << get_name() << "] Complete async execution";
         m_writer.reset();
         json_rpc_reader reader;
         CHK_PRM(reader.parse(m_request->get_result().data()),
@@ -92,11 +95,15 @@ void base_network_handler::on_complete()
         process_response(reader);
         send_response();
     }
-    END_TRY_PARAM(send_response())
+    END_TRY(send_response())
 }
 
 void base_network_handler::send_response()
 {
-    std::string_view result = m_writer.stringify();
-    m_context->send_json(result.data(), result.size());
+    BGN_TRY
+    {
+        std::string_view result = m_writer.stringify();
+        m_context->send_json(result.data(), result.size());
+    }
+    END_TRY()
 }

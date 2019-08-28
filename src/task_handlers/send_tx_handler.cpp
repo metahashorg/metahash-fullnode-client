@@ -74,7 +74,7 @@ bool send_tx_handler::prepare_params()
 
         return true;
     }
-    END_TRY_RET(false)
+    END_TRY(return false)
 }
 
 void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request)
@@ -109,7 +109,7 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request)
             send_tx_handler::execute();
         }
     }
-    END_TRY_PARAM(send_response())
+    END_TRY(send_response())
 }
 
 void send_tx_handler::process_response(json_rpc_reader &reader)
@@ -147,7 +147,7 @@ int send_tx_handler::check_params()
 
         return 1;
     }
-    END_TRY_RET(-1)
+    END_TRY(return -1)
 }
 
 int send_tx_handler::check_params_1()
@@ -180,6 +180,6 @@ int send_tx_handler::check_params_1()
         m_nonce = std::stoull(tmp);
         return 1;
     }
-    END_TRY_RET(-1)
+    END_TRY(return -1)
 }
 

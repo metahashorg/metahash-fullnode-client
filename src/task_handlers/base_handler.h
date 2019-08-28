@@ -23,7 +23,9 @@ public:
     base_handler(session_context_ptr ctx)
         : m_context(ctx)
         , m_duration(false)
-    {}
+    {
+        m_name = __func__;
+    }
 
     virtual ~base_handler() {
         m_duration.stop();
@@ -48,6 +50,10 @@ protected:
 
     virtual bool prepare_params() = 0;
 
+    const char* get_name() const {
+        return m_name;
+    }
+
 protected:
     json_rpc_id             m_id = { 0 };
     handler_result          m_result;
@@ -55,6 +61,7 @@ protected:
     json_rpc_writer         m_writer;
     session_context_ptr     m_context;
     utils::time_duration    m_duration;
+    const char*             m_name;
 };
 
 template <class T>

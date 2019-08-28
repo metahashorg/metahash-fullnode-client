@@ -13,6 +13,7 @@ class status_handler : public base_handler
 public:
     status_handler(session_context_ptr ctx): base_handler(ctx) {
         m_duration.set_message(__func__);
+        m_name = __func__;
     }
     virtual ~status_handler() override {}
 

@@ -27,6 +27,9 @@ public:
 
     void process(const json_rpc_reader& reader);
 
+protected:
+    const std::string& get_remote_ep() const override;
+
 private:
     session_context_ptr m_ctx;
     std::mutex          m_lock;

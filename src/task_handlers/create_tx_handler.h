@@ -7,7 +7,10 @@
 class create_tx_handler : public create_tx_base_handler
 {
 public:
-    create_tx_handler(session_context_ptr ctx): create_tx_base_handler(ctx) {}
+    create_tx_handler(session_context_ptr ctx)
+        : create_tx_base_handler(ctx) {
+        m_name = __func__;
+    }
     virtual ~create_tx_handler() override {}
 
     virtual void execute() override;
@@ -20,7 +23,10 @@ protected:
 class create_tx_handler_v2 : public create_tx_handler
 {
 public:
-    create_tx_handler_v2(session_context_ptr session): create_tx_handler(session) {}
+    create_tx_handler_v2(session_context_ptr session)
+        : create_tx_handler(session) {
+        m_name = __func__;
+    }
     virtual ~create_tx_handler_v2() override {}
 
 protected:
