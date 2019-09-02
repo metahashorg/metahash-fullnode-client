@@ -57,7 +57,7 @@ void http_json_rpc_request::set_path(const char* path)
             return;
         }
         m_id = path;
-        m_duration.set_message("json-rpc[" + m_id + "]");
+        m_duration.set_message(string_utils::str_concat("json-rpc[", m_id, "]"));
         if (*path != '/') {
             m_req.target(string_utils::str_concat("/", path));
         } else {

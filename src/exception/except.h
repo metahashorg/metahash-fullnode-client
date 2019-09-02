@@ -7,10 +7,10 @@
 class invalid_param
 {
 public:
-    invalid_param(std::string message):
+    invalid_param(const char* message):
         m_msg(message),
         m_code(-32602) {}
-    invalid_param(std::string message, std::string additional):
+    invalid_param(const char* message, const char* additional):
         m_msg(message),
         m_addit(additional),
         m_code(-32602){}
@@ -29,7 +29,7 @@ protected:
 class parse_error: public invalid_param
 {
 public:
-    parse_error(std::string message): invalid_param(message) {
+    parse_error(const char* message): invalid_param(message) {
         m_code = -32700;
     }
 };
@@ -37,7 +37,7 @@ public:
 class invalid_request: public invalid_param
 {
 public:
-    invalid_request(std::string message): invalid_param(message) {
+    invalid_request(const char* message): invalid_param(message) {
         m_code = -32600;
     }
 };

@@ -11,7 +11,7 @@ bool addr_validate_handler::prepare_params()
         auto params = m_reader.get_params();
         CHK_REQ(params, "params field not found")
 
-        CHK_PRM(m_reader.get_value(*params, "address", m_address)  &&!m_address.empty(), "address field not found")
+        CHK_PRM(m_reader.get_value(*params, "address", m_address) && !m_address.empty(), "address field not found")
 
         return true;
     }

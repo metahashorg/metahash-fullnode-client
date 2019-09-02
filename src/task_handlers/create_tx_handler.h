@@ -9,6 +9,7 @@ class create_tx_handler : public create_tx_base_handler
 public:
     create_tx_handler(session_context_ptr ctx)
         : create_tx_base_handler(ctx) {
+        m_duration.set_message(__func__);
         m_name = __func__;
     }
     virtual ~create_tx_handler() override {}
@@ -25,6 +26,7 @@ class create_tx_handler_v2 : public create_tx_handler
 public:
     create_tx_handler_v2(session_context_ptr session)
         : create_tx_handler(session) {
+        m_duration.set_message(__func__);
         m_name = __func__;
     }
     virtual ~create_tx_handler_v2() override {}

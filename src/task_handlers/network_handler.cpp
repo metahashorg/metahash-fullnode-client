@@ -89,7 +89,7 @@ void base_network_handler::on_complete()
         json_rpc_reader reader;
         CHK_PRM(reader.parse(m_request->get_result().data()),
                 string_utils::str_concat("Invalid response json, parse error (", std::to_string(reader.get_parse_error()),
-                                         "): ", reader.get_parse_error_str()))
+                                         "): ", reader.get_parse_error_str()).c_str())
         CHK_PRM(reader.get_error() || reader.get_result(), "No occur result or error")
 
         process_response(reader);
