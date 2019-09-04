@@ -18,6 +18,8 @@ struct handler_result
     std::string message;
 };
 
+#include <iostream>
+
 class base_handler: public std::enable_shared_from_this<base_handler> {
 public:
     base_handler(session_context_ptr ctx)
@@ -38,7 +40,10 @@ public:
 
     handler_result result()
     {
+//        std::string_view a = m_writer.stringify();
+//        std::cout << __func__ << " size:" << a.size() << " data:\n" << a.data() << std::endl;
         m_result.message = m_writer.stringify();
+//        std::cout << __func__ << " msg:\n" << m_result.message << std::endl;
         return m_result;
     }
 

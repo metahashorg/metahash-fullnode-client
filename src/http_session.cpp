@@ -131,6 +131,8 @@ void http_session::send_json(const char* data, size_t size)
 {
     HTTP_SESS_BGN
     {
+//        std::string a(data, size);
+//        std::cout << __func__ << " size: " << size << " data:\n" << a << std::endl;
         http::response<http::string_body> response;
         response.result(http::status::ok);
         response.set(http::field::content_type, "application/json");
@@ -241,12 +243,12 @@ void http_session::process_single_request(const json_rpc_reader& reader)
                 json = writer.stringify();
             } else {
                 LOGINFO << "[" << m_remote_ep << "] Process single request";
-                auto res = it->second(shared_from(this), m_req.body());
+                handler_result res = it->second(shared_from(this), m_req.body());
+                if (res) {
+                    send_json(res.message.c_str(), res.message.size());
+                }
                 // async operation
-                if (!res)
-                    return;
-                json = res.message;
-//                    json.append(res.message);
+                return;
             }
         }
         send_json(json.data(), json.size());
@@ -290,19 +292,20 @@ void http_session::process_get_request()
             writer.set_id(1);
             writer.set_error(-32601, string_utils::str_concat("Method '", method, "' does not exist").c_str());
             json = writer.stringify();
+            send_json(json.data(), json.size());
         } else {
             writer.set_id(1);
             if (!params.empty()) {
                 json_utils::to_json(params, *writer.get_params(), writer.get_allocator());
             }
             std::string_view t = writer.stringify();
-            auto res = it->second(shared_from(this), std::string(t.data(), t.size()));
+            handler_result res = it->second(shared_from(this), std::string(t.data(), t.size()));
+            if (res) {
+                send_json(res.message.c_str(), res.message.size());
+            }
             // async operation
-            if (!res)
-                return;
-            json = res.message;
+            return;
         }
-        send_json(json.data(), json.size());
     }
     HTTP_SESS_END()
 }
