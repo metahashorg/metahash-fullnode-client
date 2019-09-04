@@ -36,7 +36,8 @@ void base_network_handler::execute()
         if (!m_async_execute) {
             m_request->execute();
             m_writer.reset();
-            m_writer.parse(m_request->get_result().data());
+            const std::string_view res = m_request->get_result();
+            m_writer.parse(res.data(), res.size());
         } else {
             auto self = shared_from(this);
             m_request->execute_async([self](){ self->on_complete(); });
@@ -87,7 +88,8 @@ void base_network_handler::on_complete()
         LOGINFO << "[" << get_name() << "] Complete async execution";
         m_writer.reset();
         json_rpc_reader reader;
-        CHK_PRM(reader.parse(m_request->get_result().data()),
+        const std::string_view res = m_request->get_result();
+        CHK_PRM(reader.parse(res.data(), res.size()),
                 string_utils::str_concat("Invalid response json, parse error (", std::to_string(reader.get_parse_error()),
                                          "): ", reader.get_parse_error_str()).c_str())
         CHK_PRM(reader.get_error() || reader.get_result(), "No occur result or error")

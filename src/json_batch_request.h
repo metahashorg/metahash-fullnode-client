@@ -7,6 +7,7 @@
 #include "http_session_context_ptr.h"
 #include "rapidjson/document.h"
 #include <mutex>
+#include <vector>
 
 namespace boost {
 namespace asio {
@@ -28,13 +29,16 @@ public:
     void process(const json_rpc_reader& reader);
 
 protected:
+    void send_response();
+
     const std::string& get_remote_ep() const override;
 
 private:
-    session_context_ptr m_ctx;
-    std::mutex          m_lock;
-    rapidjson::Document m_result;
-    unsigned int        m_size;
+    session_context_ptr     m_ctx;
+    std::mutex              m_lock;
+    std::vector<std::string> m_res;
+//    rapidjson::Document     m_result;
+    unsigned int            m_size;
 };
 
 #endif // __JSON_BATCH_REQUEST_H__

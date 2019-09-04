@@ -189,7 +189,7 @@ void http_session::process_post_request()
         }
 
         json_rpc_reader reader;
-        if (reader.parse(m_req.body().c_str())) {
+        if (reader.parse(m_req.body().c_str(), m_req.body().size())) {
             if (reader.get_doc().IsObject()) {
                 process_single_request(reader);
             } else if (reader.get_doc().IsArray()) {
@@ -282,7 +282,7 @@ void http_session::process_get_request()
 
         method.remove_prefix(1);
 
-        std::string json;
+        std::string_view json;
         json_rpc_writer writer;
         auto it = get_handlers.find(method);
         if (it == get_handlers.end()) {
@@ -300,9 +300,9 @@ void http_session::process_get_request()
             // async operation
             if (!res)
                 return;
-            json.append(res.message);
+            json = res.message;
         }
-        send_json(json.c_str(), json.size());
+        send_json(json.data(), json.size());
     }
     HTTP_SESS_END()
 }

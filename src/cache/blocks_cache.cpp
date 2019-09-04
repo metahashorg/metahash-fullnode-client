@@ -165,7 +165,7 @@ void blocks_cache::routine()
                 LOGERR << "Cache. Could not get get-count-blocks";
                 goto next;
             }
-            if (!reader.parse(response->get().body().c_str())) {
+            if (!reader.parse(response->get().body().c_str(), response->get().body().size())) {
                 LOGERR << "Cache. Could not parse get-count-blocks (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
                 goto next;
             }
@@ -195,7 +195,7 @@ void blocks_cache::routine()
                     LOGERR << "Cache. Could not get get-dump-block-by-number";
                     goto next;
                 }
-                if (reader.parse(response->get().body().c_str())) {
+                if (reader.parse(response->get().body().c_str(), response->get().body().size())) {
                     tmp = reader.get_error();
                     if (tmp) {
                         LOGERR << "Cache. get-count-blocks error: " << reader.stringify(tmp);
@@ -282,7 +282,7 @@ void blocks_cache::routine_2()
                     LOGERR << "Cache. Could not get get-count-blocks";
                     break;
                 }
-                if (!reader.parse(response->get().body().c_str())) {
+                if (!reader.parse(response->get().body().c_str(), response->get().body().size())) {
                     LOGERR << "Cache. Could not parse get-count-blocks (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
                     break;
                 }
@@ -341,7 +341,7 @@ void blocks_cache::routine_2()
                 LOGERR << "Cache. Could not get get-blocks";
                 goto wait;
             }
-            if (!reader.parse(response->get().body().c_str())) {
+            if (!reader.parse(response->get().body().c_str(), response->get().body().size())) {
                 LOGERR << "Cache. Could not parse get-blocks (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
                 goto wait;
             }
@@ -429,7 +429,7 @@ void blocks_cache::routine_2()
                 goto wait;
             }
 
-            if (reader.parse(response->get().body().c_str())) {
+            if (reader.parse(response->get().body().c_str(), response->get().body().size())) {
                 tmp = reader.get_error();
                 if (tmp) {
                     LOGERR << "Cache. get-dumps-blocks-by-hash got error: " << reader.stringify(tmp);
@@ -499,7 +499,7 @@ void blocks_cache::routine_2()
                                 LOGERR << "Cache. Could not get get-block-by-number";
                                 break;
                             }
-                            if (!reader.parse(response->get().body().c_str())) {
+                            if (!reader.parse(response->get().body().c_str(), response->get().body().size())) {
                                 LOGERR << "Cache. Could not parse get-block-by-number (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
                                 break;
                             }

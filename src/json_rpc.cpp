@@ -14,10 +14,10 @@ json_rpc_reader::~json_rpc_reader()
 {
 }
 
-bool json_rpc_reader::parse(const char* json)
+bool json_rpc_reader::parse(const char* json, size_t size)
 {
     try {
-        m_error = m_doc.Parse(json);
+        m_error = m_doc.Parse(json, size);
         return !m_error.IsError();
     } catch (const std::exception& e) {
         LOGERR << "JsonReader parse error: " << e.what();
@@ -33,12 +33,13 @@ const char* json_rpc_reader::get_parse_error_str() const
 
 const std::string_view json_rpc_reader::stringify(const rapidjson::Value* value /*= nullptr*/) const
 {
+    m_buf.Flush();
     m_buf.Clear();
     rapidjson::Writer<rapidjson::StringBuffer> writer(m_buf);
     if (!value)
         value = &m_doc;
     value->Accept(writer);
-    return std::string_view(m_buf.GetString(), m_buf.GetSize());
+    return std::string_view(m_buf.GetString(), m_buf.GetLength());
 }
 
 bool json_rpc_reader::has_id() const
@@ -125,11 +126,11 @@ json_rpc_writer::~json_rpc_writer()
 {
 }
 
-bool json_rpc_writer::parse(const char* json)
+bool json_rpc_writer::parse(const char* json, size_t size)
 {
     try
     {
-        m_doc.Parse(json);
+        m_doc.Parse(json, size);
         return !m_doc.HasParseError();
     }
     catch (const std::exception& e)
@@ -179,12 +180,13 @@ void json_rpc_writer::set_id(json_rpc_id value)
 
 const std::string_view json_rpc_writer::stringify(const rapidjson::Value* value /*= nullptr*/)
 {
+    m_buf.Flush();
     m_buf.Clear();
     rapidjson::Writer<rapidjson::StringBuffer> writer(m_buf);
     if (!value)
         value = &m_doc;
     value->Accept(writer);
-    return std::string_view(m_buf.GetString(), m_buf.GetSize());
+    return std::string_view(m_buf.GetString(), m_buf.GetLength());
 }
 
 rapidjson::Value& json_rpc_writer::get_value(rapidjson::Value& root, const char* name, rapidjson::Type Type)
@@ -206,11 +208,12 @@ void json_rpc_writer::reset()
     if (m_doc.IsObject())
     {
         auto p = m_doc.FindMember("id");
-        if (p != m_doc.MemberEnd())
+        if (p != m_doc.MemberEnd()) {
             id = p->value;
+        }
     }
     m_doc.SetObject();
-    get_value(m_doc, "jsonrpc", rapidjson::kStringType) = json_rpc_ver;
+    get_value(m_doc, "jsonrpc", rapidjson::kStringType).SetString(json_rpc_ver, 3);
     get_value(m_doc, "id", rapidjson::kNullType) = id;
 }
 

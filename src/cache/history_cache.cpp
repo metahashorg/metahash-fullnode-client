@@ -181,7 +181,7 @@ void history_cache::routine()
                     LOGERR << "History cache. Could not get fetch-balance (" << v.addr << ")";
                     continue;
                 }
-                if (!reader.parse(response->get().body().c_str())) {
+                if (!reader.parse(response->get().body().c_str(), response->get().body().size())) {
                     LOGERR << "History cache. Could not parse fetch-balance (" << v.addr << "): " << reader.get_parse_error() << " " << reader.get_parse_error_str();
                     continue;
                 }
@@ -230,16 +230,16 @@ void history_cache::routine()
                         LOGERR << "History cache. Could not get fetch-history (" << v.addr << ")";
                         continue;
                     }
-                    if (!reader.parse(response->get().body().c_str())) {
+                    if (!reader.parse(response->get().body().c_str(), response->get().body().size())) {
                         LOGERR << "History cache. Could not parse fetch-history (" << v.addr << "): " << reader.get_parse_error() << " " << reader.get_parse_error_str();
                         continue;
                     }
-                    tmp = const_cast<rapidjson::Value*>(reader.get_error());
+                    tmp = reader.get_error();
                     if (tmp != nullptr) {
                         LOGERR << "History cache. Got error from fetch-history ("  << v.addr << "): " << reader.stringify(tmp);
                         continue;
                     }
-                    tmp = const_cast<rapidjson::Value*>(reader.get_result());
+                    tmp = reader.get_result();
                     if (tmp == nullptr) {
                         LOGERR << "History cache. Did not find result in fetch-history (" << v.addr << ")";
                         continue;

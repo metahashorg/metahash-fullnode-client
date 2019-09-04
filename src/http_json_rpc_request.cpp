@@ -79,7 +79,7 @@ void http_json_rpc_request::set_body(const char* body)
         m_req.set(http::field::content_length, m_req.body().size());
 
         json_rpc_reader reader;
-        if (reader.parse(body)) {
+        if (reader.parse(body, m_req.body().size())) {
             m_result.set_id(reader.get_id());
         }
     }
@@ -435,7 +435,7 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
             LOGWARN << "json-rpc[" << m_id << "] Incorrect response http status: " << status;
         }
 
-        const bool succ = m_result.parse(m_response->get().body().c_str());
+        const bool succ = m_result.parse(m_response->get().body().c_str(), m_response->get().body().size());
         if (!succ) {
             if (status != http::status::ok) {
                 m_result.set_error(-32603,

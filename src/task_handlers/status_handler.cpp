@@ -87,7 +87,7 @@ void status_handler::execute()
                 for (;;) {
                     if (result.empty()) break;
                     json_rpc_reader reader;
-                    if (!reader.parse(result.data())) {
+                    if (!reader.parse(result.data(), result.size())) {
                         m_writer.add_result("blocks_count",
                                             string_utils::str_concat("parse error (", std::to_string(reader.get_parse_error()),
                                                                      "): ", reader.get_parse_error_str()));

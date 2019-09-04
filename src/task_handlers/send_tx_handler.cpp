@@ -83,7 +83,8 @@ void send_tx_handler::on_get_balance(http_json_rpc_request_ptr request)
     {
         json_rpc_reader reader;
 
-        CHK_PRM(reader.parse(request->get_result().data()),
+        const std::string_view str = request->get_result();
+        CHK_PRM(reader.parse(str.data(), str.size()),
                 string_utils::str_concat("fetch-balane response parse error (", std::to_string(reader.get_parse_error()),
                                          "): ", reader.get_parse_error_str()).c_str())
 

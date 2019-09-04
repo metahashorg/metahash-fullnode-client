@@ -25,7 +25,7 @@ public:
     json_rpc_reader();
     ~json_rpc_reader();
 
-    bool parse(const char* json);
+    bool parse(const char* json, size_t size);
     const std::string_view stringify(const rapidjson::Value* value = nullptr) const;
 
     inline rapidjson::ParseErrorCode get_parse_error() const { return m_error.Code(); };
@@ -68,7 +68,7 @@ public:
     json_rpc_writer();
     ~json_rpc_writer();
 
-    bool parse(const char* json);
+    bool parse(const char* json, size_t size);
     void reset();
 
     const std::string_view stringify(const rapidjson::Value* value = nullptr);
@@ -95,7 +95,7 @@ public:
     
     void add_value(const char* name, const rapidjson::Value& value)
     {
-        get_value(m_doc, name, rapidjson::kNullType).CopyFrom(value, m_doc.GetAllocator());
+        get_value(m_doc, name, value.GetType()).CopyFrom(value, m_doc.GetAllocator());
     }
     
     bool is_error() const;
