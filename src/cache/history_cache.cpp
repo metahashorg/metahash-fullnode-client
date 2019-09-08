@@ -395,7 +395,7 @@ bool history_cache::get_history(const std::string& address, rapidjson::Document&
                 LOGERR << "History cache. Get history. Transaction (" << trx.GetString() << ") parse error " << parse_res.Code();
                 continue;
             }
-            doc.PushBack(t.Move(), doc.GetAllocator());
+            doc.PushBack(rapidjson::Value().CopyFrom(t, doc.GetAllocator()), doc.GetAllocator());
         }
         return true;
     }

@@ -36,8 +36,7 @@ protected:
 private:
     session_context_ptr     m_ctx;
     std::mutex              m_lock;
-    std::vector<std::string> m_res;
-//    rapidjson::Document     m_result;
+    rapidjson::Document     m_result;
     unsigned int            m_size;
 };
 
