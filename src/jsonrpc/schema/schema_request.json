@@ -1,0 +1,54 @@
+{
+    "title": "Metahash JSON-RPC Request Schema",
+    "description": "JSON-RPC request message",
+    "definitions": {
+        "request": {
+            "type": "object",
+            "properties": {
+                "jsonrpc": { "type": "string", "enum": ["1.0","2.0"] },
+                "id": { "oneOf": [
+                    { "type": "string", "minLength": 1, "maxLength": 10, "pattern": "^[0-9]*$"},
+                    { "type": "integer", "minimum": 1, "exclusiveMaximum": 4294967296},
+                    { "type": "null" }
+                ] },
+                "method": { "type": "string", "enum": [
+                    "generate", 
+                    "create-tx",
+                    "create-tx2",
+                    "send-tx",
+                    "get-count-blocks", 
+                    "get-last-txs",
+                    "get-block-by-hash",
+                    "get-block-by-number",
+                    "get-blocks", 
+                    "get-dump-block-by-number",
+                    "get-dump-block-by-hash",
+                    "get-tx",
+                    "fetch-balance", 
+                    "fetch-balances",
+                    "fetch-history",
+                    "fetch-history-filter",
+                    "status",
+                    "fetch-transaction",
+                    "validate"
+                ] },
+                "params": { "oneOf": [
+                    { "type": "object" },
+                    { "type": "array" }
+                ] }
+            },
+            "required": [ "jsonrpc", "method" ],
+	    "additionalProperties": false
+        }
+    },
+    "oneOf": [
+        {
+            "$ref": "#/definitions/request"
+        },
+        {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/definitions/request" }
+        }
+    ]
+}

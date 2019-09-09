@@ -2,6 +2,7 @@
 #include "task_handlers/task_handlers.h"
 #include "task_handlers/base_handler.h"
 #include "json_rpc.h"
+#include "json_rpc_schema.h"
 #include "settings/settings.h"
 #include "common/string_utils.h"
 #include "common/log.h"
@@ -184,27 +185,13 @@ void http_session::process_post_request()
 {
     HTTP_SESS_BGN
     {
-        if (m_req.target().size() != 1 || m_req.target()[0] != '/')
-        {
+        if (m_req.target().size() != 1 || m_req.target()[0] != '/') {
             send_bad_response(http::status::bad_request, "Incorrect Path");
             return;
         }
 
         json_rpc_reader reader;
-        if (reader.parse(m_req.body().c_str(), m_req.body().size())) {
-            if (reader.get_doc().IsObject()) {
-                process_single_request(reader);
-            } else if (reader.get_doc().IsArray()) {
-                process_batch_request(reader);
-            } else {
-                LOGERR << "[" << m_remote_ep << "] Unrecognized json type " << reader.get_doc().GetType();
-                json_rpc_writer writer;
-                writer.set_id(reader.get_id());
-                writer.set_error(-32600, string_utils::str_concat("Unrecognized json type ", std::to_string(reader.get_doc().GetType())).c_str());
-                std::string_view json = writer.stringify();
-                send_json(json.data(), json.size());
-            }
-        } else {
+        if (!reader.parse(m_req.body().c_str(), m_req.body().size())) {
             LOGERR << "[" << m_remote_ep << "] Parse json error " << reader.get_parse_error() << ": " << reader.get_parse_error_str();
             json_rpc_writer writer;
             writer.set_error(-32700, string_utils::str_concat(
@@ -212,6 +199,39 @@ void http_session::process_post_request()
                              ": ", reader.get_parse_error_str()).c_str());
             std::string_view json = writer.stringify();
             send_json(json.data(), json.size());
+        } else {
+            const rapidjson::SchemaDocument* schema = jsonrpc_schema::get(jsonrpc_schema::type::request);
+            if (schema) {
+                rapidjson::SchemaValidator validator(*schema);
+                if (!reader.get_doc().Accept(validator)) {
+                    json_rpc_writer writer;
+                    writer.set_id(reader.get_id());
+                    writer.set_error(-32600, "Not valid JSON RPC");
+                    std::string_view json = writer.stringify();
+                    send_json(json.data(), json.size());
+                    return;
+                }
+            } else {
+                LOGERR << "Couldn't load validate json schema";
+            }
+
+            switch (reader.get_doc().GetType()) {
+                case rapidjson::kObjectType:
+                    process_single_request(reader);
+                    break;
+                case rapidjson::kArrayType:
+                    process_batch_request(reader);
+                    break;
+                default: {
+                    LOGERR << "[" << m_remote_ep << "] Unrecognized json type " << reader.get_doc().GetType();
+                    json_rpc_writer writer;
+                    writer.set_id(reader.get_id());
+                    writer.set_error(-32600, string_utils::str_concat("Unrecognized json type ", std::to_string(reader.get_doc().GetType())).c_str());
+                    std::string_view json = writer.stringify();
+                    send_json(json.data(), json.size());
+                }
+                break;
+            }
         }
     }
     HTTP_SESS_END()
@@ -284,14 +304,13 @@ void http_session::process_get_request()
 
         method.remove_prefix(1);
 
-        std::string_view json;
         json_rpc_writer writer;
         auto it = get_handlers.find(method);
         if (it == get_handlers.end()) {
             LOGWARN << "[" << m_remote_ep << "] Method \"" << method << "\" does not exist";
             writer.set_id(1);
             writer.set_error(-32601, string_utils::str_concat("Method '", method, "' does not exist").c_str());
-            json = writer.stringify();
+            std::string_view json = writer.stringify();
             send_json(json.data(), json.size());
         } else {
             writer.set_id(1);

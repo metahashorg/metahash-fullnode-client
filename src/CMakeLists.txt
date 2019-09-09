@@ -18,6 +18,23 @@ find_library(BOOST1 NAMES libboost_filesystem.a HINTS ${BOOST_LIBS_LIBS})
 find_library(BOOST2 NAMES libboost_program_options.a HINTS ${BOOST_LIBS_LIBS})
 find_library(BOOST3 NAMES libboost_system.a HINTS ${BOOST_LIBS_LIBS})
 
+function( add_resource input )
+    string( MAKE_C_IDENTIFIER ${input} input_identifier )
+    set( output ${input_identifier}.o )
+    set(output_dir "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.dir/${output}")
+    add_custom_command(
+            OUTPUT ${output_dir}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMAND ld -r -b binary -o ${output_dir} ${input}
+            DEPENDS ${input}
+            COMMENT "Link resource file: ${output}"
+    )
+    set( RESOURCES ${RESOURCES} ${output_dir} PARENT_SCOPE)
+endfunction()
+
+add_resource("jsonrpc/schema/schema_request.json")
+add_resource("jsonrpc/schema/schema_response.json")
+
 add_executable(${PROJECT_NAME}
     main.cpp
     common/string_utils.cpp
@@ -30,7 +47,8 @@ add_executable(${PROJECT_NAME}
     connection_pool.cpp
     http_server.cpp
     http_json_rpc_request.cpp
-    json_rpc.cpp
+    jsonrpc/json_rpc_schema.cpp
+    jsonrpc/json_rpc.cpp
     http_session_context.cpp
     json_batch_request.cpp
     http_session.cpp
@@ -81,6 +99,8 @@ add_executable(${PROJECT_NAME}
     ${CMAKE_BINARY_DIR}/GitSHA1.cpp
     
     generate_json.cpp
+
+    ${RESOURCES}
     )
 
 include_directories( SYSTEM
@@ -91,16 +111,16 @@ include_directories( SYSTEM
     ../3rdParty/lz4/include/
     common/
     sync/
+    jsonrpc/
+    jsonrpc/schema/
     ./
 )
-
 
 find_package(Threads)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
 #find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRS})
-
 target_link_libraries(${PROJECT_NAME} ${BOOST1} ${BOOST2} ${BOOST3})
 
 find_library(COMMON_LIB common HINTS common/)

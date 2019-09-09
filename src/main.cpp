@@ -1,26 +1,21 @@
 #include <iostream>
 #include <memory>
-
 #include "http_server.h"
 #include "settings/settings.h"
 #include "check.h"
-
 #include "common/stopProgram.h"
 #include "common/log.h"
 #include "common/Thread.h"
 #include "sync/Modules.h"
 #include "sync/P2P/P2P_Ips.h"
 #include "sync/ConfigOptions.h"
-
 #include "SyncSingleton.h"
-
 #include "nslookup.h"
-
 #include "version.h"
-
 #include "common/network_utils.h"
 #include "StatisticsServer.h"
 #include "cmake_modules/GitSHA1.h"
+#include "json_rpc_schema.h"
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/program_options.hpp>
@@ -172,6 +167,8 @@ int main(int argc, char* argv[])
         ip_lookup.join();
 
         statGuard.join();
+
+        jsonrpc_schema::free();
         
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {

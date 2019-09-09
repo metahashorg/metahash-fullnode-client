@@ -1,10 +1,12 @@
-#pragma once
+#ifndef __JSON_RPC_H__
+#define __JSON_RPC_H__
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include <vector>
 #include <string.h>
 #include "rapidjson/document.h"
+#include "rapidjson/schema.h"
 #include "rapidjson/writer.h"
 
 static const char json_rpc_ver[] = "2.0";
@@ -24,6 +26,8 @@ class json_rpc_reader
 public:
     json_rpc_reader();
     ~json_rpc_reader();
+
+    bool validate_request() const;
 
     bool parse(const char* json, size_t size);
     const std::string_view stringify(const rapidjson::Value* value = nullptr) const;
@@ -121,3 +125,5 @@ protected:
     rapidjson::Document m_doc;
     rapidjson::StringBuffer m_buf;
 };
+
+#endif //__JSON_RPC_H__
