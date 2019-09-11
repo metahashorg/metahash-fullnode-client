@@ -29,30 +29,32 @@ const rapidjson::SchemaDocument* jsonrpc_schema::get(type schema_type)
         std::lock_guard<std::mutex> lock(m_locker);
         it = m_schemas.find(schema_type);
         if (it == m_schemas.end()) {
-            rapidjson::Document doc;
-            switch (schema_type) {
-                case request:
-                {
-                    doc.Parse(_schema_request_json_start, _schema_request_json_end - _schema_request_json_start);
-                    if (doc.HasParseError()) {
-                        LOGERR << "Schema " << request << " parse error: " << doc.GetErrorOffset() << " " << rapidjson::GetParseError_En(doc.GetParseError());
-                    } else {
-                        auto result = m_schemas.emplace(request, new rapidjson::SchemaDocument(doc));
-                        if (!result.second) {
-                            LOGERR << "Schema " << request << " error: couldn't insert into map";
-                        } else {
-                            LOGINFO << "Json schema " << request << " registered.";
-                            return result.first->second.get();
-                        }
-                    }
-                }
-                break;
-
-            default:
-                break;
-            }
-            return nullptr;
+            return load(schema_type);
         }
     }
     return it->second.get();
+}
+
+const rapidjson::SchemaDocument* jsonrpc_schema::load(type schema_type)
+{
+    rapidjson::Document doc;
+    switch (schema_type) {
+        case request:
+            doc.Parse(_schema_request_json_start, _schema_request_json_end - _schema_request_json_start);
+            break;
+        default:
+            return nullptr;
+    }
+    if (doc.HasParseError()) {
+        LOGERR << "Could not parse json schema #" << request << " : " << doc.GetErrorOffset() << " " << rapidjson::GetParseError_En(doc.GetParseError());
+    } else {
+        auto result = m_schemas.emplace(request, new rapidjson::SchemaDocument(doc));
+        if (!result.second) {
+            LOGERR << "Could not add json schema #" << request << " into map";
+        } else {
+            LOGINFO << "Json schema #" << request << " loaded.";
+            return result.first->second.get();
+        }
+    }
+    return nullptr;
 }

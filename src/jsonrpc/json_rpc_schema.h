@@ -19,6 +19,9 @@ public:
     static const rapidjson::SchemaDocument* get(type schema_type);
 
 private:
+    static const rapidjson::SchemaDocument* load(type schema_type);
+
+private:
     static std::mutex m_locker;
     static std::map<type, std::unique_ptr<rapidjson::SchemaDocument> > m_schemas;
 };

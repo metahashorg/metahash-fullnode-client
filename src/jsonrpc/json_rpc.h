@@ -105,6 +105,7 @@ public:
     bool is_error() const;
     void set_error(const rapidjson::Value& value);
     void set_error(int code, const char* message);
+    void set_error_data(const rapidjson::Value& value);
 
     template <typename T>
     void add_error_data(const char* name, T value)

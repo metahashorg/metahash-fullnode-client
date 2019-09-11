@@ -155,14 +155,12 @@ void json_rpc_writer::set_error(int code, const char* message)
     rapidjson::Value& err = get_value(m_doc, "error", rapidjson::kObjectType);
     get_value(err, "code", rapidjson::kNumberType).SetInt(code);
     get_value(err, "message", rapidjson::kStringType).SetString(message, m_doc.GetAllocator());
-//    rapidjson::Value err(rapidjson::kObjectType);
-//    err.AddMember("code", code, m_doc.GetAllocator());
-//    err.AddMember("code", rapidjson::kNumberType, m_doc.GetAllocator());
-//    err["code"].SetInt(code);
-//    err.AddMember("message", rapidjson::Value(message, m_doc.GetAllocator()).Move(), m_doc.GetAllocator());
-//    err.AddMember("message", rapidjson::kStringType, m_doc.GetAllocator());
-//    err["message"].SetString(message, m_doc.GetAllocator());
-//    get_value(m_doc, "error", rapidjson::kObjectType) = err;
+}
+
+void json_rpc_writer::set_error_data(const rapidjson::Value& value)
+{
+    rapidjson::Value& err = get_value(m_doc, "error", rapidjson::kObjectType);
+    get_value(err, "data", rapidjson::kObjectType).CopyFrom(value, get_allocator());
 }
 
 void json_rpc_writer::set_error(const rapidjson::Value& value)

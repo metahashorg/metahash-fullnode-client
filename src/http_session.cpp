@@ -206,7 +206,8 @@ void http_session::process_post_request()
                 if (!reader.get_doc().Accept(validator)) {
                     json_rpc_writer writer;
                     writer.set_id(reader.get_id());
-                    writer.set_error(-32600, "Not valid JSON RPC");
+                    writer.set_error(-32600, "Not valid JSON");
+                    writer.set_error_data(rapidjson::Value(validator.GetError(), writer.get_allocator()));
                     std::string_view json = writer.stringify();
                     send_json(json.data(), json.size());
                     return;
