@@ -1,0 +1,382 @@
+{
+    "title": "Metahash JSON-RPC Methods Schema",
+    "description": "JSON-RPC request message",
+    "definitions": {
+        "address": {
+            "type": "string",
+            "minLength": 52,
+            "maxLength": 52,
+            "pattern": "^(0x)[0-9aAbBcCdDeEfF]*$"
+        },
+        "hash": {
+            "type": "string",
+            "minLength": 64,
+            "maxLength": 64,
+            "pattern": "^[0-9aAbBcCdDeEfF]*$"
+        },
+        "unsigned_int": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "unsigned_int_or_string": {
+            "oneOf": [ {
+                    "$ref": "#/definitions/unsigned_int"
+                }, {
+                    "type": "string",
+                    "pattern": "^[0-9]*$"
+                }
+            ]
+        }
+    },
+    "oneOf": [
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(generate)$"
+                }
+            },
+            "required": [ "method" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(validate)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "address": { "$ref": "#/definitions/address" }
+                    },
+                    "required": [ "address" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(fetch-balance)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "address": { "$ref": "#/definitions/address" }
+                    },
+                    "required": [ "address" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(fetch-balances)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "addresses": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": { "$ref": "#/definitions/address" }
+                        }
+                    },
+                    "required": [ "addresses" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(fetch-history)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "address": { "$ref": "#/definitions/address" },
+                        "countTxs": { "$ref": "#/definitions/unsigned_int" },
+                        "beginTx": {"$ref": "#/definitions/unsigned_int" }
+                    },
+                    "required": [ "address" ],
+                    "additionalProperties": false,
+                    "dependencies": {
+                        "countTxs": ["beginTx"],
+                        "beginTx": ["countTxs"]
+                    }
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(fetch-history-filter)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "address": { "$ref" : "#/definitions/address" },
+                        "filters": {
+                            "minProperties": 1,
+                            "maxProperties": 6,
+                            "type": "object",
+                            "properties": {
+                                "isInput": { "type": "boolean" },
+                                "isOutput": { "type": "boolean" },
+                                "isSuccess": { "type": "boolean" },
+                                "isForging": { "type": "boolean" },
+                                "isTest": { "type": "boolean" },
+                                "isDelegate": { "type": "boolean" }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "required": [ "address", "filters" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(create-tx)(2)?$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "address": { "$ref": "#/definitions/address" },
+                        "to": { "$ref": "#/definitions/address" },
+                        "value": {"$ref": "#/definitions/unsigned_int_or_string" },
+                        "fee": {"$ref": "#/definitions/unsigned_int_or_string" },
+                        "nonce": {"$ref": "#/definitions/unsigned_int_or_string" },
+                        "data": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [ "address", "to", "value", "nonce" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(send-tx)$"
+                },
+                "params": {
+                    "oneOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "address": { "$ref": "#/definitions/address" },
+                                "to": { "$ref": "#/definitions/address" },
+                                "value": {"$ref": "#/definitions/unsigned_int_or_string" },
+                                "fee": {"$ref": "#/definitions/unsigned_int_or_string" },
+                                "nonce": {"$ref": "#/definitions/unsigned_int_or_string" },
+                                "data": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [ "address", "to", "value" ],
+                            "additionalProperties": false,
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "address": { "$ref": "#/definitions/address" },
+                                "transaction": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [ "address", "transaction" ],
+                            "additionalProperties": false
+                        }
+                    ]
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(get-block-by-hash)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "hash": { "$ref": "#/definitions/hash" },
+                        "type": { "$ref": "#/definitions/unsigned_int" },
+                        "countTxs": {"$ref": "#/definitions/unsigned_int" },
+                        "beginTx": {"$ref": "#/definitions/unsigned_int" }
+                    },
+                    "required": [ "hash" ],
+                    "dependencies": {
+                        "countTxs": ["beginTx"],
+                        "beginTx": ["countTxs"]
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(get-block-by-number)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "number": { "$ref": "#/definitions/unsigned_int" },
+                        "type": { "$ref": "#/definitions/unsigned_int" },
+                        "countTxs": {"$ref": "#/definitions/unsigned_int" },
+                        "beginTx": {"$ref": "#/definitions/unsigned_int" }
+                    },
+                    "required": [ "number" ],
+                    "dependencies": {
+                        "countTxs": ["beginTx"],
+                        "beginTx": ["countTxs"]
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(get-count-blocks)$"
+                }
+            },
+            "required": [ "method" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(get-dump-block-by-hash)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "hash": { "$ref": "#/definitions/hash" },
+                        "fromByte": { "$ref": "#/definitions/unsigned_int" },
+                        "toByte": { "$ref": "#/definitions/unsigned_int" }
+                    },
+                    "required": [ "hash" ],
+                    "dependencies": {
+                        "fromByte": ["toByte"],
+                        "toByte": ["fromByte"]
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(get-dump-block-by-number)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "number": { "$ref": "#/definitions/unsigned_int" },
+                        "fromByte": { "$ref": "#/definitions/unsigned_int" },
+                        "toByte": { "$ref": "#/definitions/unsigned_int" }
+                    },
+                    "required": [ "number" ],
+                    "dependencies": {
+                        "fromByte": ["toByte"],
+                        "toByte": ["fromByte"]
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(get-tx)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "hash": { "$ref": "#/definitions/hash" }
+                    },
+                    "required": [ "hash" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(fetch-transaction)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "address": { "$ref": "#/definitions/address" },
+                        "data": { "type": "string" }
+                    },
+                    "required": [ "address", "data" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method", "params" ],
+            "additionalProperties": false
+        }
+    ]
+}

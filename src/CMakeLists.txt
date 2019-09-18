@@ -33,7 +33,7 @@ function( add_resource input )
 endfunction()
 
 add_resource("jsonrpc/schema/schema_request.json")
-add_resource("jsonrpc/schema/schema_response.json")
+add_resource("jsonrpc/schema/schema_methods.json")
 
 add_executable(${PROJECT_NAME}
     main.cpp
