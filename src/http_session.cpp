@@ -200,22 +200,23 @@ void http_session::process_post_request()
             std::string_view json = writer.stringify();
             send_json(json.data(), json.size());
         } else {
-            const rapidjson::SchemaDocument* schema = jsonrpc_schema::get(jsonrpc_schema::type::request);
-            if (schema) {
-                rapidjson::SchemaValidator validator(*schema);
-                if (!reader.get_doc().Accept(validator)) {
-                    json_rpc_writer writer;
-                    writer.set_id(reader.get_id());
-                    writer.set_error(-32600, "Not valid JSON");
-                    writer.set_error_data(rapidjson::Value(validator.GetError(), writer.get_allocator()));
-                    std::string_view json = writer.stringify();
-                    send_json(json.data(), json.size());
-                    return;
+            if (settings::system::validate_request) {
+                const rapidjson::SchemaDocument* schema = jsonrpc_schema::get(jsonrpc_schema::type::request);
+                if (schema) {
+                    rapidjson::SchemaValidator validator(*schema);
+                    if (!reader.get_doc().Accept(validator)) {
+                        json_rpc_writer writer;
+                        writer.set_id(reader.get_id());
+                        writer.set_error(-32600, "Common json validation error");
+                        writer.set_error_data(rapidjson::Value(validator.GetError(), writer.get_allocator()));
+                        std::string_view json = writer.stringify();
+                        send_json(json.data(), json.size());
+                        return;
+                    }
+                } else {
+                    LOGERR << "Couldn't load validate json schema";
                 }
-            } else {
-                LOGERR << "Couldn't load validate json schema";
             }
-
             switch (reader.get_doc().GetType()) {
                 case rapidjson::kObjectType:
                     process_single_request(reader);
@@ -315,6 +316,7 @@ void http_session::process_get_request()
             send_json(json.data(), json.size());
         } else {
             writer.set_id(1);
+            writer.set_method(method.data(), method.size());
             if (!params.empty()) {
                 json_utils::to_json(params, *writer.get_params(), writer.get_allocator());
             }

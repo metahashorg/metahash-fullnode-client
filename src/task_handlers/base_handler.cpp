@@ -1,5 +1,7 @@
 #include "base_handler.h"
 #include "string_utils.h"
+#include "settings/settings.h"
+#include "jsonrpc/json_rpc_schema.h"
 
 bool base_handler::prepare(const std::string& params)
 {
@@ -13,6 +15,18 @@ bool base_handler::prepare(const std::string& params)
 
         m_id = m_reader.get_id();
         m_writer.set_id(m_id);
+
+        if (settings::system::validate_methods) {
+            const rapidjson::SchemaDocument* schema = jsonrpc_schema::get(jsonrpc_schema::type::methods);
+            CHK_REQ(schema, "Could not load validation schema");
+            rapidjson::SchemaValidator validator(*schema);
+            if (!m_reader.get_doc().Accept(validator)) {
+                 LOGERR << "[" << get_name() << "] Json validation error for method " << m_reader.get_method();
+                 m_writer.set_error(-32600, string_utils::str_concat("Json validation error for method ", m_reader.get_method()).c_str());
+                 m_writer.set_error_data(rapidjson::Value(validator.GetError(), m_writer.get_allocator()));
+                 return false;
+            }
+        }
 
         const bool complete = prepare_params();
         const bool pending = m_result.pending;

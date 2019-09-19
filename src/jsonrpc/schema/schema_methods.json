@@ -37,8 +37,7 @@
                     "pattern": "^(generate)$"
                 }
             },
-            "required": [ "method" ],
-            "additionalProperties": false
+            "required": [ "method" ]
         },
         {
             "type": "object",
@@ -56,8 +55,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -75,8 +73,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -98,8 +95,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -123,8 +119,7 @@
                     }
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -156,8 +151,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -182,8 +176,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -207,7 +200,7 @@
                                 }
                             },
                             "required": [ "address", "to", "value" ],
-                            "additionalProperties": false,
+                            "additionalProperties": false
                         },
                         {
                             "type": "object",
@@ -223,8 +216,7 @@
                     ]
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -249,8 +241,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -275,8 +266,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -286,8 +276,7 @@
                     "pattern": "^(get-count-blocks)$"
                 }
             },
-            "required": [ "method" ],
-            "additionalProperties": false
+            "required": [ "method" ]
         },
         {
             "type": "object",
@@ -311,8 +300,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -336,8 +324,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -355,8 +342,7 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
         },
         {
             "type": "object",
@@ -375,8 +361,28 @@
                     "additionalProperties": false
                 }
             },
-            "required": [ "method", "params" ],
-            "additionalProperties": false
+            "required": [ "method", "params" ]
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(status)$"
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "cmd": {
+                            "type": "string",
+                            "enum": ["keys"]
+                        }
+                    },
+                    "required": [ "cmd" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method" ]
         }
     ]
 }

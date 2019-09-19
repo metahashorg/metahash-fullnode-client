@@ -40,6 +40,8 @@
     "0x00a88a888d16a23991e73b4081b745eec0f56cdc7063baa360",
     "0x00f3dc22cbe3519ce94e9bf12145d61789da0bfd26bbdf7999"],
   "history_cache_enable": true,
-  "history_cache_addresses": []
+  "history_cache_addresses": [],
+  "validate_request": true,
+  "validate_methods": true
  }
 }

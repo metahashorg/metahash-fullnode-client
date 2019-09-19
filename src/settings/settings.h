@@ -69,6 +69,8 @@ namespace settings
         static std::vector<std::string> cores;
         static bool history_cache_enable;
         static std::vector<std::string> history_cache_addrs;
+        static bool validate_request;
+        static bool validate_methods;
     };
 
     struct statistic {

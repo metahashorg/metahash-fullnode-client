@@ -140,9 +140,12 @@ bool json_rpc_writer::parse(const char* json, size_t size)
     }
 }
 
-void json_rpc_writer::set_method(const char* value)
+void json_rpc_writer::set_method(const char* value, size_t size)
 {
-    get_value(m_doc, "method", rapidjson::kStringType).SetString(value, m_doc.GetAllocator());
+    if (size == std::string::npos) {
+        size = strnlen(value, 30);
+    }
+    get_value(m_doc, "method", rapidjson::kStringType).SetString(value, static_cast<rapidjson::SizeType>(size), m_doc.GetAllocator());
 }
 
 void json_rpc_writer::set_result(const rapidjson::Value& value)

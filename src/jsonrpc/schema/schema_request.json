@@ -7,8 +7,8 @@
             "properties": {
                 "jsonrpc": { "type": "string", "enum": ["1.0","2.0"] },
                 "id": { "oneOf": [
-                    { "type": "string", "minLength": 1, "maxLength": 10, "pattern": "^[0-9]*$"},
-                    { "type": "integer", "minimum": 1, "exclusiveMaximum": 4294967296},
+                    { "type": "string", "minLength": 1, "maxLength": 19, "pattern": "^[0-9]*$"},
+                    { "type": "integer", "minimum": 1, "exclusiveMaximum": 9223372036854775807},
                     { "type": "null" }
                 ] },
                 "method": { "type": "string", "enum": [

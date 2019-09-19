@@ -62,6 +62,8 @@ namespace settings
     std::vector<std::string> system::cores;
     bool system::history_cache_enable = {false};
     std::vector<std::string> system::history_cache_addrs;
+    bool system::validate_request = true;
+    bool system::validate_methods = true;
 
     void read(const std::string &pathToConfig) {
         pt::ptree tree;
@@ -141,6 +143,9 @@ namespace settings
         if (system::history_cache_addrs.empty()) {
             system::history_cache_enable = false;
         }
+
+        system::validate_request = tree.get<bool>("system.validate_request", true);
+        system::validate_methods = tree.get<bool>("system.validate_methods", true);
 
         if (tree.find("statistic") != tree.not_found()) {
             statistic::statisticNetwork = tree.get<std::string>("statistic.network");

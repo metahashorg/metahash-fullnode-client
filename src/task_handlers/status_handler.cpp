@@ -113,6 +113,8 @@ void status_handler::execute()
                     break;
                 }
             }
+            m_writer.add_result("validate_request", settings::system::validate_request);
+            m_writer.add_result("validate_methods", settings::system::validate_methods);
             break;
 
         case cmd::keys:

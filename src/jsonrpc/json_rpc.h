@@ -78,7 +78,7 @@ public:
     const std::string_view stringify(const rapidjson::Value* value = nullptr);
 
     void set_id(json_rpc_id value);
-    void set_method(const char* value);
+    void set_method(const char* value, size_t size = std::string::npos);
     void set_result(const rapidjson::Value& value);
 
     template <typename T>

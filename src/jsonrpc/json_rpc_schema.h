@@ -12,7 +12,8 @@ class jsonrpc_schema {
     ~jsonrpc_schema();
 public:
     enum type {
-        request
+        request,
+        methods
     };
 
     static void free();
