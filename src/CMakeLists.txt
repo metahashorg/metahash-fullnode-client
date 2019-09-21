@@ -109,6 +109,7 @@ include_directories( SYSTEM
     ../3rdParty/log4cpp/include/
     ../3rdParty/leveldb/include/
     ../3rdParty/lz4/include/
+    ../3rdParty/
     common/
     sync/
     jsonrpc/

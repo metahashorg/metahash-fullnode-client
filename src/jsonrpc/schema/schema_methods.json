@@ -383,6 +383,37 @@
                 }
             },
             "required": [ "method" ]
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(get-last-txs)$"
+                }
+            },
+            "required": [ "method" ]
+        },
+        {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "pattern": "^(get-blocks)$"
+                },
+                "params" : {
+                    "type": "object",
+                    "properties": {
+                        "countBlocks": { "$ref": "#/definitions/unsigned_int" },
+                        "beginBlock": { "$ref": "#/definitions/unsigned_int" },
+                        "type": { "type": "string" },
+                        "direction": { "type": "string" }
+                    },
+                    "required": [ "countBlocks", "beginBlock" ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [ "method" ]
         }
     ]
 }
