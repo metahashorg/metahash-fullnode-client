@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
     cache/blocks_cache.cpp
     cache/history_cache.cpp
     connection_pool.cpp
+    security_manager/security_manager.cpp
     http_server.cpp
     http_json_rpc_request.cpp
     jsonrpc/json_rpc_schema.cpp
@@ -114,6 +115,7 @@ include_directories( SYSTEM
     sync/
     jsonrpc/
     jsonrpc/schema/
+    security_manager/
     ./
 )
 
