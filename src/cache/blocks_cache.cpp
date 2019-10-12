@@ -256,16 +256,14 @@ void blocks_cache::routine_2()
         size_t resp_size = 0;
 
         const json_response_type* response;
-        boost::asio::io_context ctx;
 
         torrent_node_lib::BlockInfo bi, bi_prev;
         std::string tmp_str;
-//        bool tmp_bool = false;
 
         unsigned int tmp_blk_num = 0;
         if (m_nextblock == 0) {
             m_nextblock = 1;
-            http_json_rpc_request_ptr get_count = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
+            http_json_rpc_request_ptr get_count = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
             get_count->set_path("get-count-blocks");
             get_count->set_body("{\"id\":1, \"version\":\"2.0\", \"method\":\"get-count-blocks\"}");
             get_count->execute();
@@ -305,13 +303,13 @@ void blocks_cache::routine_2()
         const unsigned int blocks_max_size = settings::system::blocks_cache_recv_data_size * 1024 * 1024 * 2; // because of compress we can increase approximately up to 2 times
         unsigned int blocks_size = 0;
 
-        http_json_rpc_request_ptr get_blocks = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
+        http_json_rpc_request_ptr get_blocks = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
         get_blocks->set_path("get-blocks");
 
-        http_json_rpc_request_ptr get_dumps = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
+        http_json_rpc_request_ptr get_dumps = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
         get_dumps->set_path("get-dumps-blocks-by-hash");
 
-        http_json_rpc_request_ptr get_block = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
+        http_json_rpc_request_ptr get_block = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
         get_block->set_path("get-block-by-number");
 
         while (m_run) {
@@ -324,7 +322,6 @@ void blocks_cache::routine_2()
                 std::to_string(m_nextblock), ", \"countBlocks\": ", std::to_string(settings::system::blocks_cache_recv_count),
                 ", \"type\": \"forP2P\", \"direction\": \"forward\"}}");
 
-            ctx.restart();
             get_blocks->set_host(settings::server::get_tor().c_str());
             get_blocks->set_body(json.c_str());
             get_blocks->reset_attempts();
@@ -411,7 +408,6 @@ void blocks_cache::routine_2()
             }
             json.append("]}}");
 
-            ctx.restart();
             get_dumps->set_host(settings::server::get_tor().c_str());
             get_dumps->set_body(json.c_str());
             get_dumps->reset_attempts();
@@ -482,7 +478,6 @@ void blocks_cache::routine_2()
                             string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-block-by-number\", \"params\":{\"number\":",
                                                      std::to_string(iter->number-1), "}}");
 
-                            ctx.restart();
                             get_block->set_host(settings::server::get_tor().c_str());
                             get_block->set_body(json.c_str());
                             get_block->reset_attempts();
