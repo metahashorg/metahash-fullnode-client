@@ -16,13 +16,15 @@ class security_manager: public singleton<security_manager>
     friend class singleton<security_manager>;
 
     struct addr_info {
-        addr_info(std::time_t time, int attempts):
+        addr_info(std::time_t time, unsigned int attempts):
             last(time),
             attempt(attempts) {
         }
         std::time_t last = 0;
-        int attempt = 0;
+        unsigned int attempt = 0;
     };
+
+    const unsigned int max_attempts = 4;
 
 public:
     bool check(const ip::address& addr);

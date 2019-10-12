@@ -1,9 +1,10 @@
 #include "security_manager.h"
+#include <iostream>
 
 bool security_manager::check(const ip::address& addr)
 {
     auto it = m_info.find(addr);
-    if (it != m_info.end() && it->second.attempt > 4) {
+    if (it != m_info.end() && it->second.attempt > max_attempts) {
         std::time_t cur_time = std::time(nullptr);
         if (cur_time == static_cast<std::time_t>(-1)) {
             return true;
@@ -32,17 +33,11 @@ void security_manager::try_reset(const ip::address& addr)
     std::lock_guard<std::mutex> locker(m_lock);
     auto it = m_info.find(addr);
     if (it != m_info.end()) {
-        std::time_t cur_time = std::time(nullptr);
-        if (cur_time == static_cast<std::time_t>(-1)) {
-            return;
-        }
-        if (expired(cur_time, it->second)) {
-            m_info.erase(it);
-        }
+        m_info.erase(it);
     }
 }
 
 bool security_manager::expired(std::time_t time, const addr_info& info)
 {
-    return time - info.last > info.attempt * info.attempt * 100;
+    return time - info.last > (info.attempt - max_attempts) * 300;
 }
