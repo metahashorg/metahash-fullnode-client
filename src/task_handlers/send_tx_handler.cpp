@@ -60,7 +60,7 @@ bool send_tx_handler::prepare_params()
                     request->set_body(writer.stringify().data());
 
                     auto self = shared_from(this);
-                    request->execute_async([self, request](){ self->on_get_balance(request); });
+                    request->execute([self, request](){ self->on_get_balance(request); });
 
                     return false;
                 }

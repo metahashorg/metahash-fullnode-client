@@ -148,12 +148,11 @@ void history_cache::routine()
         std::chrono::system_clock::time_point tp;
 
         const json_response_type* response = nullptr;
-        boost::asio::io_context ctx;
 
-        http_json_rpc_request_ptr fetch_history = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
+        http_json_rpc_request_ptr fetch_history = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
         fetch_history->set_path("fetch-history");
 
-        http_json_rpc_request_ptr fetch_balance = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
+        http_json_rpc_request_ptr fetch_balance = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
         fetch_balance->set_path("fetch-balance");
 
         while (m_run) {
@@ -167,7 +166,6 @@ void history_cache::routine()
                 json.clear();
                 string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-balance\", \"params\":{\"address\":\"", v.addr, "\"}}");
 
-                ctx.restart();
                 fetch_balance->set_host(settings::server::get_tor().c_str());
                 fetch_balance->set_body(json.c_str());
                 fetch_balance->reset_attempts();
@@ -216,7 +214,6 @@ void history_cache::routine()
                     json.clear();
                     string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-history\", \"params\":{\"address\":\"", v.addr, "\", \"beginTx\":", std::to_string(v.begin),",\"countTxs\":10}}");
 
-                    ctx.restart();
                     fetch_history->set_host(settings::server::get_tor().c_str());
                     fetch_history->set_body(json.c_str());
                     fetch_history->reset_attempts();

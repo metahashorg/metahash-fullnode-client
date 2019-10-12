@@ -8,8 +8,6 @@
 #include "cache/blocks_cache.h"
 #include "string_utils.h"
 
-extern std::unique_ptr<blocks_cache> g_cache;
-
 get_block_by_number_handler::get_block_by_number_handler(session_context_ptr ctx)
     : base_network_handler(settings::server::get_tor(), ctx)
     , m_number(0)
@@ -49,9 +47,9 @@ bool get_block_by_number_handler::prepare_params()
             m_writer.add_param("beginTx", m_beginTx);
         }
 
-        if (g_cache && g_cache->runing()) {
+        if (blocks_cache::get()->runing()) {
             std::string dump;
-            if (g_cache->get_block_by_num(static_cast<unsigned int>(m_number), dump)) {
+            if (blocks_cache::get()->get_block_by_num(static_cast<unsigned int>(m_number), dump)) {
                 m_writer.reset();
                 torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(dump, false);
                 bi.header.blockNumber = m_number;

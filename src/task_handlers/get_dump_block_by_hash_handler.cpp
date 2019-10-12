@@ -8,8 +8,6 @@
 #include "cache/blocks_cache.h"
 #include "string_utils.h"
 
-extern std::unique_ptr<blocks_cache> g_cache;
-
 get_dump_block_by_hash::get_dump_block_by_hash(session_context_ptr ctx)
     : base_network_handler(settings::server::get_tor(), ctx)
     , m_fromByte(0)
@@ -36,10 +34,10 @@ bool get_dump_block_by_hash::prepare_params()
         m_reader.get_value(*params, "fromByte", m_fromByte);
         m_reader.get_value(*params, "toByte", m_toByte);
 
-        if (g_cache && g_cache->runing()) {
+        if (blocks_cache::get()->runing()) {
             std::string dump;
             std::string num;
-            if (g_cache->get_block_by_hash(m_hash, num, dump)) {
+            if (blocks_cache::get()->get_block_by_hash(m_hash, num, dump)) {
                  std::string hexdump;
                  string_utils::bin2hex(dump, hexdump);
                  genBlockDumpJson(hexdump, false, m_writer.get_doc());

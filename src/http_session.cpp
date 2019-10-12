@@ -8,6 +8,7 @@
 #include "common/log.h"
 #include <boost/exception/all.hpp>
 #include "json_batch_request.h"
+#include "security_manager/security_manager.h"
 
 #define HTTP_SESS_BGN try
 
@@ -31,7 +32,8 @@ http_session::http_session(tcp::socket&& socket) :
     boost::system::error_code ec;
     const tcp::endpoint& ep = m_socket.remote_endpoint(ec);
     if (!ec) {
-        string_utils::str_append(m_remote_ep, ep.address().to_string(ec), ":", std::to_string(ep.port()));
+        m_remote_address = ep.address();
+        string_utils::str_append(m_remote_ep, m_remote_address.to_string(ec), ":", std::to_string(ep.port()));
     }
 }
 
@@ -76,8 +78,13 @@ void http_session::process_request()
 
         if (!check_auth(m_req)) {
             LOGERR << "[" << m_remote_ep << "] Could not passed authentication";
+            security_manager::get()->mark_failed(m_remote_address);
             send_bad_response(http::status::unauthorized, "Access Denied");
             return;
+        }
+
+        if (settings::service::auth_enable) {
+            security_manager::get()->try_reset(m_remote_address);
         }
 
         for (;;) {

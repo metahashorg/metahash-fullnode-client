@@ -56,6 +56,7 @@ private:
     unsigned                         m_http_ver;
     bool                             m_http_keep_alive;
     std::string                      m_remote_ep;
+    ip::address                      m_remote_address;
 };
 
 #endif // __HTTP_SESSION_H__

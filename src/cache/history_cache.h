@@ -10,9 +10,12 @@
 #include "leveldb/cache.h"
 #include "leveldb/filter_policy.h"
 #include "rapidjson/document.h"
+#include "singleton.h"
 
-class history_cache
+class history_cache: public singleton<history_cache>
 {
+    friend class singleton<history_cache>;
+
     const char* folder = "./data/hst_cache/";
 
     struct info {
@@ -25,10 +28,11 @@ class history_cache
         rapidjson::Document trx;
     };
 
-public:
+private:
     history_cache();
     ~history_cache();
 
+public:
     bool start();
     void stop();
 

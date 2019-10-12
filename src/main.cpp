@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <memory>
 #include "http_server.h"
 #include "settings/settings.h"
@@ -23,28 +24,23 @@
 namespace po = boost::program_options;
 namespace bs = boost::system;
 
-std::unique_ptr<http_server> g_server;
-
 void signal_catcher(int sig);
 
 void runServer() {
+    http_server srv(settings::service::port, settings::service::threads);
     try {
         common::sleep(1s);
-        g_server = std::make_unique<http_server>(settings::service::port, settings::service::threads);
-        g_server->run();
+        srv.run();
     } catch (const common::exception &e) {
-        LOGERR << "Server run Error " << e;
-        g_server->stop();
+        LOGERR << "Server Common Exception " << e;
     } catch (const std::exception &e) {
-        LOGERR << "Server run Error " << e.what();
-        g_server->stop();
+        LOGERR << "Server Std Exception " << e.what();
     } catch (const common::StopException &) {
         LOGINFO << "Server stopped";
-        g_server->stop();
     } catch (...) {
-        LOGERR << "Server run Error: Unknown";
-        g_server->stop();
+        LOGERR << "Server Unknow Exception";
     }
+    srv.stop();
 };
 
 int main(int argc, char* argv[])
@@ -91,7 +87,7 @@ int main(int argc, char* argv[])
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help",                                    "produce help message")
-            ("any",         "accept any connections")
+            ("any",                                     "accept any connections")
             ("config",      po::value<std::string>(),   "config address");
 
         po::variables_map vm;
@@ -106,11 +102,35 @@ int main(int argc, char* argv[])
         const std::string configPath = settings::getConfigPath(vm);
         settings::read(configPath);
 
-        const NsResult bestTorrentIp = getBestIp(settings::server::torName, "Torrents:");
-        settings::server::set_tor(bestTorrentIp.server);
-        
-        const NsResult bestProxyIp = getBestIp(settings::server::proxyName, "Proxies:");
-        settings::server::set_proxy(bestProxyIp.server);
+        std::vector<NsResult> ip;
+        if (get_ip_addresses(settings::server::torName, ip)) {
+            LOGINFO << "Torrenrs:";
+            std::cout << "Torrenrs:" << std::endl;
+            for (const auto& i: ip) {
+                std::cout << std::left << std::setfill(' ') << std::setw(25) << i.server << i.timeout << " ms" << std::endl;
+                LOGINFO << i.server << " " << i.timeout << " ms";
+            }
+            settings::server::set_tor(ip.begin()->server);
+        } else {
+            std::cout << "Could not get torrent adresses" << std::endl;
+            LOGERR << "Could not get torrent adresses";
+            return EXIT_SUCCESS;
+        }
+
+        ip.clear();
+        if (get_ip_addresses(settings::server::proxyName, ip)) {
+            LOGINFO << "Proxies:";
+            std::cout << "Proxies:" << std::endl;
+            for (const auto& i: ip) {
+                std::cout << std::left << std::setfill(' ') << std::setw(25) << i.server << i.timeout << " ms" << std::endl;
+                LOGINFO << i.server << " " << i.timeout << " ms";
+            }
+            settings::server::set_proxy(ip.begin()->server);
+        } else {
+            std::cout << "Could not get proxy adresses" << std::endl;
+            LOGERR << "Could not get proxy adresses";
+            return EXIT_SUCCESS;
+        }
         
         const bool isStartStatistic = !settings::statistic::statisticNetwork.empty();
         
@@ -138,17 +158,6 @@ int main(int argc, char* argv[])
             );
         }
 
-        /*Sync sync(
-            pathToFolder, 
-            technicalAddress,
-            LevelDbOptions(settingsDb.writeBufSizeMb, settingsDb.isBloomFilter, settingsDb.isChecks, getFullPath("simple", pathToBd), settingsDb.lruCacheMb),
-                  CachesOptions(maxCountElementsBlockCache, maxCountElementsTxsCache, maxLocalCacheElements),
-                  GetterBlockOptions(maxAdvancedLoadBlocks, countBlocksInBatch, p2p.get(), getBlocksFromFile, isValidate, isValidateSign, isCompress),
-                  signKey,
-                  TestNodesOptions(otherPortTorrent, myIp, testNodesServer),
-                  isValidateState
-        );*/
-        
         common::Thread runServerThread(runServer);
 
         torrent_node_lib::StatisticGuard statGuard;

@@ -110,8 +110,10 @@ void socket_pool::stop_monitor()
 {
     POOL_BGN
     {
-        enable(false);
-        m_thr.join();
+        if (enable()) {
+            enable(false);
+            m_thr.join();
+        }
     }
     POOL_END()
 }

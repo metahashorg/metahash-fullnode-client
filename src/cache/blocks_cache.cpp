@@ -140,19 +140,17 @@ void blocks_cache::routine()
         std::chrono::system_clock::time_point tp;
 
         const json_response_type* response;
-        boost::asio::io_context ctx;
 
-        http_json_rpc_request_ptr gcb = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
+        http_json_rpc_request_ptr gcb = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
         gcb->set_path("get-count-blocks");
         gcb->set_body("{\"id\":1, \"version\":\"2.0\", \"method\":\"get-count-blocks\"}");
 
-        http_json_rpc_request_ptr gdbn = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), ctx);
+        http_json_rpc_request_ptr gdbn = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
         gdbn->set_path("get-dump-block-by-number");
 
         while (m_run) {
             tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(30);
 
-            ctx.restart();
             gcb->set_host(settings::server::get_tor().c_str());
             gcb->reset_attempts();
             gcb->execute();
@@ -183,7 +181,6 @@ void blocks_cache::routine()
             }
 
             while (m_run && m_nextblock <= count_blocks) {
-                ctx.restart();
                 json.clear();
                 string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-dump-block-by-number\", \"params\":{\"number\":", std::to_string(m_nextblock), ", \"compress\":true}}");
                 gdbn->set_body(json.c_str());

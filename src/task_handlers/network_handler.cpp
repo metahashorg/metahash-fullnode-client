@@ -8,14 +8,11 @@ base_network_handler::base_network_handler(const std::string &host, session_cont
     : base_handler(session_ctx)
 {
     m_name = __func__;
-    boost::asio::io_context* ctx = nullptr;
     if (session_ctx) {
-        ctx = &session_ctx->get_io_context();
+        m_request = std::make_shared<http_json_rpc_request>(host, session_ctx->get_io_context());
     } else {
-        m_ioctx.reset(new boost::asio::io_context());
-        ctx = m_ioctx.get();
+        m_request = std::make_shared<http_json_rpc_request>(host);
     }
-    m_request = std::make_shared<http_json_rpc_request>(host, *ctx);
 }
 
 base_network_handler::~base_network_handler()
@@ -28,20 +25,22 @@ void base_network_handler::execute()
     {
         m_request->set_path(m_reader.get_method().data());
         m_request->set_body(m_writer.stringify().data());
-        if (!m_context) {
-            m_async_execute = false;
-        }
-        m_result.pending = m_async_execute;
-        LOGINFO << "[" << get_name() << "] Async execute " << m_async_execute;
-        if (!m_async_execute) {
-            m_request->execute();
-            m_writer.reset();
-            const std::string_view res = m_request->get_result();
-            m_writer.parse(res.data(), res.size());
-        } else {
-            auto self = shared_from(this);
-            m_request->execute_async([self](){ self->on_complete(); });
-        }
+//        if (!m_context) {
+//            m_async_execute = false;
+//        }
+        m_result.pending = m_context != nullptr;
+        LOGINFO << "[" << get_name() << "] Async execute " << m_result.pending;
+//        if (!m_async_execute) {
+//            m_request->execute();
+//            m_writer.reset();
+//            const std::string_view res = m_request->get_result();
+//            m_writer.parse(res.data(), res.size());
+//        } else {
+//            auto self = shared_from(this);
+//            m_request->execute_async([self](){ self->on_complete(); });
+//        }
+        auto self = shared_from(this);
+        m_request->execute([self](){ self->on_complete(); });
     }
     END_TRY()
 }

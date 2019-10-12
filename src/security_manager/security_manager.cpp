@@ -1,13 +1,5 @@
 #include "security_manager.h"
 
-security_manager::security_manager()
-{
-}
-
-security_manager::~security_manager()
-{
-}
-
 bool security_manager::check(const ip::address& addr)
 {
     auto it = m_info.find(addr);
@@ -26,6 +18,7 @@ bool security_manager::check(const ip::address& addr)
 
 void security_manager::mark_failed(const ip::address& addr)
 {
+    std::lock_guard<std::mutex> locker(m_lock);
     auto it = m_info.find(addr);
     if (it != m_info.end()) {
         it->second.attempt++;
@@ -36,6 +29,7 @@ void security_manager::mark_failed(const ip::address& addr)
 
 void security_manager::try_reset(const ip::address& addr)
 {
+    std::lock_guard<std::mutex> locker(m_lock);
     auto it = m_info.find(addr);
     if (it != m_info.end()) {
         std::time_t cur_time = std::time(nullptr);

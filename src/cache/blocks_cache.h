@@ -6,17 +6,21 @@
 #include "leveldb/db.h"
 #include "leveldb/cache.h"
 #include "leveldb/filter_policy.h"
+#include "singleton.h"
 
 namespace torrent_node_lib {
     struct BlockInfo;
 }
 
-class blocks_cache
+class blocks_cache: public singleton<blocks_cache>
 {
-public:
+    friend class singleton<blocks_cache>;
+
+private:
     blocks_cache();
     ~blocks_cache();
 
+public:
     bool start();
     void stop();
 

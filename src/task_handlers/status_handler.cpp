@@ -16,9 +16,6 @@
 
 #include "version.h"
 
-extern std::unique_ptr<socket_pool> g_conn_pool;
-extern std::unique_ptr<blocks_cache> g_cache;
-
 bool status_handler::prepare_params()
 {
     BGN_TRY
@@ -54,16 +51,16 @@ void status_handler::execute()
             m_writer.add_result("jrpc_timeout", settings::system::jrpc_timeout);
             m_writer.add_result("jrpc_conn_timeout", settings::system::jrpc_conn_timeout);
             m_writer.add_result("jrpc_attempts_count", settings::system::jrpc_attempts_count);
-            m_writer.add_result("conn_pool_enable", g_conn_pool && g_conn_pool->enable() ? true : false);
+            m_writer.add_result("conn_pool_enable", socket_pool::get()->enable());
             m_writer.add_result("conn_pool_ttl", settings::system::conn_pool_ttl);
             m_writer.add_result("conn_pool_capacity", settings::system::conn_pool_capacity);
-            if (g_conn_pool && g_conn_pool->enable()) {
-                m_writer.add_result("conn_pool_ready", g_conn_pool->get_ready_size());
-                m_writer.add_result("conn_pool_busy", g_conn_pool->get_busy_size());
+            if (socket_pool::get()->enable()) {
+                m_writer.add_result("conn_pool_ready", socket_pool::get()->get_ready_size());
+                m_writer.add_result("conn_pool_busy", socket_pool::get()->get_busy_size());
             }
             m_writer.add_result("blocks_cache_ver", settings::system::blocks_cache_ver);
-            m_writer.add_result("blocks_cache_enable", g_cache->runing());
-            m_writer.add_result("blocks_cache_next_block", g_cache->next_block());
+            m_writer.add_result("blocks_cache_enable", blocks_cache::get()->runing());
+            m_writer.add_result("blocks_cache_next_block", blocks_cache::get()->next_block());
             m_writer.add_result("blocks_cache_force", settings::system::blocks_cache_force);
             m_writer.add_result("blocks_cache_init_count", settings::system::blocks_cache_init_count);
             m_writer.add_result("blocks_cache_recv_count", settings::system::blocks_cache_recv_count);
@@ -77,8 +74,8 @@ void status_handler::execute()
                 m_writer.add_result("blocks_count", sync.getBlockchain().countBlocks());
                 m_writer.add_result("last_block", sync.getKnownBlock());
             } else {
-                asio::io_context io;
-                auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), io);
+//                asio::io_context io;
+                auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor()/*, io*/);
                 request->set_path("get-count-blocks");
                 request->set_body("{\"id\":1}");
                 request->execute();

@@ -12,41 +12,71 @@
 #include <boost/beast/http/write.hpp>
 
 http_json_rpc_request::http_json_rpc_request(const std::string& host, asio::io_context& execute_context):
-    m_io_ctx(execute_context),
-    m_socket(m_io_ctx),
-    m_resolver(m_io_ctx),
+    m_io_ctx_ref(&execute_context),
+    m_socket(*m_io_ctx_ref),
+    m_resolver(*m_io_ctx_ref),
     m_duration(false, "json-rpc"),
-    m_callback(nullptr),
     m_host(host),
     m_ssl_ctx(ssl::context::sslv23),
-    m_ssl_socket(m_io_ctx, m_ssl_ctx),
-    m_async(true),
-    m_use_ssl(false),
-    m_canceled(false),
-    m_attempt(0),
-    m_rerun(false)
+    m_ssl_socket(*m_io_ctx_ref, m_ssl_ctx)
 {
-    std::string addr, path, port;
-    utils::parse_address(m_host, addr, port, path, m_use_ssl);
+    init();
+}
 
-    m_req.version(11);
-    m_req.set(http::field::host, addr);
-    //m_req.set(http::field::user_agent, "metahash.service");
-    m_req.set(http::field::content_type, "application/json");
+http_json_rpc_request::http_json_rpc_request(const std::string& host, unsigned int timeout /*= 0*/, unsigned int conn_timeout /*= 0*/, unsigned int attempts_count /*= 0*/):
+    m_io_ctx_ref(nullptr),
+    m_io_ctx(new boost::asio::io_context(1)),
+    m_socket(*m_io_ctx),
+    m_resolver(*m_io_ctx),
+    m_duration(false, "json-rpc"),
+    m_host(host),
+    m_ssl_ctx(ssl::context::sslv23),
+    m_ssl_socket(*m_io_ctx, m_ssl_ctx)
+{
+    init();
 
-    set_path(path.c_str());
-
-    m_ssl_ctx.set_default_verify_paths();
-    m_ssl_ctx.set_verify_mode(ssl::verify_fail_if_no_peer_cert);
-
-    m_ssl_ctx.set_verify_callback([this](bool preverified, ssl::verify_context& ctx) -> bool {
-        return this->verify_certificate(preverified, ctx);
-    });
+    if (timeout != 0) {
+        m_timeout = timeout;
+    }
+    if (conn_timeout != 0) {
+        m_conn_timeout = conn_timeout;
+    }
+    if (attempts_count != 0) {
+        m_attempts_count = attempts_count;
+    }
 }
 
 http_json_rpc_request::~http_json_rpc_request()
 {
     close();
+}
+
+void http_json_rpc_request::init()
+{
+    m_timeout        = settings::system::jrpc_timeout;
+    m_conn_timeout   = settings::system::jrpc_conn_timeout;
+    m_attempts_count = settings::system::jrpc_attempts_count;
+
+    m_callback = nullptr;
+    m_use_ssl = false;
+    m_canceled = false;
+    m_rerun = false;
+    m_attempt = 0;
+
+    m_req.version(11);
+    m_req.set(http::field::content_type, "application/json");
+
+    if (!m_host.empty()) {
+        std::string addr, path, port;
+        utils::parse_address(m_host, addr, port, path, m_use_ssl);
+        m_req.set(http::field::host, addr);
+        set_path(path.c_str());
+    }
+    m_ssl_ctx.set_default_verify_paths();
+    m_ssl_ctx.set_verify_mode(ssl::verify_fail_if_no_peer_cert);
+    m_ssl_ctx.set_verify_callback([this](bool preverified, ssl::verify_context& ctx) -> bool {
+        return this->verify_certificate(preverified, ctx);
+    });
 }
 
 void http_json_rpc_request::set_path(const char* path)
@@ -63,10 +93,6 @@ void http_json_rpc_request::set_path(const char* path)
         } else {
             m_req.target(path);
         }
-//        std::string target = path;
-//        if (target[0] != '/')
-//            target.insert(target.begin(), '/');
-//        m_req.target(target);
     }
     JRPC_END()
 }
@@ -135,17 +161,17 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
 
         m_duration.stop();
 
-        if (m_attempt < settings::system::jrpc_attempts_count) {
+        if (m_attempt < m_attempts_count) {
             LOGINFO << "json-rpc[" << m_id << "] Rerun request";
-            execute_async(m_callback);
+            execute(m_callback);
         } else {
             m_result.set_error(-32603, string_utils::str_concat("Json-rpc error ", std::to_string(e.value()), " : ", e.message()).c_str());
-            m_result.add_error_data("when", from);
+            m_result.add_error_data("where", from);
             m_result.add_error_data("host", m_host);
             perform_callback();
 
-            if (!m_async && !m_io_ctx.stopped())
-                m_io_ctx.stop();
+            if (m_io_ctx.get() && !m_io_ctx->stopped())
+                m_io_ctx->stop();
         }
 
         return true;
@@ -153,30 +179,28 @@ bool http_json_rpc_request::error_handler(const boost::system::error_code& e, co
     JRPC_END(false)
 }
 
-void http_json_rpc_request::execute()
-{
-    JRPC_BGN
-    {
-        execute_async(nullptr);
-        m_async = false;
-        m_io_ctx.run();
-    }
-    JRPC_END()
-}
+//void http_json_rpc_request::execute()
+//{
+//    execute_async(nullptr);
+//}
 
-void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callback)
+void http_json_rpc_request::execute(http_json_rpc_execute_callback callback)
 {
     JRPC_BGN
     {
+        m_attempt++;
+
+        if (m_io_ctx.get() && m_attempt == 1) {
+            m_io_ctx->restart();
+        }
+
         m_duration.start();
 
         if (callback) {
             m_callback = callback;
         }
 
-        m_attempt++;
-
-        LOGDEBUG << "json-rpc[" << m_id << "] Run request attempt " << m_attempt << "/" << settings::system::jrpc_attempts_count;
+        LOGDEBUG << "json-rpc[" << m_id << "] Run request attempt " << m_attempt << "/" << m_attempts_count;
 
         m_canceled = false;
         m_result.reset();
@@ -187,9 +211,9 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
         auto self = shared_from_this();
         bool need_connect = true;
 
-        if (g_conn_pool->enable()) {
-            m_pool_obj = g_conn_pool->checkout(m_host);
-            if (!g_conn_pool->valid(m_pool_obj)) {
+        if (socket_pool::get()->enable()) {
+            m_pool_obj = socket_pool::get()->checkout(m_host);
+            if (!socket_pool::get()->valid(m_pool_obj)) {
                 m_req.set(http::field::connection, "close");
             } else if (m_pool_obj->socket != -1) {
                 boost::system::error_code ec;
@@ -211,8 +235,11 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
 
                 if (!ec) {
                     need_connect = false;
-                    m_timer.start(std::chrono::milliseconds(settings::system::jrpc_timeout), [self](){
-                        self->on_request_timeout();
+//                    m_timer.start(std::chrono::milliseconds(m_timeout), [self](){
+//                        self->on_request_timeout();
+//                    });
+                    m_timer.start(std::chrono::milliseconds(m_timeout), [self](){
+                        self->on_timeout(timeout::request);
                     });
                     if (is_ssl()) {
                         http::async_write(m_ssl_socket, m_req, [self](const boost::system::error_code& e, std::size_t){
@@ -242,10 +269,14 @@ void http_json_rpc_request::execute_async(http_json_rpc_execute_callback callbac
                 self->on_resolve(e, eps);
             });
         }
+
+        if (m_io_ctx.get() && m_attempt == 1) {
+            m_io_ctx->run();
+        }
     }
     JRPC_END()
 }
-
+/*
 void http_json_rpc_request::on_request_timeout()
 {
     JRPC_BGN
@@ -257,39 +288,23 @@ void http_json_rpc_request::on_request_timeout()
         }
         m_canceled = true;
 
-        LOGERR << "json-rpc[" << m_id << "] Request timeout " << settings::system::jrpc_timeout << " ms " << m_host;
+        LOGERR << "json-rpc[" << m_id << "] Request timeout " << m_timeout << " ms " << m_host;
 
         close(true);
         m_connect_timer.stop();
         m_timer.set_callback(nullptr);
         m_duration.stop();
-        if (m_attempt < settings::system::jrpc_attempts_count) {
+        if (m_attempt < m_attempts_count) {
             m_rerun = true;
         } else {
             m_result.set_error(-32603,
-                string_utils::str_concat("Json-rpc timeout ", std::to_string(settings::system::jrpc_timeout), " ms").c_str());
+                string_utils::str_concat("Json-rpc timeout ", std::to_string(m_timeout), " ms").c_str());
             m_result.add_error_data("host", m_host);
             perform_callback();
+
+            if (m_io_ctx.get() && !m_io_ctx->stopped())
+                m_io_ctx->stop();
         }
-    }
-    JRPC_END()
-}
-
-void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps)
-{
-    JRPC_BGN
-    {
-        if (error_handler(e, __func__)) {
-            return;
-        }
-
-        auto self = shared_from_this();
-        m_connect_timer.start(std::chrono::milliseconds(settings::system::jrpc_conn_timeout), [self](){
-            self->on_connect_timeout();
-        });
-
-        asio::async_connect(is_ssl() ? m_ssl_socket.lowest_layer() : m_socket, eps,
-            [self](const boost::system::error_code& e, const tcp::endpoint& ep){ self->on_connect(e, ep); });
     }
     JRPC_END()
 }
@@ -305,20 +320,96 @@ void http_json_rpc_request::on_connect_timeout()
         }
         m_canceled = true;
 
-        LOGERR << "json-rpc[" << m_id << "] Connection timeout " << settings::system::jrpc_conn_timeout << " ms to " << m_host;
+        LOGERR << "json-rpc[" << m_id << "] Connection timeout " << m_conn_timeout << " ms to " << m_host;
 
         close(true);
         m_timer.stop();
         m_connect_timer.set_callback(nullptr);
         m_duration.stop();
-        if (m_attempt < settings::system::jrpc_attempts_count) {
+        if (m_attempt < m_attempts_count) {
             m_rerun = true;
         } else {
             m_result.set_error(-32603,
-                string_utils::str_concat("Json-rpc connection timeout ", std::to_string(settings::system::jrpc_conn_timeout), " ms").c_str());
+                string_utils::str_concat("Json-rpc connection timeout ", std::to_string(m_conn_timeout), " ms").c_str());
             m_result.add_error_data("host", m_host);
             perform_callback();
+
+            if (m_io_ctx.get() && !m_io_ctx->stopped())
+                m_io_ctx->stop();
         }
+    }
+    JRPC_END()
+}
+*/
+void http_json_rpc_request::on_timeout(timeout type)
+{
+    JRPC_BGN
+    {
+        std::lock_guard<std::mutex> lock(m_locker);
+
+        if (m_canceled) {
+            return;
+        }
+        m_canceled = true;
+
+        close(true);
+
+        switch (type) {
+        case timeout::request:
+            LOGERR << "json-rpc[" << m_id << "] Request timeout " << m_timeout << " ms " << m_host;
+            m_connect_timer.stop();
+            m_timer.set_callback(nullptr);
+            break;
+        case timeout::connection:
+            LOGERR << "json-rpc[" << m_id << "] Connection timeout " << m_conn_timeout << " ms to " << m_host;
+            m_timer.stop();
+            m_connect_timer.set_callback(nullptr);
+            break;
+        }
+
+        m_duration.stop();
+        if (m_attempt < m_attempts_count) {
+            m_rerun = true;
+        } else {
+            switch (type) {
+            case timeout::request:
+                m_result.set_error(-32603,
+                    string_utils::str_concat("Json-rpc timeout ", std::to_string(m_timeout), " ms").c_str());
+                break;
+            case timeout::connection:
+                m_result.set_error(-32603,
+                    string_utils::str_concat("Json-rpc connection timeout ", std::to_string(m_conn_timeout), " ms").c_str());
+                break;
+            }
+            m_result.add_error_data("host", m_host);
+
+            perform_callback();
+
+            if (m_io_ctx.get() && !m_io_ctx->stopped())
+                m_io_ctx->stop();
+        }
+    }
+    JRPC_END()
+}
+
+void http_json_rpc_request::on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps)
+{
+    JRPC_BGN
+    {
+        if (error_handler(e, __func__)) {
+            return;
+        }
+
+        auto self = shared_from_this();
+//        m_connect_timer.start(std::chrono::milliseconds(m_conn_timeout), [self](){
+//            self->on_connect_timeout();
+//        });
+        m_connect_timer.start(std::chrono::milliseconds(m_conn_timeout), [self](){
+            self->on_timeout(timeout::connection);
+        });
+
+        asio::async_connect(is_ssl() ? m_ssl_socket.lowest_layer() : m_socket, eps,
+            [self](const boost::system::error_code& e, const tcp::endpoint& ep){ self->on_connect(e, ep); });
     }
     JRPC_END()
 }
@@ -334,8 +425,11 @@ void http_json_rpc_request::on_connect(const boost::system::error_code& e, const
         m_connect_timer.stop();
 
         auto self = shared_from_this();
-        m_timer.start(std::chrono::milliseconds(settings::system::jrpc_timeout), [self](){
-            self->on_request_timeout();
+//        m_timer.start(std::chrono::milliseconds(m_timeout), [self](){
+//            self->on_request_timeout();
+//        });
+        m_timer.start(std::chrono::milliseconds(m_timeout), [self](){
+            self->on_timeout(timeout::request);
         });
 
         if (is_ssl()) {
@@ -450,8 +544,8 @@ void http_json_rpc_request::on_read(const boost::system::error_code& e, size_t)
 
         perform_callback();
 
-        if (!m_async && !m_io_ctx.stopped()) {
-            m_io_ctx.stop();
+        if (m_io_ctx.get() && !m_io_ctx->stopped()) {
+            m_io_ctx->stop();
         }
     }
     JRPC_END()
@@ -488,7 +582,7 @@ void http_json_rpc_request::close(bool force)
     JRPC_BGN
     {
         boost::system::error_code ec;
-        if (g_conn_pool->enable() && g_conn_pool->valid(m_pool_obj)) {
+        if (socket_pool::get()->enable() && socket_pool::get()->valid(m_pool_obj)) {
             if (force) {
                 m_socket.shutdown(tcp::socket::shutdown_both, ec);
                 m_socket.close(ec);
@@ -504,7 +598,7 @@ void http_json_rpc_request::close(bool force)
                 } else {
                     m_pool_obj->socket = -1;
                 }
-                g_conn_pool->checkin(m_pool_obj);
+                socket_pool::get()->checkin(m_pool_obj);
                 m_socket.shutdown(tcp::socket::shutdown_both, ec);
                 m_socket.close(ec);
             } else {
@@ -516,7 +610,7 @@ void http_json_rpc_request::close(bool force)
                 } else {
                     m_pool_obj->socket = -1;
                 }
-                g_conn_pool->checkin(m_pool_obj);
+                socket_pool::get()->checkin(m_pool_obj);
                 m_ssl_socket.shutdown(ec);
             }
         } else {

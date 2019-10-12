@@ -4,6 +4,7 @@
 #include <list>
 #include <mutex>
 #include <thread>
+#include "singleton.h"
 
 #define BOOST_ERROR_CODE_HEADER_ONLY
 //#include <boost/beast/core.hpp>
@@ -27,11 +28,14 @@ struct ep_descr
 
 using pool_object = std::list<ep_descr>::iterator;
 
-class socket_pool
+class socket_pool: public singleton<socket_pool>
 {
-public:
+    friend class singleton<socket_pool>;
+
+private:
     socket_pool();
     ~socket_pool();
+public:
 
     bool enable() const;
     void enable(bool value);

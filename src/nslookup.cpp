@@ -7,7 +7,6 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
-#include <iomanip>
 
 #include <duration.h>
 
@@ -22,6 +21,11 @@
 #include "log.h"
 
 #include "common/stopProgram.h"
+#include "http_json_rpc_request_ptr.h"
+#include "http_json_rpc_request.h"
+#include "json_rpc.h"
+#include <boost/exception/all.hpp>
+#include <boost/asio/io_context.hpp>
 
 static std::string parse_record(unsigned char *buffer, size_t r, ns_sect s, int idx, ns_msg *m) {
     ns_rr rr;
@@ -56,7 +60,7 @@ static std::string parse_record(unsigned char *buffer, size_t r, ns_sect s, int 
     }
 }
 
-static std::vector<std::string> nsLookup(const std::string &server) {
+static void nsLookup(const std::string &server, std::vector<std::string>& result) {
     curl_global_init(CURL_GLOBAL_ALL);
     
     std::array<unsigned char, 8192> buffer;
@@ -76,11 +80,9 @@ static std::vector<std::string> nsLookup(const std::string &server) {
     const int k = ns_initparse(buffer.data(), r, &m);
     CHECK(k != -1, "ns_initparse error " + std::string(strerror(errno)));
       
-    std::vector<std::string> result;
     for (int i = 0; i < answers; ++i) {
         result.emplace_back(parse_record(buffer.data(), r, ns_s_an, i, &m));
     }
-    return result;
 }
 
 static int writer(char *data, size_t size, size_t nmemb, std::string *buffer) {
@@ -147,7 +149,8 @@ static bool validateIpAddress(const std::string &ipAddress) {
     return result != 0;
 }
 
-NsResult getBestIp(const std::string &address, const char* print) {
+bool get_ip_addresses(const std::string &address, std::vector<NsResult>& ip)
+{
     std::string server = address;
     const auto foundScheme = server.find("://");
     std::string scheme;
@@ -155,52 +158,44 @@ NsResult getBestIp(const std::string &address, const char* print) {
         scheme = server.substr(0, foundScheme + 3);
         server = server.substr(foundScheme + 3);
     }
-    
+
     const auto foundPort = server.find(':');
     int port = 0;
-    if (foundPort == server.npos) {
-        server = server;
-    } else {
+    if (foundPort != server.npos) {
         port = std::stoi(server.substr(foundPort + 1));
         server = server.substr(0, foundPort);
     }
-    
+
     if (validateIpAddress(server)) {
-        return NsResult(scheme + server + ((port != 0) ? (":" + std::to_string(port)) : ""), 0);
+        ip.emplace_back(scheme + server + ((port != 0) ? (":" + std::to_string(port)) : ""), 0);
+        return true;
     }
-    
-    const std::vector<std::string> result = nsLookup(server);
-    
-    std::vector<NsResult> pr;
+
+    std::vector<std::string> result;
+    nsLookup(server, result);
+
     for (const std::string &r: result) {
         const std::string serv = scheme + r + ((port != 0) ? (":" + std::to_string(port)) : "");
         common::Timer tt;
         try {
             request(serv, "", "", "");
             tt.stop();
-            pr.emplace_back(serv, tt.countMs());
+            ip.emplace_back(serv, tt.countMs());
         } catch (const common::exception &e) {
-            pr.emplace_back(serv, milliseconds(999s).count());
+            ip.emplace_back(serv, milliseconds(999s).count());
         }
     }
 
-    std::sort(pr.begin(), pr.end(), [](const NsResult &first, const NsResult &second) {
+    std::sort(ip.begin(), ip.end(), [](const NsResult &first, const NsResult &second) {
         return first.timeout < second.timeout;
     });
 
-    if (print) {
-        std::cout << print << std::endl;
-        LOGINFO << print;
-        for (const auto& i: pr) {
-            std::cout << std::left << std::setfill(' ') << std::setw(25) << i.server << i.timeout << " ms" << std::endl;
-            LOGINFO << i.server << " " << i.timeout << " ms";
-        }
-    }
-    
-    const auto found = pr.begin();
+    return !ip.empty();
+}
 
-    CHECK(found != pr.end(), "Servers empty");
-    return *pr.begin();
+void on_get_count_blocks()
+{
+
 }
 
 void lookup_best_ip()
@@ -215,7 +210,17 @@ void lookup_best_ip()
         params.sched_priority = sched_get_priority_min(SCHED_OTHER);
         pthread_setschedparam(pt, SCHED_OTHER, &params);
 
-        NsResult res;
+        std::vector<NsResult> tors;
+        std::vector<NsResult> prxs;
+
+        const json_response_type* response;
+        http_json_rpc_request_ptr req = std::make_shared<http_json_rpc_request>("", 3000, 2000, 1);
+        req->set_path("get-count-blocks");
+        req->set_body("{\"id\":1, \"version\":\"2.0\", \"method\":\"get-count-blocks\"}");
+
+        json_rpc_reader reader;
+        const rapidjson::Value* tmp;
+        unsigned int max_blocks = 0;
 
         while (true) {
             try {
@@ -223,20 +228,71 @@ void lookup_best_ip()
 
                 common::checkStopSignal();
 
-                res = getBestIp(settings::server::torName);
-                if (tor != res.server) {
-                    tor = res.server;
-                    settings::server::set_tor(tor);
-                    LOGINFO << "Changed torrent address: " << res.server << " " << res.timeout << " ms";
+                tors.clear();
+                if (!get_ip_addresses(settings::server::torName, tors)) {
+                    LOGERR << "Lookup ip. Could not get torrent ip-addresses from " << settings::server::torName;
+                } else {
+                    max_blocks = 0;
+                    for (auto& i: tors) {
+                        if (i.timeout >= 2000) {
+                            continue;
+                        }
+                        req->set_host(i.server.c_str());
+                        req->reset_attempts();
+                        req->execute();
+                        response = req->get_response();
+                        if (!response) {
+                            LOGERR << "Lookup ip. Could not get response from get-count-blocks";
+                            continue;
+                        }
+                        if (response->get().body().empty()) {
+                            LOGERR << "Lookup ip. Could not get get-count-blocks";
+                            continue;
+                        }
+                        if (!reader.parse(response->get().body().c_str(), response->get().body().size())) {
+                            LOGERR << "Lookup ip. Could not parse get-count-blocks (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
+                            continue;
+                        }
+                        tmp = reader.get_result();
+                        if (tmp == nullptr) {
+                            LOGERR << "Lookup ip. Did not find result in get-count-blocks";
+                            continue;
+                        }
+                        if (!reader.get_value(*tmp, "count_blocks", i.blocks_count)) {
+                            LOGERR << "Lookup ip. Did not find field 'count_blocks' in get-count-blocks";
+                            continue;
+                        }
+                        max_blocks = std::max(max_blocks, i.blocks_count);
+                    }
+                    if (max_blocks > 9) {
+                        max_blocks -= 10;
+                    }
+                    std::vector<NsResult>::const_iterator it = tors.cend();
+                    for (it = tors.cbegin(); it != tors.cend(); it++) {
+                        if (it->blocks_count > max_blocks) {
+                            break;
+                        }
+                    }
+                    if (it != tors.cend()) {
+                        if (tor != it->server) {
+                            tor = it->server;
+                            settings::server::set_tor(tor);
+                            LOGINFO << "Changed torrent address: " << it->server << " " << it->timeout << " ms, blocks " << it->blocks_count;
+                        }
+                    }
                 }
 
                 common::checkStopSignal();
 
-                res = getBestIp(settings::server::proxyName);
-                if (proxy != res.server) {
-                    proxy = res.server;
-                    settings::server::set_proxy(proxy);
-                    LOGINFO << "Changed proxy address: " << res.server << " " << res.timeout << " ms";
+                prxs.clear();
+                if (!get_ip_addresses(settings::server::proxyName, prxs)) {
+                    LOGERR << "Lookup ip. Could not get proxy ip-address from " << settings::server::proxyName;
+                } else {
+                    if (proxy != prxs.begin()->server) {
+                        proxy = prxs.begin()->server;
+                        settings::server::set_proxy(proxy);
+                        LOGINFO << "Lookup ip. Changed proxy address: " << prxs.begin()->server << " " << prxs.begin()->timeout << " ms";
+                    }
                 }
 
                 common::checkStopSignal();

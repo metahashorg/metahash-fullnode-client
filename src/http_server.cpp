@@ -8,11 +8,7 @@
 #include "connection_pool.h"
 #include "cache/blocks_cache.h"
 #include "cache/history_cache.h"
-
-std::unique_ptr<socket_pool> g_conn_pool;
-std::unique_ptr<blocks_cache> g_cache;
-std::unique_ptr<history_cache> g_hist_cache;
-
+#include "security_manager/security_manager.h"
 
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
     : m_thread_count(thread_count)
@@ -57,10 +53,6 @@ void http_server::run()
 
     checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
     
-    g_conn_pool = std::make_unique<socket_pool>();
-    g_cache = std::make_unique<blocks_cache>();
-    g_hist_cache = std::make_unique<history_cache>();
-
     m_run = true;
     std::vector<std::unique_ptr<std::thread> > threads;
     for (int i = 0; i < m_thread_count; ++i)
@@ -73,15 +65,15 @@ void http_server::run()
     std::cout << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port() << std::endl;
 
     if (settings::system::conn_pool_enable) {
-        g_conn_pool->run_monitor();
+        socket_pool::get()->run_monitor();
     }
 
     if (settings::system::blocks_cache_enable) {
-        g_cache->start();
+        blocks_cache::get()->start();
     }
 
     if (settings::system::history_cache_enable) {
-        g_hist_cache->start();
+        history_cache::get()->start();
     }
 
     for (std::size_t i = 0; i < threads.size(); ++i) {
@@ -91,9 +83,9 @@ void http_server::run()
     m_run = false;
     LOGINFO << "Service stoped";
 
-    g_cache->stop();
-    g_hist_cache->stop();
-    g_conn_pool->stop_monitor();
+    blocks_cache::get()->stop();
+    history_cache::get()->stop();
+    socket_pool::get()->stop_monitor();
 }
 
 void http_server::stop()
@@ -133,6 +125,10 @@ void http_server::accept(tcp::acceptor& acceptor)
 
 bool http_server::check_access(const tcp::endpoint& ep)
 {
+    if (settings::service::auth_enable && !security_manager::get()->check(ep.address())) {
+        return false;
+    }
+
     if (settings::service::any_conns) {
         return true;
     }
@@ -141,9 +137,10 @@ bool http_server::check_access(const tcp::endpoint& ep)
         return true;
     }
 
+    boost::system::error_code ec;
     if (std::find(settings::service::access.begin(),
                   settings::service::access.end(),
-                  ep.address().to_string()) != settings::service::access.end()) {
+                  ep.address().to_string(ec)) != settings::service::access.end()) {
         return true;
     }
 

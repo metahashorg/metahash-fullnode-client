@@ -5,8 +5,6 @@
 #include "common/convertStrings.h"
 #include "utils.h"
 
-extern std::unique_ptr<history_cache> g_hist_cache;
-
 fetch_transaction_handler::fetch_transaction_handler(session_context_ptr ctx)
     : base_handler(ctx)
 {
@@ -43,7 +41,7 @@ void fetch_transaction_handler::execute()
     {
         rapidjson::Document doc;
         m_writer.reset();
-        if (!g_hist_cache->get_history(m_addr, doc)) {
+        if (!history_cache::get()->get_history(m_addr, doc)) {
             m_writer.set_error(-32301, doc.GetString());
             return;
         }
