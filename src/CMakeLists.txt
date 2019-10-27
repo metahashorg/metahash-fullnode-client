@@ -150,7 +150,7 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
 endif()
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG_")
-    set (CMAKE_CXX_FLAGS "-Werror -pthread")
+    set (CMAKE_CXX_FLAGS " -pthread")
 endif()
 
 #set (CMAKE_CXX_FLAGS "-g -rdynamic")

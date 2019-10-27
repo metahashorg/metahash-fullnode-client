@@ -4,15 +4,19 @@
 bool security_manager::check(const ip::address& addr)
 {
     auto it = m_info.find(addr);
-    if (it != m_info.end() && it->second.attempt > max_attempts) {
-        std::time_t cur_time = std::time(nullptr);
-        if (cur_time == static_cast<std::time_t>(-1)) {
-            return true;
+    if (it != m_info.end()) {
+        std::lock_guard<std::mutex> locker(m_lock);
+        it = m_info.find(addr);
+        if (it != m_info.end() && it->second.attempt > max_attempts) {
+            std::time_t cur_time = std::time(nullptr);
+            if (cur_time == static_cast<std::time_t>(-1)) {
+                return true;
+            }
+            if (!expired(cur_time, it->second)) {
+                return false;
+            }
+            it->second.last = cur_time;
         }
-        if (!expired(cur_time, it->second)) {
-            return false;
-        }
-        it->second.last = cur_time;
     }
     return true;
 }
@@ -30,10 +34,13 @@ void security_manager::mark_failed(const ip::address& addr)
 
 void security_manager::try_reset(const ip::address& addr)
 {
-    std::lock_guard<std::mutex> locker(m_lock);
     auto it = m_info.find(addr);
     if (it != m_info.end()) {
-        m_info.erase(it);
+        std::lock_guard<std::mutex> locker(m_lock);
+        it = m_info.find(addr);
+        if (it != m_info.end()) {
+            m_info.erase(it);
+        }
     }
 }
 

@@ -51,10 +51,8 @@ void http_session::run()
         m_buf.consume(m_buf.size());
 
         auto self = shared_from(this);
-        http::async_read(m_socket, m_buf, m_req, [self](beast::error_code ec, std::size_t bytes_transferred)
-        {
-            if (!ec && bytes_transferred > 0)
-            {
+        http::async_read(m_socket, m_buf, m_req, [self](beast::error_code ec, std::size_t bytes_transferred) {
+            if (!ec && bytes_transferred > 0) {
                 self->process_request();
                 if (self->keep_alive()) {
                     self->run();
@@ -214,7 +212,7 @@ void http_session::process_post_request()
                     if (!reader.get_doc().Accept(validator)) {
                         json_rpc_writer writer;
                         writer.set_id(reader.get_id());
-                        writer.set_error(-32600, "Common json validation error");
+                        writer.set_error(-32600, "Common request json validation error");
                         writer.set_error_data(rapidjson::Value(validator.GetError(), writer.get_allocator()));
                         std::string_view json = writer.stringify();
                         send_json(json.data(), json.size());

@@ -99,13 +99,13 @@ void http_server::accept(tcp::acceptor& acceptor)
     acceptor.async_accept([&](boost::system::error_code ec, tcp::socket socket)
     {
         if (ec) {
-            LOGERR << __func__ << " Failed on accept: " << ec.message();
+            LOGERR << __func__ << " Failed on accept (" << ec.value() << ") : " << ec.message();
         }
         else {
             boost::system::error_code er;
             const tcp::endpoint& ep = socket.remote_endpoint(er);
             if (er) {
-                LOGERR << "Accept: Could not get remote endpoint: " << er.message();
+                LOGERR << "Accept. Could not get remote endpoint " << er.value() << " : " << er.message();
                 er.clear();
                 socket.shutdown(tcp::socket::shutdown_both, er);
                 socket.close(er);

@@ -11,9 +11,9 @@ using mh_count_t = uint64_t;
 
 struct handler_result
 {
-    operator bool() const               {return !pending;}
-    operator const std::string() const  {return message;}
-    operator const char*() const        {return message.c_str();}
+    explicit operator bool() const               {return !pending;}
+    //explicit operator const std::string() const  {return message;}
+    //explicit operator const char*() const        {return message.c_str();}
     bool pending = { false };
     std::string message;
 };
