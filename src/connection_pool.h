@@ -47,8 +47,8 @@ public:
 
     bool valid(const pool_object& value);
 
-    void run_monitor();
-    void stop_monitor();
+    void start();
+    void stop();
 
     size_t get_ready_size() const;
     size_t get_busy_size() const;

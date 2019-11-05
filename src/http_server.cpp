@@ -9,6 +9,7 @@
 #include "cache/blocks_cache.h"
 #include "cache/history_cache.h"
 #include "security_manager/security_manager.h"
+#include "json_rpc_schema.h"
 
 http_server::http_server(unsigned short port /*= 9999*/, int thread_count /*= 4*/)
     : m_thread_count(thread_count)
@@ -54,20 +55,19 @@ void http_server::run()
     checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
     
     m_run = true;
-    std::vector<std::unique_ptr<std::thread> > threads;
-    for (int i = 0; i < m_thread_count; ++i)
-    {
+    std::vector<std::unique_ptr<std::thread>> threads;
+    for (int i = 0; i < m_thread_count; ++i) {
         threads.emplace_back(new std::thread(worker_proc, this));
     }
 
-    LOGINFO << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port();
-
+    LOGINFO   << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port();
     std::cout << "Service runing at " << m_ep.address().to_string() << ":" << m_ep.port() << std::endl;
 
     if (settings::system::conn_pool_enable) {
-        socket_pool::get()->run_monitor();
+        socket_pool::get()->start();
     }
 
+    blocks_cache::get()->init();
     if (settings::system::blocks_cache_enable) {
         blocks_cache::get()->start();
     }
@@ -84,8 +84,16 @@ void http_server::run()
     LOGINFO << "Service stoped";
 
     blocks_cache::get()->stop();
+    blocks_cache::free();
+
     history_cache::get()->stop();
-    socket_pool::get()->stop_monitor();
+    history_cache::free();
+
+    socket_pool::get()->stop();
+    socket_pool::free();
+
+    security_manager::free();
+    jsonrpc_schema::free();
 }
 
 void http_server::stop()
@@ -100,10 +108,9 @@ void http_server::accept(tcp::acceptor& acceptor)
     {
         if (ec) {
             LOGERR << __func__ << " Failed on accept (" << ec.value() << ") : " << ec.message();
-        }
-        else {
+        } else {
             boost::system::error_code er;
-            const tcp::endpoint& ep = socket.remote_endpoint(er);
+            const tcp::endpoint ep = socket.remote_endpoint(er);
             if (er) {
                 LOGERR << "Accept. Could not get remote endpoint " << er.value() << " : " << er.message();
                 er.clear();

@@ -25,9 +25,6 @@ class json_rpc_reader
 {
 public:
     json_rpc_reader();
-    ~json_rpc_reader();
-
-    bool validate_request() const;
 
     bool parse(const char* json, size_t size);
     const std::string_view stringify(const rapidjson::Value* value = nullptr) const;
@@ -48,7 +45,7 @@ public:
     {
         if (!root.IsObject())
             return false;
-        rapidjson::Value::ConstMemberIterator v = root.FindMember(name);
+        const auto v = root.FindMember(name);
         if (v != root.MemberEnd() && v->value.Is<T>())
         {
             value = v->value.Get<T>();
@@ -70,7 +67,6 @@ class json_rpc_writer
 {
 public:
     json_rpc_writer();
-    ~json_rpc_writer();
 
     bool parse(const char* json, size_t size);
     void reset();
@@ -81,8 +77,14 @@ public:
     void set_method(const char* value, size_t size = std::string::npos);
     void set_result(const rapidjson::Value& value);
 
+    template <typename T, size_t N>
+    void add_result(const char* name, const T (&value)[N])
+    {
+        add_result<T>(name, value);
+    }
+
     template <typename T>
-    void add_result(const char* name, T value)
+    void add_result(const char* name, const T& value)
     {
         rapidjson::Value& result = get_value(m_doc, "result", rapidjson::kObjectType);
         rapidjson::Value& param = get_value(result, name, rapidjson::kNullType);
@@ -90,7 +92,7 @@ public:
     }
 
     template <typename T>
-    void add_param(const char* name, T value)
+    void add_param(const char* name, const T& value)
     {
         rapidjson::Value& params = get_value(m_doc, "params", rapidjson::kObjectType);
         rapidjson::Value& param = get_value(params, name, rapidjson::kNullType);
@@ -108,7 +110,7 @@ public:
     void set_error_data(const rapidjson::Value& value);
 
     template <typename T>
-    void add_error_data(const char* name, T value)
+    void add_error_data(const char* name, const T& value)
     {
         rapidjson::Value& err = get_value(m_doc, "error", rapidjson::kObjectType);
         rapidjson::Value& data = get_value(err, "data", rapidjson::kObjectType);

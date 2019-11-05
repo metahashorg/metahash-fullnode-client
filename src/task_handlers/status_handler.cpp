@@ -40,8 +40,8 @@ void status_handler::execute()
         switch (m_cmd) {
             case cmd::general:
             m_writer.add_result("version", get_version());
-            m_writer.add_result("git_hash", g_GIT_SHA1);
-            m_writer.add_result("git_date", g_GIT_DATE);
+            m_writer.add_result("git_hash", (const char*)g_GIT_SHA1);
+            m_writer.add_result("git_date", (const char*)g_GIT_DATE);
             m_writer.add_result("network_tor_name", settings::server::torName);
             m_writer.add_result("network_proxy_name", settings::server::proxyName);
             m_writer.add_result("network_tor", settings::server::get_tor());

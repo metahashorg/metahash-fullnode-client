@@ -18,9 +18,9 @@ class blocks_cache: public singleton<blocks_cache>
 
 private:
     blocks_cache();
-    ~blocks_cache();
 
 public:
+    bool init();
     bool start();
     void stop();
 
@@ -45,6 +45,7 @@ protected:
 
 private:
     bool        m_run;
+    bool        m_init;
     unsigned    m_nextblock;
     std::unique_ptr<std::thread> m_worker;
     std::unique_ptr<leveldb::DB> m_db;

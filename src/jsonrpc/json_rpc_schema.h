@@ -6,25 +6,26 @@
 #include <mutex>
 #include "rapidjson/document.h"
 #include "rapidjson/schema.h"
+#include "singleton.h"
 
-class jsonrpc_schema {
+class jsonrpc_schema: public singleton<jsonrpc_schema>
+{
+    friend class singleton<jsonrpc_schema>;
+
     jsonrpc_schema();
-    ~jsonrpc_schema();
 public:
     enum type {
         request,
         methods
     };
 
-    static void free();
-    static const rapidjson::SchemaDocument* get(type schema_type);
+    const rapidjson::SchemaDocument* get_schema(type schema_type);
 
 private:
-    static const rapidjson::SchemaDocument* load(type schema_type);
+    const rapidjson::SchemaDocument* load(type schema_type);
 
 private:
-    static std::mutex m_locker;
-    static std::map<type, std::unique_ptr<rapidjson::SchemaDocument> > m_schemas;
+    std::map<type, std::unique_ptr<rapidjson::SchemaDocument> > m_schemas;
 };
 
 

@@ -361,7 +361,7 @@ bool history_cache::get_history(const std::string& address, rapidjson::Document&
             return false;
         }
         rapidjson::Document hst;
-        rapidjson::ParseResult parse_res = hst.Parse(str.c_str());
+        rapidjson::ParseResult parse_res = hst.Parse(str);
         if (parse_res.IsError()) {
             LOGERR << "History cache. Get history. Parse error " << parse_res.Code();
             doc.SetString(string_utils::str_concat("History parse error ", std::to_string(parse_res.Code())), doc.GetAllocator());

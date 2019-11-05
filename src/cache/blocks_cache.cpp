@@ -36,18 +36,18 @@
 
 blocks_cache::blocks_cache()
     : m_run(false)
+    , m_init(false)
     , m_nextblock(0)
 {
 }
 
-blocks_cache::~blocks_cache()
-{
-}
-
-bool blocks_cache::start()
+bool blocks_cache::init()
 {
     CACHE_BGN
     {
+        if (m_init) {
+            return true;
+        }
         if (!fs_utils::dir::is_exists("./data/")){
             if (!fs_utils::dir::create("./data/")) {
                 LOGERR << "Cache. Could not create folder ./data/";
@@ -82,6 +82,19 @@ bool blocks_cache::start()
         status = m_db->Get(opt, "next_block", &result);
         if (status.ok()) {
             m_nextblock = std::atoi(result.c_str());
+        }
+        m_init = true;
+        return m_init;
+    }
+    CACHE_END(return false)
+}
+
+bool blocks_cache::start()
+{
+    CACHE_BGN
+    {
+        if (!init()) {
+            LOGERR << "Cache. Could not initialize. Aborted.";
         }
         LOGINFO << "Cache. Next block is " << m_nextblock;
         LOGINFO << "Cache. Init successfully";
@@ -526,13 +539,13 @@ void blocks_cache::routine_2()
                     // checking hashes
                     if (bi.header.hash != iter->hash) {
                         LOGERR << "Cache. Block " << string_utils::bin2hex(bi.header.hash) << " is not equal " << string_utils::bin2hex(iter->hash);
-                        goto next;
+                        goto wait;
                     }
 
                     // checking current block core addresses
                     if (!core_addr_verification(bi, string_utils::bin2hex(bi_prev.header.hash))) {
                         dump_bad_block(bi.header.blockNumber.value(), p, blk_size);
-                        goto next;
+                        goto wait;
                     }
 
                     if (sz_prev > 0 && p_prev) {
@@ -554,7 +567,6 @@ void blocks_cache::routine_2()
                         update_number(m_nextblock);
                     }
                 }
-next:
                 p += blk_size;
                 iter++;
             }

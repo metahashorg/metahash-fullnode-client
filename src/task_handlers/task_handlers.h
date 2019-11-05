@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __TASK_HANDLERS_H__
+#define __TASK_HANDLERS_H__
 
 #include <memory>
 #include <map>
@@ -13,3 +14,5 @@ using UseLocalDatabase = bool;
 extern const std::map<std::pair<std::string, UseLocalDatabase>, handler_func> post_handlers;
 
 extern const std::map<std::string_view, handler_func> get_handlers;
+
+#endif // __TASK_HANDLERS_H__

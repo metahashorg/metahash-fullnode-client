@@ -100,13 +100,13 @@ bool socket_pool::valid(const pool_object& value)
     return value._M_node != 0 && value != m_busy.end();
 }
 
-void socket_pool::run_monitor()
+void socket_pool::start()
 {
     enable(true);
     m_thr = std::thread(thread_proc, this);
 }
 
-void socket_pool::stop_monitor()
+void socket_pool::stop()
 {
     POOL_BGN
     {

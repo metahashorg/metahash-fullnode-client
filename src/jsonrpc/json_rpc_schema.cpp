@@ -7,31 +7,17 @@ extern char _schema_request_json_end[]   asm( "_binary_jsonrpc_schema_schema_req
 extern char _schema_methods_json_start[] asm( "_binary_jsonrpc_schema_schema_methods_json_start" );
 extern char _schema_methods_json_end[]   asm( "_binary_jsonrpc_schema_schema_methods_json_end" );
 
-std::map<jsonrpc_schema::type, std::unique_ptr<rapidjson::SchemaDocument> > jsonrpc_schema::m_schemas;
-std::mutex jsonrpc_schema::m_locker;
-
 jsonrpc_schema::jsonrpc_schema()
 {
+    load(request);
+    load(methods);
 }
 
-jsonrpc_schema::~jsonrpc_schema()
-{
-}
-
-void jsonrpc_schema::free()
-{
-    m_schemas.clear();
-}
-
-const rapidjson::SchemaDocument* jsonrpc_schema::get(type schema_type)
+const rapidjson::SchemaDocument* jsonrpc_schema::get_schema(type schema_type)
 {
     auto it = m_schemas.find(schema_type);
     if (it == m_schemas.end()) {
-        std::lock_guard<std::mutex> lock(m_locker);
-        it = m_schemas.find(schema_type);
-        if (it == m_schemas.end()) {
-            return load(schema_type);
-        }
+        return nullptr;
     }
     return it->second.get();
 }

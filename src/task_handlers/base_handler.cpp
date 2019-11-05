@@ -17,7 +17,7 @@ bool base_handler::prepare(const std::string& params)
         m_writer.set_id(m_id);
 
         if (settings::system::validate_methods) {
-            const rapidjson::SchemaDocument* schema = jsonrpc_schema::get(jsonrpc_schema::type::methods);
+            const rapidjson::SchemaDocument* schema = jsonrpc_schema::get()->get_schema(jsonrpc_schema::type::methods);
             CHK_REQ(schema, "Could not load validation schema");
             rapidjson::SchemaValidator validator(*schema);
             if (!m_reader.get_doc().Accept(validator)) {

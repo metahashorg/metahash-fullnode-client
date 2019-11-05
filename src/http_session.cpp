@@ -30,7 +30,7 @@ http_session::http_session(tcp::socket&& socket) :
     m_http_keep_alive(false)
 {
     boost::system::error_code ec;
-    const tcp::endpoint& ep = m_socket.remote_endpoint(ec);
+    const tcp::endpoint ep = m_socket.remote_endpoint(ec);
     if (!ec) {
         m_remote_address = ep.address();
         string_utils::str_append(m_remote_ep, m_remote_address.to_string(ec), ":", std::to_string(ep.port()));
@@ -175,6 +175,7 @@ void http_session::send_response(http::response<http::string_body>& response)
         LOGINFO << "[" << m_remote_ep << "] Send response " << response.result();
 
         boost::system::error_code ec;
+        // TODO check for thread safety
         http::write(m_socket, response, ec);
         if (ec) {
             LOGERR << "[" << m_remote_ep << "] Socket write error: " << ec.message();
@@ -206,7 +207,7 @@ void http_session::process_post_request()
             send_json(json.data(), json.size());
         } else {
             if (settings::system::validate_request) {
-                const rapidjson::SchemaDocument* schema = jsonrpc_schema::get(jsonrpc_schema::type::request);
+                const rapidjson::SchemaDocument* schema = jsonrpc_schema::get()->get_schema(jsonrpc_schema::type::request);
                 if (schema) {
                     rapidjson::SchemaValidator validator(*schema);
                     if (!reader.get_doc().Accept(validator)) {

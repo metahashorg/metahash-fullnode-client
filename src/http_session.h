@@ -21,7 +21,9 @@ class http_session: public session_context
 public:
     http_session() = delete;
     http_session(const http_session& session) = delete;
-    http_session& operator=(http_session session) = delete;
+    http_session(http_session&& session) = delete;
+    http_session& operator=(const http_session& session) = delete;
+    http_session& operator=(http_session&& session) = delete;
 
     http_session(tcp::socket&& socket);
     virtual ~http_session() override;

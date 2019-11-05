@@ -43,7 +43,6 @@ void runServer() {
     srv.stop();
 };
 
-
 int main(int argc, char* argv[])
 {
 //    {
@@ -178,8 +177,6 @@ int main(int argc, char* argv[])
 
         statGuard.join();
 
-        jsonrpc_schema::free();
-        
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {
         LOGERR << e.what();

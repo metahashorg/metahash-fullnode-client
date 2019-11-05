@@ -7,10 +7,7 @@
 // json_rpc_reader
 
 json_rpc_reader::json_rpc_reader()
-{
-}
-
-json_rpc_reader::~json_rpc_reader()
+    : m_doc(rapidjson::kObjectType)
 {
 }
 
@@ -90,10 +87,11 @@ const rapidjson::Value* json_rpc_reader::get(const char* name, const rapidjson::
     if (!root.IsObject()) {
         return nullptr;
     }
-    rapidjson::Value::ConstMemberIterator p = root.FindMember(name);
-    if (p == root.MemberEnd())
+    const auto v = root.FindMember(name);
+    if (v == root.MemberEnd()) {
         return nullptr;
-    return &p->value;
+    }
+    return &v->value;
 }
 
 bool json_rpc_reader::get_value(const rapidjson::Value& root, const char* name, std::string_view& value) const
@@ -101,10 +99,10 @@ bool json_rpc_reader::get_value(const rapidjson::Value& root, const char* name, 
     if (!root.IsObject()) {
         return false;
     }
-    auto v = root.FindMember(name);
+    const auto v = root.FindMember(name);
     if (v != root.MemberEnd() && v->value.IsString())
     {
-        value = v->value.GetString();
+        value = std::string_view(v->value.GetString(), v->value.GetStringLength());
         return true;
     }
     return false;
@@ -118,12 +116,9 @@ const rapidjson::Document& json_rpc_reader::get_doc() const
 // json_rpc_writer
 
 json_rpc_writer::json_rpc_writer()
+    : m_doc(rapidjson::kObjectType)
 {
     reset();
-}
-
-json_rpc_writer::~json_rpc_writer()
-{
 }
 
 bool json_rpc_writer::parse(const char* json, size_t size)
@@ -210,7 +205,7 @@ void json_rpc_writer::reset()
     {
         auto p = m_doc.FindMember("id");
         if (p != m_doc.MemberEnd()) {
-            id = p->value;
+            id.CopyFrom(p->value, m_doc.GetAllocator());
         }
     }
     m_doc.SetObject();
