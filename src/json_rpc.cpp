@@ -86,6 +86,8 @@ rapidjson::Value* json_rpc_reader::get_params()
 
 rapidjson::Value* json_rpc_reader::get(const std::string& name, rapidjson::Value& root)
 {
+    if (!root.IsObject())
+        return nullptr;
     auto p = root.FindMember(name);
     if (p == root.MemberEnd())
         return nullptr;
@@ -182,6 +184,9 @@ std::string json_rpc_writer::stringify(rapidjson::Value* value /*= nullptr*/)
 
 rapidjson::Value& json_rpc_writer::get_value(rapidjson::Value& root, const std::string& name, rapidjson::Type Type)
 {
+    if (!root.IsObject()) {
+        root.SetObject();
+    }
     auto node = root.FindMember(name);
     if (node != root.MemberEnd())
         return node->value;
