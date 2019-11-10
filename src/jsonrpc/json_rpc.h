@@ -80,7 +80,7 @@ public:
     template <typename T, size_t N>
     void add_result(const char* name, const T (&value)[N])
     {
-        add_result<T>(name, value);
+        add_result<const T*>(static_cast<const T*>(name), value);
     }
 
     template <typename T>
