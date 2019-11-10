@@ -23,7 +23,7 @@ public:
     batch_json_request(session_context_ptr ctx);
     virtual ~batch_json_request() override;
 
-    boost::asio::io_context& get_io_context() override;
+    boost::asio::io_context* get_io_context() override;
     void send_json(const char* data, size_t size) override;
 
     void process(const json_rpc_reader& reader);

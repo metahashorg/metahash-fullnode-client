@@ -53,7 +53,7 @@ namespace utils
         typedef std::chrono::milliseconds Interval;
         typedef std::function<void(void)> Handler;
 
-        Timer() {};
+        Timer();
         ~Timer();
 
         void start(const Interval& interval, const Handler& handler, bool immediately = true);
@@ -63,11 +63,11 @@ namespace utils
         void run_once();
 
     private:
-        std::thread         m_thr;
-        Handler             m_handler;
-        std::condition_variable cond;
-        std::mutex          m_locker;
-        Interval            m_interval;
-        bool isStopped = true;
+        std::thread             m_thr;
+        Handler                 m_handler;
+        std::condition_variable m_cond;
+        std::mutex              m_locker;
+        Interval                m_interval;
+        bool                    m_stop;
     };
 }

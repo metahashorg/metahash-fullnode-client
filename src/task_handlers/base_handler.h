@@ -8,25 +8,16 @@
 #include "time_duration.h"
 
 using mh_count_t = uint64_t;
-
-struct handler_result
-{
-    explicit operator bool() const               {return !pending;}
-    //explicit operator const std::string() const  {return message;}
-    //explicit operator const char*() const        {return message.c_str();}
-    bool pending = { false };
-    std::string message;
-};
-
-#include <iostream>
+using handler_result = std::pair<bool, std::string>;
 
 class base_handler: public std::enable_shared_from_this<base_handler> {
 public:
     base_handler(session_context_ptr ctx)
         : m_context(ctx)
         , m_duration(false)
+        , m_name(__func__)
     {
-        m_name = __func__;
+        m_result.first = false;
     }
 
     virtual ~base_handler() {
@@ -40,10 +31,7 @@ public:
 
     handler_result result()
     {
-//        std::string_view a = m_writer.stringify();
-//        std::cout << __func__ << " size:" << a.size() << " data:\n" << a.data() << std::endl;
-        m_result.message = m_writer.stringify();
-//        std::cout << __func__ << " msg:\n" << m_result.message << std::endl;
+        m_result.second = m_writer.stringify();
         return m_result;
     }
 
@@ -70,7 +58,7 @@ protected:
 };
 
 template <class T>
-static handler_result perform(session_context_ptr ctx, const std::string& params) {
+handler_result perform(session_context_ptr ctx, const std::string& params) {
     try {
         std::shared_ptr<T> obj = std::make_shared<T>(ctx);
         if (obj->prepare(params)) {

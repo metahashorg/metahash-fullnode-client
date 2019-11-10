@@ -23,7 +23,7 @@ public:
     }
 
     virtual void send_json(const char* data, size_t size) = 0;
-    virtual boost::asio::io_context& get_io_context() = 0;
+    virtual boost::asio::io_context* get_io_context() = 0;
     virtual const std::string& get_remote_ep() const = 0;
 };
 

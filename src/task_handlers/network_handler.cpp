@@ -4,15 +4,11 @@
 #include <memory>
 #include "common/string_utils.h"
 
-base_network_handler::base_network_handler(const std::string &host, session_context_ptr session_ctx)
+base_network_handler::base_network_handler(std::string&& host, session_context_ptr session_ctx)
     : base_handler(session_ctx)
 {
     m_name = __func__;
-    if (session_ctx) {
-        m_request = std::make_shared<http_json_rpc_request>(host, session_ctx->get_io_context());
-    } else {
-        m_request = std::make_shared<http_json_rpc_request>(host);
-    }
+    m_request = std::make_shared<http_json_rpc_request>(std::move(host), session_ctx ? session_ctx->get_io_context() : nullptr);
 }
 
 base_network_handler::~base_network_handler()
@@ -24,21 +20,9 @@ void base_network_handler::execute()
     BGN_TRY
     {
         m_request->set_path(m_reader.get_method().data());
-        m_request->set_body(m_writer.stringify().data());
-//        if (!m_context) {
-//            m_async_execute = false;
-//        }
-        m_result.pending = m_context != nullptr;
-        LOGINFO << "[" << get_name() << "] Async execute " << m_result.pending;
-//        if (!m_async_execute) {
-//            m_request->execute();
-//            m_writer.reset();
-//            const std::string_view res = m_request->get_result();
-//            m_writer.parse(res.data(), res.size());
-//        } else {
-//            auto self = shared_from(this);
-//            m_request->execute_async([self](){ self->on_complete(); });
-//        }
+        m_request->set_body(m_writer.stringify());
+        m_result.first = m_context != nullptr;
+        LOGINFO << "[" << get_name() << "] Async execute " << m_result.first;
         auto self = shared_from(this);
         m_request->execute([self](){ self->on_complete(); });
     }

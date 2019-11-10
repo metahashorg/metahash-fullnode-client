@@ -146,7 +146,7 @@ void blocks_cache::routine()
         LOGINFO << "Cache. Version 1 Started";
         m_run = true;
         unsigned int count_blocks = 0;
-        handler_result res;
+//        handler_result res;
         std::string json;
         json_rpc_reader reader;
         const rapidjson::Value* tmp;
@@ -164,7 +164,7 @@ void blocks_cache::routine()
         while (m_run) {
             tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(30);
 
-            gcb->set_host(settings::server::get_tor().c_str());
+            gcb->set_host(settings::server::get_tor());
             gcb->reset_attempts();
             gcb->execute();
             response = gcb->get_response();
@@ -196,8 +196,8 @@ void blocks_cache::routine()
             while (m_run && m_nextblock <= count_blocks) {
                 json.clear();
                 string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-dump-block-by-number\", \"params\":{\"number\":", std::to_string(m_nextblock), ", \"compress\":true}}");
-                gdbn->set_body(json.c_str());
-                gdbn->set_host(settings::server::get_tor().c_str());
+                gdbn->set_body(json);
+                gdbn->set_host(settings::server::get_tor());
                 gdbn->reset_attempts();
                 gdbn->execute();
                 response = gdbn->get_response();
@@ -240,7 +240,7 @@ void blocks_cache::routine_2()
     {
         LOGINFO << "Cache. Version 2 Started";
         m_run = true;
-        handler_result res;
+//        handler_result res;
         std::string json;
         std::string decompressed;
 //        std::string_view dump;
@@ -335,8 +335,8 @@ void blocks_cache::routine_2()
                 std::to_string(m_nextblock), ", \"countBlocks\": ", std::to_string(settings::system::blocks_cache_recv_count),
                 ", \"type\": \"forP2P\", \"direction\": \"forward\"}}");
 
-            get_blocks->set_host(settings::server::get_tor().c_str());
-            get_blocks->set_body(json.c_str());
+            get_blocks->set_host(settings::server::get_tor());
+            get_blocks->set_body(json);
             get_blocks->reset_attempts();
             get_blocks->execute();
             response = get_blocks->get_response();
@@ -421,8 +421,8 @@ void blocks_cache::routine_2()
             }
             json.append("]}}");
 
-            get_dumps->set_host(settings::server::get_tor().c_str());
-            get_dumps->set_body(json.c_str());
+            get_dumps->set_host(settings::server::get_tor());
+            get_dumps->set_body(json);
             get_dumps->reset_attempts();
             get_dumps->execute();
             response = get_dumps->get_response();
@@ -491,8 +491,8 @@ void blocks_cache::routine_2()
                             string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-block-by-number\", \"params\":{\"number\":",
                                                      std::to_string(iter->number-1), "}}");
 
-                            get_block->set_host(settings::server::get_tor().c_str());
-                            get_block->set_body(json.c_str());
+                            get_block->set_host(settings::server::get_tor());
+                            get_block->set_body(json);
                             get_block->reset_attempts();
                             get_block->execute();
                             response = get_block->get_response();

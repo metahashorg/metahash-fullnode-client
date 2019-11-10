@@ -5,16 +5,10 @@
 #include "base_handler.h"
 #include "http_json_rpc_request_ptr.h"
 
-//namespace boost {
-//namespace asio {
-//class io_context;
-//}
-//}
-
 class base_network_handler : public base_handler
 {
 public:
-    base_network_handler(const std::string& host, session_context_ptr session_ctx);
+    base_network_handler(std::string&& host, session_context_ptr session_ctx);
     virtual ~base_network_handler() override;
 
     virtual void execute() override;
@@ -27,9 +21,7 @@ protected:
     void send_response();
 
 protected:
-//    bool m_async_execute = {true};
     http_json_rpc_request_ptr m_request;
-//    std::unique_ptr<boost::asio::io_context> m_ioctx;
 };
 
 #endif // __NETWORK_HANDLER_H__

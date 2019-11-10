@@ -29,8 +29,7 @@ bool base_handler::prepare(const std::string& params)
         }
 
         const bool complete = prepare_params();
-        const bool pending = m_result.pending;
-        if (!complete && !pending)
+        if (!complete && !m_result.first)
         {
             // prepare_params must set an error
 
@@ -40,7 +39,7 @@ bool base_handler::prepare(const std::string& params)
                 m_writer.set_error(-32602, "Invalid params");
             }
         }
-        LOGINFO << "[" << get_name() << "] Prepared json (complete = " << complete << ", async = " << pending << ")";
+        LOGINFO << "[" << get_name() << "] Prepared json (complete = " << complete << ", async = " << m_result.first << ")";
 
 #ifdef _DEBUG_
         LOGDEBUG << "Prepared json: \n" << m_writer.stringify();

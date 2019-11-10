@@ -138,7 +138,7 @@ void history_cache::routine()
         LOGINFO << "History cache. Version 1 Started";
         m_run = true;
 
-        handler_result res;
+//        handler_result res;
         std::string json;
 
         json_rpc_reader reader;
@@ -166,8 +166,8 @@ void history_cache::routine()
                 json.clear();
                 string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-balance\", \"params\":{\"address\":\"", v.addr, "\"}}");
 
-                fetch_balance->set_host(settings::server::get_tor().c_str());
-                fetch_balance->set_body(json.c_str());
+                fetch_balance->set_host(settings::server::get_tor());
+                fetch_balance->set_body(json);
                 fetch_balance->reset_attempts();
                 fetch_balance->execute();
                 response = fetch_balance->get_response();
@@ -214,8 +214,8 @@ void history_cache::routine()
                     json.clear();
                     string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-history\", \"params\":{\"address\":\"", v.addr, "\", \"beginTx\":", std::to_string(v.begin),",\"countTxs\":10}}");
 
-                    fetch_history->set_host(settings::server::get_tor().c_str());
-                    fetch_history->set_body(json.c_str());
+                    fetch_history->set_host(settings::server::get_tor());
+                    fetch_history->set_body(json);
                     fetch_history->reset_attempts();
                     fetch_history->execute();
                     response = fetch_history->get_response();

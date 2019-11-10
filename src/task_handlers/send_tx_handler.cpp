@@ -49,7 +49,7 @@ bool send_tx_handler::prepare_params()
                     const torrent_node_lib::BalanceInfo balance = sync.getBalance(torrent_node_lib::Address(m_address));
                     m_nonce = balance.countSpent + 1;
                 } else {
-                    m_result.pending = true;
+                    m_result.first = true;
 
                     json_rpc_writer writer;
                     writer.set_id(1);
@@ -57,7 +57,7 @@ bool send_tx_handler::prepare_params()
 
                     auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor(), m_context->get_io_context());
                     request->set_path("fetch-balance");
-                    request->set_body(writer.stringify().data());
+                    request->set_body(writer.stringify());
 
                     auto self = shared_from(this);
                     request->execute([self, request](){ self->on_get_balance(request); });

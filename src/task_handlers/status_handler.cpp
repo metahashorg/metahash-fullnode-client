@@ -74,8 +74,7 @@ void status_handler::execute()
                 m_writer.add_result("blocks_count", sync.getBlockchain().countBlocks());
                 m_writer.add_result("last_block", sync.getKnownBlock());
             } else {
-//                asio::io_context io;
-                auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor()/*, io*/);
+                auto request = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
                 request->set_path("get-count-blocks");
                 request->set_body("{\"id\":1}");
                 request->execute();

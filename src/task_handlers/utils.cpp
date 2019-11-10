@@ -264,29 +264,33 @@ namespace utils
     }
 
     // Timer
+    Timer::Timer()
+        : m_handler(nullptr)
+        , m_stop(true)
+    {
+    }
+
     Timer::~Timer() {
         if (m_thr.joinable()) {
             m_thr.join();
         }
     }
 
-    void Timer::start(const Interval& interval, const Handler& handler, bool immediately /*= true*/) {
+    void Timer::start(const Interval& interval, const Handler& handler, bool run /*= true*/) {
         std::unique_lock<std::mutex> guard(m_locker);
         set_callback(handler);
         m_interval = interval;
-        if (immediately) {
-            isStopped = false;
+        m_stop = !run;
+        if (!m_stop) {
             run_once();
-        } else {
-            isStopped = true;
         }
     }
 
     void Timer::stop() {
         std::unique_lock<std::mutex> guard(m_locker);
-        if (!isStopped) {
-            isStopped = true;
-            cond.notify_one();
+        if (!m_stop) {
+            m_stop = true;
+            m_cond.notify_one();
             guard.unlock();
             if (m_thr.joinable()) {
                 m_thr.join();
@@ -296,20 +300,26 @@ namespace utils
     }
 
     void Timer::run_once() {
-        isStopped = false;
+        m_stop = false;
         if (m_thr.joinable()) {
             m_thr.join();
         }
         m_thr = std::thread([&]() {
             std::unique_lock<std::mutex> guard(m_locker);
-            if (cond.wait_for(guard, m_interval, [&](){return isStopped;})) {
-                return;
+            std::cv_status status = std::cv_status::no_timeout;
+            while (true) {
+                status = m_cond.wait_for(guard, m_interval);
+                if (m_stop) {
+                    return;
+                }
+                if (status == std::cv_status::timeout) {
+                    break;
+                }
             }
-            isStopped = true;
-//            guard.unlock();
             if (m_handler) {
                 m_handler();
             }
+            m_stop = true;
         });
     }
 

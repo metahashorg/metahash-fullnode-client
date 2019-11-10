@@ -30,7 +30,7 @@ batch_json_request::~batch_json_request()
 {
 }
 
-boost::asio::io_context& batch_json_request::get_io_context()
+boost::asio::io_context* batch_json_request::get_io_context()
 {
     return m_ctx->get_io_context();
 }
@@ -124,9 +124,9 @@ void batch_json_request::process(const json_rpc_reader& reader)
                 m_result.PushBack(rapidjson::Value().CopyFrom(writer.get_doc(), m_result.GetAllocator()).Move(), m_result.GetAllocator());
             } else {
                 auto res = it->second(shared_from(this), json.data());
-                if (res) {
+                if (!res.first) {
                     // sync complete
-                    writer.parse(res.message.c_str(), res.message.size());
+                    writer.parse(res.second.c_str(), res.second.size());
                     m_result.PushBack(rapidjson::Value().CopyFrom(writer.get_doc(), m_result.GetAllocator()).Move(), m_result.GetAllocator());
                 }
             }

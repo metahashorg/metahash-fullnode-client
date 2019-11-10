@@ -30,7 +30,7 @@ public:
 
     void run();
 
-    asio::io_context& get_io_context() override;
+    asio::io_context* get_io_context() override;
 
     void send_json(const char* data, size_t size) override;
 

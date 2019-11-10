@@ -214,7 +214,7 @@ void lookup_best_ip()
         std::vector<NsResult> prxs;
 
         const json_response_type* response;
-        http_json_rpc_request_ptr req = std::make_shared<http_json_rpc_request>("", 3000, 2000, 1);
+        http_json_rpc_request_ptr req = std::make_shared<http_json_rpc_request>("", nullptr, 3000, 2000, 1);
         req->set_path("get-count-blocks");
         req->set_body("{\"id\":1, \"version\":\"2.0\", \"method\":\"get-count-blocks\"}");
 
@@ -237,7 +237,7 @@ void lookup_best_ip()
                         if (i.timeout >= 2000) {
                             continue;
                         }
-                        req->set_host(i.server.c_str());
+                        req->set_host(i.server);
                         req->reset_attempts();
                         req->execute();
                         response = req->get_response();

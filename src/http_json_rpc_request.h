@@ -20,6 +20,7 @@
 #include "task_handlers/time_duration.h"
 #include "task_handlers/utils.h"
 #include "connection_pool.h"
+#include "log.h"
 
 namespace   asio    = boost::asio;
 namespace   ssl     = boost::asio::ssl;
@@ -31,76 +32,6 @@ namespace   http    = boost::beast::http;
 using http_json_rpc_execute_callback = std::function<void()>;
 using json_response_type = http::response_parser<http::string_body>;
 using json_request_type = http::request<http::string_body>;
-
-class http_json_rpc_request: public std::enable_shared_from_this<http_json_rpc_request>
-{
-    enum class timeout {
-        request,
-        connection
-    };
-
-public:
-    http_json_rpc_request(const std::string& host, asio::io_context& execute_context);
-    http_json_rpc_request(const std::string& host, unsigned int timeout = 0, unsigned int conn_timeout = 0, unsigned int attempts_count = 0);
-
-    virtual ~http_json_rpc_request();
-
-    void set_path(const char* path);
-    void set_body(const char* body);
-    void set_host(const char* host);
-
-    void reset_attempts();
-
-    void execute(http_json_rpc_execute_callback callback = nullptr);
-//    void execute_async(http_json_rpc_execute_callback callback);
-
-    const std::string_view get_result();
-    const json_response_type* get_response();
-    const std::string& get_id();
-
-protected:
-    void init();
-
-    void on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps);
-    void on_connect(const boost::system::error_code& ec, const tcp::endpoint& ep);
-    void on_handshake(const boost::system::error_code& e);
-    void on_write(const boost::system::error_code& e);
-    void on_read(const boost::system::error_code& e, size_t sz);
-    void on_timeout(timeout type);
-    bool error_handler(const boost::system::error_code& e, const char* from);
-    void perform_callback();
-    bool verify_certificate(bool preverified, ssl::verify_context& ctx);
-    void close(bool force = false);
-
-    inline bool is_ssl() const { return m_use_ssl; }
-
-protected:
-    asio::io_context*                   m_io_ctx_ref;
-    std::unique_ptr<asio::io_context>   m_io_ctx;
-    tcp::socket                         m_socket;
-    tcp::resolver                       m_resolver;
-    utils::Timer                        m_timer;
-    utils::Timer                        m_connect_timer;
-    utils::time_duration                m_duration;
-    json_request_type                   m_req { http::verb::post, "/", 11 };
-    std::unique_ptr<json_response_type> m_response;
-    boost::beast::flat_buffer           m_buf { 8192 };
-    json_rpc_writer                     m_result;
-    http_json_rpc_execute_callback      m_callback;
-    std::string                         m_host;
-    ssl::context                        m_ssl_ctx;
-    ssl::stream<tcp::socket>            m_ssl_socket;
-    std::string                         m_id;
-    bool                                m_use_ssl;
-    bool                                m_canceled;
-    std::mutex                          m_locker;
-    pool_object                         m_pool_obj;
-    unsigned int                        m_attempt;
-    bool                                m_rerun;
-    unsigned int                        m_timeout;
-    unsigned int                        m_conn_timeout;
-    unsigned int                        m_attempts_count;
-};
 
 #define JRPC_BGN try
 
@@ -127,5 +58,94 @@ protected:
         m_canceled = true;\
         return ret;\
     }
+
+class http_json_rpc_request: public std::enable_shared_from_this<http_json_rpc_request>
+{
+    enum class timeout {
+        request,
+        connection
+    };
+
+public:
+    http_json_rpc_request(std::string&& host, asio::io_context* ctx = nullptr,
+                          int timeout = -1, int conn_timeout = -1, int attempts_count = -1);
+
+    virtual ~http_json_rpc_request();
+
+    void set_path(const char* path);
+
+    template <typename T>
+    void set_body(T&& body) {
+        JRPC_BGN
+        {
+            m_req.body().assign(std::forward<T>(body));
+            m_req.set(http::field::content_length, m_req.body().size());
+
+            json_rpc_reader reader;
+            if (reader.parse(m_req.body().data(), m_req.body().size())) {
+                m_result.set_id(reader.get_id());
+            }
+        }
+        JRPC_END()
+    }
+
+    template <typename T>
+    void set_host(T&& host)
+    {
+        JRPC_BGN
+        {
+            m_host = std::forward<T>(host);
+            std::string addr, path, port;
+            utils::parse_address(m_host, addr, port, path, m_use_ssl);
+            m_req.set(http::field::host, addr);
+        }
+        JRPC_END()
+    }
+
+    void reset_attempts();
+
+    void execute(http_json_rpc_execute_callback callback = nullptr);
+
+    const std::string_view get_result();
+    const json_response_type* get_response();
+
+protected:
+    void on_resolve(const boost::system::error_code& e, tcp::resolver::results_type eps);
+    void on_connect(const boost::system::error_code& ec, const tcp::endpoint& ep);
+    void on_handshake(const boost::system::error_code& e);
+    void on_write(const boost::system::error_code& e);
+    void on_read(const boost::system::error_code& e, size_t sz);
+    void on_timeout(timeout type);
+    bool error_handler(const boost::system::error_code& e, const char* from);
+    void perform_callback();
+    bool verify_certificate(bool preverified, ssl::verify_context& ctx);
+    void close(bool force = false);
+
+    inline bool is_ssl() const { return m_use_ssl; }
+
+protected:
+    std::unique_ptr<asio::io_context>   m_io_ctx;
+    tcp::socket                         m_socket;
+    tcp::resolver                       m_resolver;
+    utils::Timer                        m_timer;
+    utils::time_duration                m_duration;
+    json_request_type                   m_req;
+    std::unique_ptr<json_response_type> m_response;
+    boost::beast::flat_buffer           m_buf { 8192 };
+    json_rpc_writer                     m_result;
+    http_json_rpc_execute_callback      m_callback;
+    std::string                         m_host;
+    ssl::context                        m_ssl_ctx;      //
+    ssl::stream<tcp::socket>            m_ssl_socket;   //
+    std::mutex                          m_locker;
+    pool_object                         m_pool_obj;
+    unsigned int                        m_attempt;
+    unsigned int                        m_timeout;
+    unsigned int                        m_conn_timeout;
+    unsigned int                        m_attempts_count;
+    bool                                m_use_ssl;      //
+    bool                                m_canceled;
+    bool                                m_rerun;
+};
 
 #endif // __HTTP_JSON_RPC_REQUEST_H__

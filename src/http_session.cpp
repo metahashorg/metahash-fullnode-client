@@ -63,9 +63,9 @@ void http_session::run()
     HTTP_SESS_END()
 }
 
-asio::io_context& http_session::get_io_context()
+asio::io_context* http_session::get_io_context()
 {
-    return m_socket.get_io_context();
+    return &m_socket.get_io_context();
 }
 
 void http_session::process_request()
@@ -270,10 +270,9 @@ void http_session::process_single_request(const json_rpc_reader& reader)
                 writer.set_error(-32601, string_utils::str_concat("Method '", method, "' does not exist").c_str());
                 json = writer.stringify();
             } else {
-                LOGINFO << "[" << m_remote_ep << "] Process single request";
                 handler_result res = it->second(shared_from(this), m_req.body());
-                if (res) {
-                    send_json(res.message.c_str(), res.message.size());
+                if (!res.first) {
+                    send_json(res.second.c_str(), res.second.size());
                 }
                 // async operation
                 return;
@@ -328,8 +327,8 @@ void http_session::process_get_request()
             }
             std::string_view t = writer.stringify();
             handler_result res = it->second(shared_from(this), std::string(t.data(), t.size()));
-            if (res) {
-                send_json(res.message.c_str(), res.message.size());
+            if (!res.first) {
+                send_json(res.second.c_str(), res.second.size());
             }
             // async operation
             return;
