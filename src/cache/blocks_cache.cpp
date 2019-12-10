@@ -381,7 +381,7 @@ void blocks_cache::routine_2()
                     blocks_size += it->value.GetUint();
                     if (settings::system::blocks_cache_block_verification ? hashes.size() > 1 : hashes.size() > 0) {
                         if (blocks_size > blocks_max_size) {
-                            LOGWARN << "Cache. Reached maximum blocks data size per request: " << blocks_max_size << " bytes";
+                            LOGWARN << "Cache. Reached the maximum of the blocks data size per one request: " << blocks_max_size << " bytes";
                             break;
                         }
                     }
@@ -675,6 +675,7 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi,
         std::vector<std::string> cores = settings::system::cores;
         std::vector<std::string>::iterator it;
 
+        std::string from;
         for (size_t i = 0; i < bi.txs.size(); ++i) {
             if (i > 6) {
                 break;
@@ -690,7 +691,7 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi,
                        << ") and toAddress (" << bi.txs[i].toAddress.calcHexString() << ") is not equal";
                 break;
             }
-            std::string from = bi.txs[i].fromAddress.calcHexString();
+            from = bi.txs[i].fromAddress.calcHexString();
             std::transform(from.begin(), from.end(), from.begin(), ::tolower);
             for (it = cores.begin(); it != cores.end(); it++) {
                 if (it->compare(from) == 0){
