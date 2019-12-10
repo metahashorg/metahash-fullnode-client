@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include <iostream>
+#include <variant>
 
 #include "check.h"
 
@@ -12,7 +13,8 @@ namespace torrent_node_lib {
 
 // Процедуры сериализации сделаны таким образом, чтобы младшие разряды оказывались в конце
 template<typename T>
-inline std::string toBinaryStringBigEndian(T val) {
+[[nodiscard]] inline std::string toBinaryStringBigEndian(T val) {
+    static_assert(std::is_unsigned_v<T>, "Not unsigned integer");
     std::string result(sizeof(T), 0);
     int i = result.size() - 1;
     while (val != 0 && i >= 0) {
@@ -26,6 +28,7 @@ inline std::string toBinaryStringBigEndian(T val) {
 // Процедуры сериализации сделаны таким образом, чтобы младшие разряды оказывались в конце
 template<typename T>
 inline void toBinaryStringBigEndian(T val, std::vector<char> &buffer) {
+    static_assert(std::is_unsigned_v<T>, "Not unsigned integer");
     int i = sizeof(val) - 1;
     const size_t oldSize = buffer.size();
     buffer.resize(oldSize + sizeof(val), 0);
@@ -38,6 +41,7 @@ inline void toBinaryStringBigEndian(T val, std::vector<char> &buffer) {
 
 template<typename T>
 inline T fromBinaryStringBigEndian(const std::string &raw, size_t fromPos, size_t &endPos) {
+    static_assert(std::is_unsigned_v<T>, "Not unsigned integer");
     endPos = fromPos;
     constexpr size_t sizeField = sizeof(T);
     if (raw.size() < sizeField + fromPos) {
@@ -54,7 +58,7 @@ inline T fromBinaryStringBigEndian(const std::string &raw, size_t fromPos, size_
 }
 
 template<typename T>
-inline std::string serializeIntBigEndian(T intValue) {
+[[nodiscard]] inline std::string serializeIntBigEndian(T intValue) {
     return toBinaryStringBigEndian<T>(intValue);
 }
 
@@ -63,7 +67,7 @@ inline void serializeIntBigEndian(T intValue, std::vector<char> &buffer) {
     toBinaryStringBigEndian<T>(intValue, buffer);
 }
 
-inline std::string serializeStringBigEndian(const std::string &str) {
+[[nodiscard]] inline std::string serializeStringBigEndian(const std::string &str) {
     std::string res;
     res.reserve(str.size() + 10);
     res += serializeIntBigEndian<size_t>(str.size());
@@ -71,12 +75,17 @@ inline std::string serializeStringBigEndian(const std::string &str) {
     return res;
 }
 
-inline std::string serializeVectorBigEndian(const std::vector<unsigned char> &str) {
+[[nodiscard]] inline std::string serializeVectorBigEndian(const std::vector<unsigned char> &str) {
     std::string res;
     res.reserve(str.size() + 10);
     res += serializeIntBigEndian<size_t>(str.size());
     res.insert(res.end(), str.begin(), str.end());
     return res;
+}
+
+inline void serializeVectorBigEndian(const std::vector<unsigned char> &str, std::vector<char> &buffer) {
+    serializeIntBigEndian<size_t>(str.size(), buffer);
+    buffer.insert(buffer.end(), str.begin(), str.end());
 }
 
 inline void serializeStringBigEndian(const std::string &str, std::vector<char> &buffer) {
@@ -146,7 +155,7 @@ inline std::vector<unsigned char> deserializeVectorBigEndian(const std::string &
 
 
 template<typename T>
-inline std::string serializeInt(T intValue) {
+[[nodiscard]] inline std::string serializeInt(T intValue) {
     return serializeIntBigEndian<T>(intValue);
 }
 
@@ -155,12 +164,16 @@ inline void serializeInt(T intValue, std::vector<char> &buffer) {
     serializeIntBigEndian<T>(intValue, buffer);
 }
 
-inline std::string serializeString(const std::string &str) {
+[[nodiscard]] inline std::string serializeString(const std::string &str) {
     return serializeStringBigEndian(str);
 }
 
-inline std::string serializeVector(const std::vector<unsigned char> &str) {
+[[nodiscard]] inline std::string serializeVector(const std::vector<unsigned char> &str) {
     return serializeVectorBigEndian(str);
+}
+
+inline void serializeVector(const std::vector<unsigned char> &str, std::vector<char> &buffer) {
+    serializeVectorBigEndian(str, buffer);
 }
 
 inline void serializeString(const std::string &str, std::vector<char> &buffer) {
@@ -187,6 +200,40 @@ inline std::string deserializeString(const std::string &raw, size_t &fromPos) {
 
 inline std::vector<unsigned char> deserializeVector(const std::string &raw, size_t &fromPos) {    
     return deserializeVectorBigEndian(raw, fromPos);
+}
+
+template<typename Variant>
+inline void serializeVariant(const Variant &variant, std::vector<char> &buffer) {
+    serializeInt<uint64_t>(variant.index(), buffer);
+    std::visit([&buffer](auto &&arg){
+        if constexpr (!std::is_same_v<std::decay_t<decltype(arg)>, std::monostate>) {
+            arg.serialize(buffer);
+        }
+    }, variant);
+}
+
+template<size_t I, typename Variant>
+void tryParse(const std::string &raw, size_t &fromPos, size_t number, Variant &status) {
+    if (I == number) {
+        using TypeElement = std::decay_t<decltype(std::get<I>(status))>;
+        if constexpr (!std::is_same_v<TypeElement, std::monostate>) {
+            status = TypeElement::deserialize(raw, fromPos);
+        }
+    }
+}
+
+template <typename Variant, std::size_t ... I>
+void parseVarintImpl(const std::string &raw, size_t &fromPos, size_t number, Variant &status, std::index_sequence<I ... >) {
+    (tryParse<I>(raw, fromPos, number, status), ...);
+}
+
+template <typename Variant, std::size_t ... I>
+void deserializeVarint(const std::string &raw, size_t &fromPos, Variant &status) {
+    constexpr size_t varintSize = std::variant_size_v<std::decay_t<decltype(status)>>;
+    const size_t number = deserializeInt<size_t>(raw, fromPos);
+    CHECK(number < varintSize, "Incorrect type in transaction status");
+    
+    parseVarintImpl(raw, fromPos, number, status, std::make_index_sequence<varintSize>());
 }
 
 }

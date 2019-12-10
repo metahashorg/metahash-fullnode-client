@@ -51,6 +51,8 @@ public:
     
     bool isScriptAddress() const;
     
+    bool isTokenAddress() const;
+    
 private:
     
     std::string address;

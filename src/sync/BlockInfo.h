@@ -113,14 +113,28 @@ private:
     
     TransactionStatus() = default;
     
-    template <std::size_t ... I>
-    void parseVarint(const std::string &raw, size_t &fromPos, size_t number, std::index_sequence<I ... >);
+};
+
+struct Token {
+    std::string type;
+    Address owner;
+    int decimals;
+    size_t beginValue;
+    size_t allValue;
+    std::string symbol;
+    std::string name;
+    bool emission;
+    std::string txHash;
     
-    template<size_t I>
-    void tryParse(const std::string &raw, size_t &fromPos, size_t number);
+    void serialize(std::vector<char> &buffer) const;
+    
+    static Token deserialize(const std::string &raw);
+    
 };
 
 struct TransactionInfo {
+public:
+    
     struct DelegateInfo {
         int64_t value;
         bool isDelegate;
@@ -135,6 +149,41 @@ struct TransactionInfo {
         ScriptType type = ScriptType::unknown;
     };
     
+    struct TokenInfo {
+        struct Create {
+            std::string type;
+            Address owner;
+            int decimals;
+            size_t value;
+            std::string symbol;
+            std::string name;
+            bool emission;
+            std::vector<std::pair<Address, size_t>> beginDistribution;
+        };
+        
+        struct ChangeOwner {
+            Address newOwner;
+        };
+        
+        struct ChangeEmission {
+            bool newEmission;
+        };
+        
+        struct AddTokens {
+            Address toAddress;
+            size_t value;
+        };
+        
+        struct MoveTokens {
+            Address toAddress;
+            size_t value;
+        };
+        
+        std::variant<Create, ChangeOwner, ChangeEmission, AddTokens, MoveTokens> info;
+    };
+    
+public:
+    
     std::string hash;
     Address fromAddress;
     Address toAddress;
@@ -144,10 +193,11 @@ struct TransactionInfo {
     size_t blockNumber = 0;
     size_t blockIndex = 0;
     size_t sizeRawTx = 0;
-    bool isSaveToBd = true;
-    
+
     bool isSignBlockTx = false;
-        
+
+    bool isModuleNotSet = false;
+    
     std::optional<uint64_t> intStatus;
     
     std::vector<char> sign;
@@ -157,19 +207,17 @@ struct TransactionInfo {
     
     std::string allRawTx;
     
-    std::optional<int64_t> realFees;
-    
+    FilePosition filePos;
+        
     std::optional<DelegateInfo> delegate;
     
     std::optional<ScriptInfo> scriptInfo;
     
-    FilePosition filePos;
+    std::optional<TokenInfo> tokenInfo;
     
     std::optional<TransactionStatus> status;
     
-    bool isModuleNotSet = false;
-    
-    bool isInitialized = false;
+public:
     
     void serialize(std::vector<char> &buffer) const;
     
@@ -177,7 +225,7 @@ struct TransactionInfo {
     
     static TransactionInfo deserialize(const std::string &raw, size_t &from);
     
-    void calcRealFee();
+    size_t realFee() const;
     
     bool isStatusNeed() const {
         return delegate.has_value() || scriptInfo.has_value();
@@ -195,11 +243,86 @@ struct TransactionInfo {
 };
 
 struct BalanceInfo {
-    struct DelegateBalance {
-        size_t delegate = 0;
-        size_t undelegate = 0;
-        size_t delegated = 0;
-        size_t undelegated = 0;
+public:
+    
+    class BalanceElement {
+    public:
+        void receiveValue(size_t value);
+        
+        void spentValue(size_t value);
+        
+        size_t received() const;
+        
+        size_t spent() const;
+        
+        size_t balance() const;
+        
+        void fill(size_t received, size_t spent);
+        
+    private:
+        size_t received_ = 0;
+        size_t spent_ = 0;
+    };
+    
+    struct DelegateBalance {       
+        class DelegateElement {
+        public:
+                       
+            void delegateValue(size_t value) {
+                balance.spentValue(value);
+            }
+            
+            void undelegateValue(size_t value) {
+                balance.receiveValue(value);
+            }
+            
+            size_t delegate() const {
+                return balance.spent();
+            }
+            
+            size_t undelegate() const {
+                return balance.received();
+            }
+                        
+            void fill(size_t delegate, size_t undelegate) {
+                balance.fill(undelegate, delegate);
+            }
+            
+        private:
+            
+            BalanceElement balance;
+        };
+        
+        class DelegatedElement {
+        public:
+            
+            void delegatedValue(size_t value) {
+                balance.receiveValue(value);
+            }
+            
+            void undelegatedValue(size_t value) {
+                balance.spentValue(value);
+            }
+            
+            size_t delegated() const {
+                return balance.received();
+            }
+            
+            size_t undelegated() const {
+                return balance.spent();
+            }
+            
+            void fill(size_t delegated, size_t undelegated) {
+                balance.fill(delegated, undelegated);
+            }
+            
+        private:
+            
+            BalanceElement balance;
+        };
+        
+        DelegateElement delegate;
+        DelegatedElement delegated;
         size_t reserved = 0;
         size_t countOp = 0;
     };
@@ -209,8 +332,14 @@ struct BalanceInfo {
         size_t countOp = 0;
     };
     
-    size_t received = 0;
-    size_t spent = 0;
+    struct TokenBalance {
+        BalanceElement balance;
+        size_t countOp = 0;
+    };
+    
+public:
+    
+    BalanceElement balance;
     size_t countReceived = 0;
     size_t countSpent = 0;
     size_t countTxs = 0;
@@ -223,17 +352,29 @@ struct BalanceInfo {
     
     size_t blockNumber = 0;
     
+    std::unordered_map<std::string, TokenBalance> tokens;
+    
+public:
+    
     BalanceInfo() = default;
     
     void plusWithDelegate(const TransactionInfo &tx, const Address &address, const std::optional<int64_t> &undelegateValue, bool isOkStatus);
     
     void plusWithoutDelegate(const TransactionInfo &tx, const Address &address, bool changeBalance, bool isForging);
         
+    void addTokens(const TransactionInfo &tx, size_t value, bool isOkStatus);
+    
+    void moveTokens(const TransactionInfo &tx, const Address &address, const Address &toAddress, size_t value, bool isOkStatus);
+    
     BalanceInfo& operator+=(const BalanceInfo &second);
+    
+    size_t received() const;
+    
+    size_t spent() const;
     
     int64_t calcBalance();
     
-    int64_t calcBalanceWithoutDelegate();
+    int64_t calcBalanceWithoutDelegate() const;
     
     void serialize(std::vector<char> &buffer) const;
     
@@ -254,6 +395,16 @@ struct CommonBalance {
     static CommonBalance deserialize(const std::string &raw);
 };
 
+struct CommonMimimumBlockHeader {
+    std::vector<unsigned char> hash;
+    FilePosition filePos;
+    
+    CommonMimimumBlockHeader(const std::vector<unsigned char> &hash, const FilePosition &filePos)
+        : hash(hash)
+        , filePos(filePos)
+    {}
+};
+
 struct BlockHeader {
     size_t timestamp;
     uint64_t blockSize = 0;
@@ -265,6 +416,8 @@ struct BlockHeader {
     std::vector<unsigned char> signature;
        
     size_t countTxs = 0;
+    
+    size_t countSignTx = 0;
     
     FilePosition filePos;
         
@@ -295,34 +448,95 @@ struct MinimumBlockHeader {
     std::string hash;
     std::string parentHash;
     std::string fileName;
+    
+    std::set<std::string> prevExtraBlocks;
+    std::set<std::string> nextExtraBlocks;
 };
 
-struct BlockTimes {
-    time_point timeBegin;
-    time_point timeEnd;
+struct MinimumSignBlockHeader {
+    std::vector<unsigned char> hash;
+    FilePosition filePos;
+    std::vector<unsigned char> prevHash;
     
-    time_point timeBeginGetBlock;
-    time_point timeEndGetBlock;
+    void serialize(std::vector<char> &buffer) const;
     
-    time_point timeBeginSaveBlock;
-    time_point timeEndSaveBlock;
+    static MinimumSignBlockHeader deserialize(const std::string &raw, size_t &fromPos);
+    
 };
 
-struct TransactionStatistics {
-    size_t countTransferTxs = 0;
-    size_t countInitTxs = 0;
+struct SignBlockHeader {
+    size_t timestamp;
+    uint64_t blockSize = 0;
+    
+    std::vector<unsigned char> hash;
+    std::vector<unsigned char> prevHash;
+    
+    FilePosition filePos;
+    
+    std::vector<unsigned char> senderSign;
+    std::vector<unsigned char> senderPubkey;
+    std::vector<unsigned char> senderAddress;
+    
+    std::string serialize() const;
+    
+    static SignBlockHeader deserialize(const std::string &raw);
+    
+    size_t endBlockPos() const;
+};
+
+struct SignTransactionInfo {
+    std::vector<unsigned char> blockHash;
+    std::vector<char> sign;
+    std::vector<unsigned char> pubkey;
+    Address address;
+};
+
+struct SignBlockInfo {
+    SignBlockHeader header;
+    
+    std::vector<SignTransactionInfo> txs;
+    
+    void saveSenderInfo(const std::vector<unsigned char> &senderSign, const std::vector<unsigned char> &senderPubkey, const std::vector<unsigned char> &senderAddress) {
+        header.senderSign = senderSign;
+        header.senderPubkey = senderPubkey;
+        header.senderAddress = senderAddress;
+    }
+    
+    void saveFilePath(const std::string &path) {
+        header.filePos.fileNameRelative = path;
+    }
+    
+};
+
+struct RejectedTxsBlockHeader {
+    uint64_t blockSize = 0;
+    
+    FilePosition filePos;
+       
+    size_t endBlockPos() const;
+};
+
+struct RejectedTxsBlockInfo {
+    RejectedTxsBlockHeader header;
 };
 
 struct BlockInfo {
     BlockHeader header;
     
-    BlockTimes times;
-    
-    TransactionStatistics txsStatistic;
-    
     std::vector<TransactionInfo> txs;
     
     std::vector<TransactionInfo> getBlockSignatures() const;
+    
+    void saveSenderInfo(const std::vector<unsigned char> &senderSign, const std::vector<unsigned char> &senderPubkey, const std::vector<unsigned char> &senderAddress) {
+        header.senderSign = senderSign;
+        header.senderPubkey = senderPubkey;
+        header.senderAddress = senderAddress;
+    }
+    
+    void saveFilePath(const std::string &path) {
+        header.filePos.fileNameRelative = path;
+    }
+    
 };
 
 struct BlocksMetadata {
@@ -398,21 +612,6 @@ struct DelegateState {
     void serialize(std::vector<char> &buffer) const;
     
     static DelegateState deserialize(const std::string &raw);
-};
-
-struct DelegateStateHelper {
-    size_t blockNumber = 0;
-    
-    DelegateStateHelper() = default;
-    
-    DelegateStateHelper(size_t blockNumber)
-        : blockNumber(blockNumber)
-    {}
-    
-    void serialize(std::vector<char> &buffer) const;
-    
-    static DelegateStateHelper deserialize(const std::string &raw);
-    
 };
 
 struct ForgingSums {

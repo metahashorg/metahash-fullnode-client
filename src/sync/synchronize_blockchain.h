@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <variant>
 
 #include "ConfigOptions.h"
 
@@ -28,6 +29,12 @@ struct NodeTestResult;
 struct NodeTestTrust;
 struct NodeTestCount;
 struct NodeTestExtendedStat;
+struct Token;
+struct SignBlockInfo;
+struct SignTransactionInfo;
+struct MinimumSignBlockHeader;
+struct CommonMimimumBlockHeader;
+struct RejectedTxsBlockInfo;
 
 struct TransactionsFilters;
 
@@ -50,25 +57,23 @@ public:
     
 public:
     
-    static BlockInfo parseBlockDump(const std::string &binaryDump, bool isValidate);
+    static std::variant<std::monostate, BlockInfo, SignBlockInfo, RejectedTxsBlockInfo> parseBlockDump(const std::string &binaryDump, bool isValidate);
     
 public:
     
-    bool isVirtualMachine() const;
-    
     void synchronize(int countThreads);
-
-    void addUsers(const std::set<Address> &addresses);
     
     std::vector<TransactionInfo> getTxsForAddress(const Address &address, size_t from, size_t count, size_t limitTxs) const;
 
     std::vector<TransactionInfo> getTxsForAddress(const Address &address, size_t &from, size_t count, size_t limitTxs, const TransactionsFilters &filters) const;
     
-    TransactionInfo getTransaction(const std::string &txHash) const;
+    std::optional<TransactionInfo> getTransaction(const std::string &txHash) const;
 
+    Token getTokenInfo(const Address &address) const;
+    
     BalanceInfo getBalance(const Address &address) const;
 
-    std::string getBlockDump(const BlockHeader &bh, size_t fromByte, size_t toByte, bool isHex, bool isSign) const;
+    std::string getBlockDump(const CommonMimimumBlockHeader &bh, size_t fromByte, size_t toByte, bool isHex, bool isSign) const;
 
     BlockInfo getFullBlock(const BlockHeader &bh, size_t beginTx, size_t countTx) const;
 
@@ -105,6 +110,14 @@ public:
     std::string signTestString(const std::string &str, bool isHex) const;
     
     bool verifyTechnicalAddressSign(const std::string &binary, const std::vector<unsigned char> &signature, const std::vector<unsigned char> &pubkey) const;
+    
+    std::vector<Address> getRandomAddresses(size_t countAddresses) const;
+    
+    std::vector<SignTransactionInfo> findSignBlock(const BlockHeader &bh) const;
+    
+    std::vector<MinimumSignBlockHeader> getSignaturesBetween(const std::optional<std::vector<unsigned char>> &firstBlock, const std::optional<std::vector<unsigned char>> &secondBlock) const;
+    
+    std::optional<MinimumSignBlockHeader> findSignature(const std::vector<unsigned char> &hash) const;
     
 private:
     

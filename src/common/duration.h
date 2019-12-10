@@ -61,15 +61,16 @@ public:
         isStopped = true;
     }
     
-    size_t countMs() {
+    size_t countMs() const {
         return count().count();
     }
     
-    milliseconds count() {
+    milliseconds count() const {
         if (!isStopped) {
-            stop();
+            return std::chrono::duration_cast<milliseconds>(common::now() - beginTime);
+        } else {
+            return std::chrono::duration_cast<milliseconds>(stoppedTime - beginTime);        
         }
-        return std::chrono::duration_cast<milliseconds>(stoppedTime - beginTime);        
     }
     
 private:

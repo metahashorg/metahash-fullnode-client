@@ -14,7 +14,6 @@
 #include "nslookup.h"
 #include "version.h"
 #include "common/network_utils.h"
-#include "StatisticsServer.h"
 #include "cmake_modules/GitSHA1.h"
 #include "json_rpc_schema.h"
 

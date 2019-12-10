@@ -34,7 +34,9 @@ struct ThreadImpl {
     }
     
     void join() {
-        t.join();
+        if (t.joinable()) {
+            t.join();
+        }
     }
     
 };
