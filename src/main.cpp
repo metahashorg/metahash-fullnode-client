@@ -17,6 +17,8 @@
 #include "cmake_modules/GitSHA1.h"
 #include "json_rpc_schema.h"
 
+#include "Statistic/StatisticsServer.h"
+
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/program_options.hpp>
 
@@ -150,7 +152,7 @@ int main(int argc, char* argv[])
                 "",
                 torrent_node_lib::LevelDbOptions(8, true, true, settings::system::leveldbFolder, 100),
                 torrent_node_lib::CachesOptions(0, 1, 100),
-                torrent_node_lib::GetterBlockOptions(100, 100, p2p.get(), false, settings::system::validateBlocks, false, false),
+                torrent_node_lib::GetterBlockOptions(100, 100, p2p.get(), false, settings::system::validateBlocks, false, false, false),
                 "",
                 torrent_node_lib::TestNodesOptions(0, "", ""),
                 false

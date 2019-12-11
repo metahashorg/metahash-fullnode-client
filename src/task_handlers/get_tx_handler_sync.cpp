@@ -28,8 +28,8 @@ BGN_TRY {
     const torrent_node_lib::Sync &sync = *syncSingleton();
     
     const std::vector<unsigned char> hash2 = common::fromHex(hash);
-    const torrent_node_lib::TransactionInfo tx = sync.getTransaction(std::string(hash2.begin(), hash2.end()));
+    const std::optional<torrent_node_lib::TransactionInfo> tx = sync.getTransaction(std::string(hash2.begin(), hash2.end()));
     
-    transactionToJson(tx, sync.getBlockchain(), sync.getBlockchain().countBlocks(), sync.getKnownBlock(), false, JsonVersion::V1, m_writer.get_doc());
+    transactionToJson(tx.value_or(torrent_node_lib::TransactionInfo()), sync.getBlockchain(), sync.getBlockchain().countBlocks(), sync.getKnownBlock(), false, JsonVersion::V1, m_writer.get_doc());
 } END_TRY();
 }

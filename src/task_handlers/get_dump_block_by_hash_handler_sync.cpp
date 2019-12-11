@@ -42,7 +42,7 @@ BGN_TRY {
     try {
         const torrent_node_lib::BlockHeader bh = sync.getBlockchain().getBlock(hash);
         CHECK(bh.blockNumber.has_value(), "block " + hash + " not found");
-        const std::string res = sync.getBlockDump(bh, fromByte, toByte, isHex, false);
+        const std::string res = sync.getBlockDump(torrent_node_lib::CommonMimimumBlockHeader(bh.hash, bh.filePos), fromByte, toByte, isHex, false);
         
         CHECK(!res.empty(), "block " + hash + " not found");
         if (isHex) {

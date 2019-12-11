@@ -42,9 +42,9 @@ void get_tx_handler::execute()
             const torrent_node_lib::Sync &sync = *syncSingleton();
 
             const std::vector<unsigned char> hash2 = common::fromHex(m_hash);
-            const torrent_node_lib::TransactionInfo tx = sync.getTransaction(std::string(hash2.begin(), hash2.end()));
+            const std::optional<torrent_node_lib::TransactionInfo> tx = sync.getTransaction(std::string(hash2.begin(), hash2.end()));
 
-            transactionToJson(tx, sync.getBlockchain(), sync.getBlockchain().countBlocks(), sync.getKnownBlock(),
+            transactionToJson(tx.value_or(torrent_node_lib::TransactionInfo()), sync.getBlockchain(), sync.getBlockchain().countBlocks(), sync.getKnownBlock(),
                               false, JsonVersion::V1, m_writer.get_doc());
         } else {
             base_network_handler::execute();

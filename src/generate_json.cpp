@@ -63,7 +63,7 @@ std::string genTransactionNotFoundResponse(const RequestId& requestId, const std
 }
 
 static rapidjson::Value transactionInfoToJson(const TransactionInfo &info, const BlockHeader &bh, size_t currentBlock, rapidjson::Document::AllocatorType &allocator, int type, const JsonVersion &version) {
-    CHECK(info.isInitialized, "Transaction not initialized");
+    CHECK(!info.hash.empty(), "Transaction not initialized");
     if (type == 2) {
         const bool isStringValue = version == JsonVersion::V2;
         
@@ -83,7 +83,7 @@ static rapidjson::Value transactionInfoToJson(const TransactionInfo &info, const
         infoJson.AddMember("signature", strToJson(toHex(info.sign.begin(), info.sign.end()), allocator), allocator);
         infoJson.AddMember("publickey", strToJson(toHex(info.pubKey.begin(), info.pubKey.end()), allocator), allocator);
         infoJson.AddMember("fee", intOrString(info.fees, isStringValue, allocator), allocator);
-        infoJson.AddMember("realFee", intOrString(info.realFees.value_or(0), isStringValue, allocator), allocator);
+        infoJson.AddMember("realFee", intOrString(info.realFee(), isStringValue, allocator), allocator);
         infoJson.AddMember("nonce", intOrString(info.nonce, isStringValue, allocator), allocator);
         if (info.intStatus.has_value()) {
             infoJson.AddMember("intStatus", info.intStatus.value(), allocator);
@@ -177,18 +177,18 @@ void balanceInfoToJson(const std::string &address, const BalanceInfo &balance, s
     auto &allocator = doc.GetAllocator();
     rapidjson::Value resultValue(rapidjson::kObjectType);
     resultValue.AddMember("address", strToJson(address, allocator), allocator);
-    resultValue.AddMember("received", intOrString(balance.received, isStringValue, allocator), allocator);
-    resultValue.AddMember("spent", intOrString(balance.spent, isStringValue, allocator), allocator);
+    resultValue.AddMember("received", intOrString(balance.received(), isStringValue, allocator), allocator);
+    resultValue.AddMember("spent", intOrString(balance.spent(), isStringValue, allocator), allocator);
     resultValue.AddMember("count_received", intOrString(balance.countReceived, isStringValue, allocator), allocator);
     resultValue.AddMember("count_spent", intOrString(balance.countSpent, isStringValue, allocator), allocator);
     resultValue.AddMember("block_number", intOrString(balance.blockNumber, isStringValue, allocator), allocator);
     resultValue.AddMember("currentBlock", intOrString(currentBlock, isStringValue, allocator), allocator);
     if (balance.delegated.has_value()) {
         resultValue.AddMember("countDelegatedOps", intOrString(balance.delegated->countOp, isStringValue, allocator), allocator);
-        resultValue.AddMember("delegate", intOrString(balance.delegated->delegate, isStringValue, allocator), allocator);
-        resultValue.AddMember("undelegate", intOrString(balance.delegated->undelegate, isStringValue, allocator), allocator);
-        resultValue.AddMember("delegated", intOrString(balance.delegated->delegated, isStringValue, allocator), allocator);
-        resultValue.AddMember("undelegated", intOrString(balance.delegated->undelegated, isStringValue, allocator), allocator);
+        resultValue.AddMember("delegate", intOrString(balance.delegated->delegate.delegate(), isStringValue, allocator), allocator);
+        resultValue.AddMember("undelegate", intOrString(balance.delegated->delegate.undelegate(), isStringValue, allocator), allocator);
+        resultValue.AddMember("delegated", intOrString(balance.delegated->delegated.delegated(), isStringValue, allocator), allocator);
+        resultValue.AddMember("undelegated", intOrString(balance.delegated->delegated.undelegated(), isStringValue, allocator), allocator);
         resultValue.AddMember("reserved", intOrString(balance.delegated->reserved, isStringValue, allocator), allocator);
     }
     if (balance.forged.has_value()) {

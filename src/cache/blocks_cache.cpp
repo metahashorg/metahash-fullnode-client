@@ -216,9 +216,15 @@ void blocks_cache::routine()
                 }
 
                 std::string buf = torrent_node_lib::decompress(response->get().body());
-                torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(buf, false);
+                std::variant<std::monostate, torrent_node_lib::BlockInfo, torrent_node_lib::SignBlockInfo, torrent_node_lib::RejectedTxsBlockInfo> bi = torrent_node_lib::Sync::parseBlockDump(buf, false);
+                if (std::holds_alternative<std::monostate>(bi)) {
+                    LOGERR << "Not parsed";
+                } else if (std::holds_alternative<torrent_node_lib::SignBlockInfo>(bi)) {
+                    LOGWARN << "Sign block";
+                }
+                torrent_node_lib::BlockInfo &b = std::get<torrent_node_lib::BlockInfo>(bi);
 
-                if (save_block(m_nextblock, string_utils::bin2hex(bi.header.hash), response->get().body())) {
+                if (save_block(m_nextblock, string_utils::bin2hex(b.header.hash), response->get().body())) {
                     update_number(++m_nextblock);
                 }
                 common::checkStopSignal();

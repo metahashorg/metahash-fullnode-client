@@ -51,7 +51,10 @@ bool get_block_by_hash_handler::prepare_params()
             std::string num;
             if (blocks_cache::get()->get_block_by_hash(m_hash, num, dump)) {
                 m_writer.reset();
-                torrent_node_lib::BlockInfo bi = torrent_node_lib::Sync::parseBlockDump(dump, false);
+                std::variant<std::monostate, torrent_node_lib::BlockInfo, torrent_node_lib::SignBlockInfo, torrent_node_lib::RejectedTxsBlockInfo> biv = torrent_node_lib::Sync::parseBlockDump(dump, false);
+                CHK_PRM(std::holds_alternative<torrent_node_lib::BlockInfo>(biv), "Incorrect block type");
+                torrent_node_lib::BlockInfo &bi = std::get<torrent_node_lib::BlockInfo>(biv);
+            
                 bi.header.blockNumber = std::stoi(num);
                 bi.header.countTxs = bi.txs.size();
                 if (!settings::system::allowStateBlocks && bi.header.isStateBlock()) {

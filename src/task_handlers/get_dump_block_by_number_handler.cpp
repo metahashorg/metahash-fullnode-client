@@ -69,7 +69,7 @@ void get_dump_block_by_number::execute()
             try {
                 const torrent_node_lib::BlockHeader bh = sync.getBlockchain().getBlock(m_number);
                 CHECK(bh.blockNumber.has_value(), "block " + std::to_string(m_number) + " has not found");
-                const std::string res = sync.getBlockDump(bh, m_fromByte, m_toByte, m_isHex, false);
+                const std::string res = sync.getBlockDump(torrent_node_lib::CommonMimimumBlockHeader(bh.hash, bh.filePos), m_fromByte, m_toByte, m_isHex, false);
 
                 CHECK(!res.empty(), "block " + std::to_string(m_number) + " not found");
                 if (m_isHex) {

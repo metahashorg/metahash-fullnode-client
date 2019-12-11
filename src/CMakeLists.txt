@@ -97,6 +97,10 @@ add_executable(${PROJECT_NAME}
     task_handlers/get_dump_block_by_hash_handler_sync.cpp
     task_handlers/get_dump_block_by_number_handler_sync.cpp
     
+    Statistic/Statistics.cpp
+    Statistic/StatisticsServer.cpp
+    Statistic/benchmarks.cpp
+    
     ${CMAKE_BINARY_DIR}/GitSHA1.cpp
     
     generate_json.cpp
