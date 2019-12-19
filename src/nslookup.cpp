@@ -224,9 +224,14 @@ void lookup_best_ip()
 
         while (true) {
             try {
-                tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(60);
-
                 common::checkStopSignal();
+
+                if (std::chrono::high_resolution_clock::now() - tp < std::chrono::seconds(60)) {
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                    continue;
+                }
+
+                tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(60);
 
                 tors.clear();
                 if (!get_ip_addresses(settings::server::torName, tors)) {
@@ -296,18 +301,16 @@ void lookup_best_ip()
                 }
 
                 common::checkStopSignal();
-                std::this_thread::sleep_until(tp);
 
             } catch (const common::exception &e) {
                 LOGERR << __func__ << " error: " << e;
-                std::this_thread::sleep_until(tp);
             }
         }
 
     } catch (const std::exception &e) {
         LOGERR << __func__ << " std error: " << e.what();
-    } catch (const common::StopException &e) {
-        LOGINFO << __func__ << " Stoped";
+    } catch (const common::StopException &) {
+        LOGINFO << __func__ << " Stop invoke";
     } catch (...) {
         LOGERR << __func__ << " Unknown error";
     }

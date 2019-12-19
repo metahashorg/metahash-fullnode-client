@@ -26,6 +26,15 @@
                     "pattern": "^[0-9]*$"
                 }
             ]
+        },
+        "unsigned_int_or_p2p": {
+            "oneOf": [ {
+                    "$ref": "#/definitions/unsigned_int"
+                }, {
+                    "type": "string",
+                    "pattern": "^(forP2P)$"
+                }
+            ]
         }
     },
     "oneOf": [
@@ -229,7 +238,7 @@
                     "type": "object",
                     "properties": {
                         "hash": { "$ref": "#/definitions/hash" },
-                        "type": { "$ref": "#/definitions/unsigned_int" },
+                        "type": { "$ref": "#/definitions/unsigned_int_or_p2p" },
                         "countTxs": {"$ref": "#/definitions/unsigned_int" },
                         "beginTx": {"$ref": "#/definitions/unsigned_int" }
                     },
@@ -254,7 +263,7 @@
                     "type": "object",
                     "properties": {
                         "number": { "$ref": "#/definitions/unsigned_int" },
-                        "type": { "$ref": "#/definitions/unsigned_int" },
+                        "type": { "$ref": "#/definitions/unsigned_int_or_p2p" },
                         "countTxs": {"$ref": "#/definitions/unsigned_int" },
                         "beginTx": {"$ref": "#/definitions/unsigned_int" }
                     },

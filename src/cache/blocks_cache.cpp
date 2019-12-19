@@ -1,32 +1,35 @@
 #include "blocks_cache.h"
-#include "common/stopProgram.h"
-#include "log.h"
-#include "settings/settings.h"
-#include "common/filesystem_utils.h"
-#include "common/string_utils.h"
-#include "json_rpc.h"
-#include "http_json_rpc_request.h"
+#include <fstream>
+#include <byteswap.h>
 #include <boost/exception/all.hpp>
 #include <boost/asio/io_context.hpp>
-#include <byteswap.h>
+#include "common/stopProgram.h"
+#include "common/filesystem_utils.h"
+#include "common/string_utils.h"
+#include "settings/settings.h"
+#include "log.h"
+#include "json_rpc.h"
+#include "http_json_rpc_request.h"
 #include "../sync/BlockInfo.h"
 #include "../sync/synchronize_blockchain.h"
 #include "compress.h"
-
+#include "convertStrings.h"
 #include "task_handlers/get_count_blocks_handler.h"
 #include "task_handlers/get_dump_block_by_number_handler.h"
-#include <convertStrings.h>
-#include <fstream>
 
 #define CACHE_BGN try
 
 #define CACHE_END(ret) \
     catch (const common::StopException&) {\
+        LOGINFO << __PRETTY_FUNCTION__ << " Stop invoke";\
         ret;\
-    } catch (boost::exception& ex) {\
+    } catch (const std::bad_variant_access& ex) {\
+        LOGERR << __PRETTY_FUNCTION__ << " bad variant exception: " << ex.what();\
+        ret;\
+    } catch (const boost::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);\
         ret;\
-    } catch (std::exception& ex) {\
+    } catch (const std::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what();\
         ret;\
     } catch (...) {\
@@ -34,9 +37,10 @@
         ret;\
     }
 
+#define EXTRA_BLOCKS_NUM 1835000
+
 blocks_cache::blocks_cache()
     : m_run(false)
-    , m_init(false)
     , m_nextblock(0)
 {
 }
@@ -45,7 +49,9 @@ bool blocks_cache::init()
 {
     CACHE_BGN
     {
-        if (m_init) {
+        static bool cache_init = false;
+
+        if (cache_init) {
             return true;
         }
         if (!fs_utils::dir::is_exists("./data/")){
@@ -81,10 +87,13 @@ bool blocks_cache::init()
         leveldb::ReadOptions opt;
         status = m_db->Get(opt, "next_block", &result);
         if (status.ok()) {
-            m_nextblock = std::atoi(result.c_str());
+            m_nextblock = static_cast<blk_number>(std::atoi(result.c_str()));
         }
-        m_init = true;
-        return m_init;
+        cache_init = true;
+
+        LOGINFO << "Cache. Init successfully";
+
+        return cache_init;
     }
     CACHE_END(return false)
 }
@@ -97,7 +106,6 @@ bool blocks_cache::start()
             LOGERR << "Cache. Could not initialize. Aborted.";
         }
         LOGINFO << "Cache. Next block is " << m_nextblock;
-        LOGINFO << "Cache. Init successfully";
 
         m_worker = std::make_unique<std::thread>(worker_proc, this);
         return true;
@@ -122,21 +130,28 @@ bool blocks_cache::runing() const
     return m_run;
 }
 
-unsigned int blocks_cache::next_block() const
+blocks_cache::blk_number blocks_cache::next_block() const
 {
     return m_nextblock;
 }
 
 void blocks_cache::worker_proc(blocks_cache *param)
 {
-    switch (settings::system::blocks_cache_ver) {
-    case 2:
-        param->routine_2();
-        break;
-    default:
-        param->routine();
-        break;
+    CACHE_BGN
+    {
+        param->m_run = true;
+        switch (settings::system::blocks_cache_ver) {
+        case 2:
+            param->routine_2();
+            break;
+        default:
+            param->routine();
+            break;
+        }
     }
+    CACHE_END()
+    param->m_run = false;
+    LOGINFO << "Cache. Stoped";
 }
 
 void blocks_cache::routine()
@@ -144,9 +159,7 @@ void blocks_cache::routine()
     CACHE_BGN
     {
         LOGINFO << "Cache. Version 1 Started";
-        m_run = true;
-        unsigned int count_blocks = 0;
-//        handler_result res;
+        blk_number count_blocks = 0;
         std::string json;
         json_rpc_reader reader;
         const rapidjson::Value* tmp;
@@ -161,7 +174,14 @@ void blocks_cache::routine()
         http_json_rpc_request_ptr gdbn = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
         gdbn->set_path("get-dump-block-by-number");
 
+        ext_blk_data ext_data = {0}; // does not check signs
+
         while (m_run) {
+            common::checkStopSignal();
+            if (std::chrono::high_resolution_clock::now() - tp < std::chrono::seconds(30)) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                continue;
+            }
             tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(30);
 
             gcb->set_host(settings::server::get_tor());
@@ -170,27 +190,27 @@ void blocks_cache::routine()
             response = gcb->get_response();
             if (!response) {
                 LOGERR << "Cache. Could not get response from get-count-blocks";
-                goto next;
+                continue;
             }
             if (response->get().body().empty()) {
                 LOGERR << "Cache. Could not get get-count-blocks";
-                goto next;
+                continue;
             }
             if (!reader.parse(response->get().body().c_str(), response->get().body().size())) {
                 LOGERR << "Cache. Could not parse get-count-blocks (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
-                goto next;
+                continue;
             }
             tmp = reader.get_result();
             if (tmp == nullptr) {
                 LOGERR << "Cache. Did not find result in get-count-blocks";
-                goto next;
+                continue;
             }
             if (!reader.get_value(*tmp, "count_blocks", count_blocks)) {
                 LOGERR << "Cache. Did not find field 'count_blocks' in get-count-blocks";
-                goto next;
+                continue;
             }
             if (m_nextblock == 0) {
-                m_nextblock = count_blocks - 50000;
+                m_nextblock = count_blocks - settings::system::blocks_cache_init_count > 0 ? count_blocks - settings::system::blocks_cache_init_count : 1;
             }
 
             while (m_run && m_nextblock <= count_blocks) {
@@ -203,7 +223,7 @@ void blocks_cache::routine()
                 response = gdbn->get_response();
                 if (response->get().body().empty()) {
                     LOGERR << "Cache. Could not get get-dump-block-by-number";
-                    goto next;
+                    break;
                 }
                 if (reader.parse(response->get().body().c_str(), response->get().body().size())) {
                     tmp = reader.get_error();
@@ -212,32 +232,27 @@ void blocks_cache::routine()
                     } else {
                         LOGERR << "Cache. get-count-blocks error: json response occured " << response->get().body().size() << " bytes: " << response->get().body();
                     }
-                    goto next;
+                    break;
                 }
 
                 std::string buf = torrent_node_lib::decompress(response->get().body());
-                std::variant<std::monostate, torrent_node_lib::BlockInfo, torrent_node_lib::SignBlockInfo, torrent_node_lib::RejectedTxsBlockInfo> bi = torrent_node_lib::Sync::parseBlockDump(buf, false);
-                if (std::holds_alternative<std::monostate>(bi)) {
-                    LOGERR << "Not parsed";
-                } else if (std::holds_alternative<torrent_node_lib::SignBlockInfo>(bi)) {
-                    LOGWARN << "Sign block";
-                }
-                torrent_node_lib::BlockInfo &b = std::get<torrent_node_lib::BlockInfo>(bi);
-
-                if (save_block(m_nextblock, string_utils::bin2hex(b.header.hash), response->get().body())) {
-                    update_number(++m_nextblock);
+                auto bi = torrent_node_lib::Sync::parseBlockDump(buf, false);
+                if (!std::holds_alternative<torrent_node_lib::BlockInfo>(bi)) {
+                    LOGERR << "Cache. Block could not parsed";
+                } else {
+                    torrent_node_lib::BlockInfo &b = std::get<torrent_node_lib::BlockInfo>(bi);
+                    if (save_block(m_nextblock,
+                                   string_utils::bin2hex(b.header.hash),
+                                   response->get().body(),
+                                   std::string_view(ext_data, sizeof(ext_data)))) {
+                        update_number(++m_nextblock);
+                    }
                 }
                 common::checkStopSignal();
             }
-
-next:
-            common::checkStopSignal();
-            std::this_thread::sleep_until(tp);
         }
     }
     CACHE_END()
-    m_run = false;
-    LOGINFO << "Cache. Stoped";
 }
 
 void blocks_cache::routine_2()
@@ -245,28 +260,21 @@ void blocks_cache::routine_2()
     CACHE_BGN
     {
         LOGINFO << "Cache. Version 2 Started";
-        m_run = true;
-//        handler_result res;
         std::string json;
+        json.resize(32768);
         std::string decompressed;
-//        std::string_view dump;
         json_rpc_reader reader;
+
         const rapidjson::Value* tmp = nullptr;
         rapidjson::Value::ConstMemberIterator it;
-        rapidjson::Value::Array::ConstValueIterator arr_it;
+        rapidjson::Value::Array::ConstValueIterator arr_it, hash_it;
+
         std::chrono::system_clock::time_point tp;
 
-        struct block_info {
-            block_info(unsigned int number_, const char* str, size_t size)
-                : number(number_)
-                , hash(common::fromHex(std::string(str, str + size))) {
-            }
-            const unsigned int number;
-            std::vector<unsigned char> hash;
-        };
-
-        std::vector<block_info> hashes;
-        std::vector<block_info>::const_iterator iter;
+        std::vector<std::vector<unsigned char>> extra_hashes;
+        std::vector<std::vector<unsigned char>>::const_iterator extra_it;
+        std::vector<blocks_cache::blk_info> hashes;
+        std::vector<blocks_cache::blk_info>::const_iterator iter;
         const char
                 *buf = nullptr,
                 *p = nullptr,
@@ -278,8 +286,11 @@ void blocks_cache::routine_2()
 
         torrent_node_lib::BlockInfo bi, bi_prev;
         std::string tmp_str;
+        tmp_str.resize(32768);
 
-        unsigned int tmp_blk_num = 0;
+        ext_blk_data ext_data = {0};
+
+        blk_number tmp_blk_num = 0;
         if (m_nextblock == 0) {
             m_nextblock = 1;
             http_json_rpc_request_ptr get_count = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
@@ -305,7 +316,7 @@ void blocks_cache::routine_2()
                     LOGERR << "Cache. Did not find result in et-count-blocks";
                     break;
                 }
-                unsigned int count_blocks = 0;
+                blk_number count_blocks = 0;
                 if (!reader.get_value(*tmp, "count_blocks", count_blocks)) {
                     LOGERR << "Cache. Did not find field 'count_blocks' in get-count-blocks";
                     break;
@@ -315,11 +326,12 @@ void blocks_cache::routine_2()
                 }
                 break;
             }
-            LOGINFO << "Cache. Next block set to " << m_nextblock;
         }
+        LOGINFO << "Cache. Next block set to " << m_nextblock;
 
         // max summary size of blocks per request
-        const unsigned int blocks_max_size = settings::system::blocks_cache_recv_data_size * 1024 * 1024 * 2; // because of compress we can increase approximately up to 2 times
+        // increase approximately up to 2 times because of compress
+        const unsigned int blocks_max_size = settings::system::blocks_cache_recv_data_size * 1024 * 1024 * 2;
         unsigned int blocks_size = 0;
 
         http_json_rpc_request_ptr get_blocks = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
@@ -332,7 +344,13 @@ void blocks_cache::routine_2()
         get_block->set_path("get-block-by-number");
 
         while (m_run) {
-            common::checkStopSignal();
+start:
+            common::checkStopSignal();            
+
+            if (std::chrono::high_resolution_clock::now() - tp < std::chrono::seconds(30)) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                continue;
+            }
 
             tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(30);
 
@@ -348,36 +366,38 @@ void blocks_cache::routine_2()
             response = get_blocks->get_response();
             if (!response) {
                 LOGERR << "Cache. Could not get response from get-blocks";
-                goto wait;
+                continue;
             }
             if (response->get().body().empty()) {
                 LOGERR << "Cache. Could not get get-blocks";
-                goto wait;
+                continue;
             }
             if (!reader.parse(response->get().body().c_str(), response->get().body().size())) {
                 LOGERR << "Cache. Could not parse get-blocks (" << reader.get_parse_error() << "): " << reader.get_parse_error_str();
-                goto wait;
+                continue;
             }
             tmp = reader.get_error();
             if (tmp != nullptr) {
                 LOGERR << "Cache. Got error from get-blocks: " << reader.stringify(tmp);
-                goto wait;
+                continue;
             }
             tmp = reader.get_result();
             if (tmp == nullptr) {
                 LOGERR << "Cache. Did not find result in get-blocks";
-                goto wait;
+                continue;
             }
             if (!tmp->IsArray()) {
                 LOGERR << "Cache. Expect array from get-blocks";
-                goto wait;
+                continue;
             }
             if (tmp->Size() == 0) {
-                goto wait;
+                continue;
             }
 
+            extra_hashes.clear();
             hashes.clear();
             blocks_size = 0;
+
             for (arr_it = tmp->GetArray().begin(); arr_it != tmp->GetArray().end(); arr_it++) {
                 if (!arr_it->IsObject()) {
                     continue;
@@ -387,7 +407,7 @@ void blocks_cache::routine_2()
                     blocks_size += it->value.GetUint();
                     if (settings::system::blocks_cache_block_verification ? hashes.size() > 1 : hashes.size() > 0) {
                         if (blocks_size > blocks_max_size) {
-                            LOGWARN << "Cache. Reached the maximum of the blocks data size per one request: " << blocks_max_size << " bytes";
+                            LOGWARN << "Cache. Reached the maximum of the blocks data size per one request (" << blocks_max_size << " bytes): " << hashes.size() << " blocks / " << blocks_size << " bytes";
                             break;
                         }
                     }
@@ -395,23 +415,31 @@ void blocks_cache::routine_2()
                 it = arr_it->FindMember("number");
                 if (it == arr_it->MemberEnd()) {
                     LOGERR << "Cache. Could not get block number from get-blocks";
-                    goto wait;
+                    goto start;
                 }
                 tmp_blk_num = it->value.GetUint();
                 it = arr_it->FindMember("hash");
                 if (it == arr_it->MemberEnd()) {
                     LOGERR << "Cache. Could not get block hash from get-blocks";
-                    goto wait;
+                    goto start;
                 }
-                hashes.emplace_back(tmp_blk_num, it->value.GetString(), it->value.GetStringLength());
+
+//                std::string_view hhh = reader.stringify(arr_it);
+//                std::cout << hhh << std::endl;
+
+                hashes.emplace_back(tmp_blk_num, common::fromHex({it->value.GetString(), it->value.GetStringLength()}));
+
+                it = arr_it->FindMember("prev_extra_blocks");
+                if (it != arr_it->MemberEnd() && it->value.IsArray()) {
+                    for (hash_it = it->value.GetArray().begin(); hash_it != it->value.GetArray().end(); hash_it++) {
+                        extra_hashes.emplace_back(common::fromHex({hash_it->GetString(), hash_it->GetStringLength()}));
+                    }
+                }
             }
 
-            if (hashes.empty()) {
-                goto wait;
-            }
-
-            if (settings::system::blocks_cache_block_verification && hashes.size() < 2) {
-                goto wait;
+            if (hashes.empty() ||
+               (settings::system::blocks_cache_block_verification && hashes.size() < 2)) {
+                goto start;
             }
 
             json.clear();
@@ -421,8 +449,8 @@ void blocks_cache::routine_2()
                     json.append(",");
                 }
                 json.append("\"");
-                const std::string hashStr = string_utils::bin2hex(i->hash);
-                json.append(hashStr.data(), hashStr.size());
+//                tmp_str = string_utils::bin2hex(std::get<1>(*i));
+                json.append(string_utils::bin2hex(std::get<1>(*i)));
                 json.append("\"");
             }
             json.append("]}}");
@@ -434,23 +462,23 @@ void blocks_cache::routine_2()
             response = get_dumps->get_response();
             if (!response) {
                 LOGERR << "Cache. Could not get response from get-dumps-blocks-by-hash";
-                goto wait;
+                goto start;
             }
             if (response->get().body().empty()) {
                 LOGERR << "Cache. get-dumps-blocks-by-hash empty response";
-                goto wait;
+                goto start;
             }
 
             if (reader.parse(response->get().body().c_str(), response->get().body().size())) {
                 tmp = reader.get_error();
                 if (tmp) {
                     LOGERR << "Cache. get-dumps-blocks-by-hash got error: " << reader.stringify(tmp);
-                    goto wait;
+                    goto start;
                 }
                 tmp = reader.get_result();
                 if (tmp) {
                     LOGERR << "Cache. get-dumps-blocks-by-hash got result " << reader.stringify(tmp);
-                    goto wait;
+                    goto start;
                 }
                 LOGWARN << "Cache. get-dumps-blocks-by-hash body has parsed " << response->get().body().size() << " bytes";
             }
@@ -458,10 +486,10 @@ void blocks_cache::routine_2()
             decompressed = torrent_node_lib::decompress(response->get().body());
             resp_size = decompressed.size();
 
-            LOGINFO << "Cache. Getting " << hashes.size() << " block(s). Size " << response->get().body().size() << "/" << resp_size;
+            LOGINFO << "Cache. Getting " << hashes.size() << " block(s). Size compressed " << response->get().body().size() << "/ decompressed " << resp_size;
 
             if (resp_size == 0) {
-                goto wait;
+                goto start;
             }
 
             buf = decompressed.c_str();
@@ -481,22 +509,20 @@ void blocks_cache::routine_2()
                     break;
                 }
                 p += sizeof(blk_size);
-
-                if (settings::system::blocks_cache_block_verification && iter->number > 1) {
-
+                memset(ext_data, 0, sizeof(ext_data));
+                tmp_blk_num = std::get<0>(*iter);
+                if (settings::system::blocks_cache_block_verification && tmp_blk_num > 1 && tmp_blk_num <= EXTRA_BLOCKS_NUM) {
                     // getting previous block
                     if (bi_prev.header.hash.empty()) {
-
                         // try get from cache
-                        if (get_block_by_num(iter->number-1, tmp_str)) {
-                            bi_prev = torrent_node_lib::Sync::parseBlockDump(tmp_str, false);
+                        tmp_str.clear();
+                        if (get_block_by_num(tmp_blk_num - 1, tmp_str)) {
+                            bi_prev = std::get<torrent_node_lib::BlockInfo>(torrent_node_lib::Sync::parseBlockDump(tmp_str, false));
                         } else {
-
-                            // if block does not exist in cache we take from torrent
+                            // if block does not exist in cache then take it from torrent
                             json.clear();
                             string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\", \"method\":\"get-block-by-number\", \"params\":{\"number\":",
-                                                     std::to_string(iter->number-1), "}}");
-
+                                                         std::to_string(tmp_blk_num - 1), "}}");
                             get_block->set_host(settings::server::get_tor());
                             get_block->set_body(json);
                             get_block->reset_attempts();
@@ -524,39 +550,54 @@ void blocks_cache::routine_2()
                                 LOGERR << "Cache. Did not find result in get-block-by-number";
                                 break;
                             }
-                            std::string hashStr;
-                            if (!reader.get_value(*tmp, "hash", hashStr)) {
-                                bi_prev.header.hash = common::fromHex(hashStr);
+                            tmp_str.clear();
+                            if (!reader.get_value(*tmp, "hash", tmp_str)) {
                                 LOGERR << "Cache. Did not find hash in result get-block-by-number";
                                 break;
                             }
+                            bi_prev.header.hash = common::fromHex(tmp_str);
                             if (bi_prev.header.hash.empty()) {
                                 LOGERR << "Cache. Hash must be not blank";
                                 break;
                             }
+                            bi_prev.header.blockNumber = tmp_blk_num - 1;
                         }
-                        bi_prev.header.blockNumber = iter->number-1;
                     }
 
                     // getting current block
-                    bi = torrent_node_lib::Sync::parseBlockDump(std::string(p, blk_size), false);
-                    bi.header.blockNumber = iter->number;
+                    bi = std::get<torrent_node_lib::BlockInfo>(torrent_node_lib::Sync::parseBlockDump(std::string(p, blk_size), false));
+                    bi.header.blockNumber = tmp_blk_num;
 
                     // checking hashes
-                    if (bi.header.hash != iter->hash) {
-                        LOGERR << "Cache. Block " << string_utils::bin2hex(bi.header.hash) << " is not equal " << string_utils::bin2hex(iter->hash);
-                        goto wait;
+                    if (bi.header.hash != std::get<1>(*iter)) {
+                        LOGERR << "Cache. Block " << string_utils::bin2hex(bi.header.hash) << " is not equal " << string_utils::bin2hex(std::get<1>(*iter));
+                        goto start;
                     }
 
                     // checking current block core addresses
                     if (!core_addr_verification(bi, string_utils::bin2hex(bi_prev.header.hash))) {
                         dump_bad_block(bi.header.blockNumber.value(), p, blk_size);
-                        goto wait;
+                        goto start;
                     }
 
-                    if (sz_prev > 0 && p_prev) {
-                        if (save_block(static_cast<unsigned>(bi_prev.header.blockNumber.value()), string_utils::bin2hex(bi_prev.header.hash), std::string_view(p_prev, sz_prev))) {
-                            m_nextblock = static_cast<unsigned>(bi_prev.header.blockNumber.value()) + 1;
+                    if (p_prev && sz_prev > 0) {
+                        ext_data[0] = blk_signed;
+                        if (save_block(static_cast<blk_number>(bi_prev.header.blockNumber.value()),
+                                        string_utils::bin2hex(bi_prev.header.hash),
+                                        std::string_view(p_prev, sz_prev),
+                                        std::string_view(ext_data, sizeof(ext_data)))) {
+                            m_nextblock = static_cast<blk_number>(bi_prev.header.blockNumber.value()) + 1;
+                            update_number(m_nextblock);
+                        }
+                    }
+
+                    if (tmp_blk_num == EXTRA_BLOCKS_NUM) {
+                        ext_data[0] = blk_not_signed;
+                        if (save_block(static_cast<blk_number>(bi.header.blockNumber.value()),
+                                       string_utils::bin2hex(bi.header.hash),
+                                       std::string_view(p, blk_size),
+                                       std::string_view(ext_data, sizeof(ext_data)))) {
+                            m_nextblock = static_cast<blk_number>(bi.header.blockNumber.value()) + 1;
                             update_number(m_nextblock);
                         }
                     }
@@ -565,11 +606,13 @@ void blocks_cache::routine_2()
                     std::swap(bi, bi_prev);
                     p_prev = p;
                     sz_prev = blk_size;
-
                 } else {
-                    // save blocks without verification
-                    if (save_block(iter->number, string_utils::bin2hex(iter->hash), std::string_view(p, blk_size))) {
-                        m_nextblock = iter->number+1;
+                    ext_data[0] = settings::system::blocks_cache_block_verification ? blk_not_signed : blk_not_checked;
+                    if (save_block(tmp_blk_num,
+                                   string_utils::bin2hex(std::get<1>(*iter)),
+                                   std::string_view(p, blk_size),
+                                   std::string_view(ext_data, sizeof(ext_data)))) {
+                        m_nextblock = tmp_blk_num + 1;
                         update_number(m_nextblock);
                     }
                 }
@@ -577,41 +620,122 @@ void blocks_cache::routine_2()
                 iter++;
             }
 
-            if (settings::system::blocks_cache_force) {
-                continue;
+            while (!extra_hashes.empty()) {
+                extra_it = extra_hashes.cbegin();
+                size_t count = 0;
+                json.clear();
+                json.append("{\"id\":1, \"version\":\"2.0\", \"method\":\"get-dumps-blocks-by-hash\", \"params\":{\"compress\":true, \"hashes\":[");
+                for (; extra_it!= extra_hashes.cend(); extra_it++) {
+                    if (extra_it != extra_hashes.cbegin()) {
+                        json.append(",");
+                    }
+                    json.append("\"");
+//                    tmp_str = string_utils::bin2hex(*i);
+                    json.append(string_utils::bin2hex(*extra_it));
+                    json.append("\"");
+                    if (settings::system::blocks_cache_recv_count <= count) {
+                        break;
+                    }
+                }
+                json.append("]}}");
+
+                get_dumps->set_host(settings::server::get_tor());
+                get_dumps->set_body(json);
+                get_dumps->reset_attempts();
+                get_dumps->execute();
+                response = get_dumps->get_response();
+                if (!response) {
+                    LOGERR << "Cache. Extra blocks. Could not get response from get-dumps-blocks-by-hash";
+                    goto start;
+                }
+                if (response->get().body().empty()) {
+                    LOGERR << "Cache. Extra blocks. get-dumps-blocks-by-hash empty response";
+                    goto start;
+                }
+
+                if (reader.parse(response->get().body().c_str(), response->get().body().size())) {
+                    tmp = reader.get_error();
+                    if (tmp) {
+                        LOGERR << "Cache. Extra blocks. get-dumps-blocks-by-hash got error: " << reader.stringify(tmp);
+                        goto start;
+                    }
+                    tmp = reader.get_result();
+                    if (tmp) {
+                        LOGERR << "Cache. Extra blocks. get-dumps-blocks-by-hash got result " << reader.stringify(tmp);
+                        goto start;
+                    }
+                    LOGWARN << "Cache. Extra blocks. get-dumps-blocks-by-hash body has parsed " << response->get().body().size() << " bytes";
+                }
+
+                decompressed = torrent_node_lib::decompress(response->get().body());
+                resp_size = decompressed.size();
+
+                LOGINFO << "Cache. Extra blocks. Getting " << extra_hashes.size() << " block(s). Size compressed " << response->get().body().size() << "/ decompressed " << resp_size;
+
+                buf = decompressed.c_str();
+                p = buf;
+                auto it = extra_hashes.cbegin();
+                while (p < buf + resp_size && it != extra_hashes.cend()) {
+                    memcpy(&blk_size, p, sizeof(blk_size));
+                    blk_size = __builtin_bswap64(blk_size);
+                    if (blk_size == 0) {
+                        LOGERR << "Cache. Extra blocks. Error while response parse";
+                        break;
+                    }
+                    p += sizeof(blk_size);
+                    memset(ext_data, 0, sizeof(ext_data));
+
+                    auto some_block = torrent_node_lib::Sync::parseBlockDump(std::string(p, blk_size), false);
+
+                    if (!std::holds_alternative<torrent_node_lib::SignBlockInfo>(some_block)) {
+                        LOGERR << "Cache. Extra blocks. Block " << string_utils::bin2hex(*it) << " is not Sign Block";
+                    } else {
+                        torrent_node_lib::SignBlockInfo& sign_block = std::get<torrent_node_lib::SignBlockInfo>(some_block);
+                        if (core_addr_verification(sign_block)) {
+                            ext_data[0] = blk_signed;
+                        }
+                        tmp_str.clear();
+                        if (get_block_num_by_hash(string_utils::bin2hex(sign_block.header.prevHash), tmp_str)) {
+                            save_extra_data(tmp_str, std::string_view(ext_data, sizeof(ext_data)));
+                            save_extra_block(tmp_str, std::string_view(p, blk_size));
+                        } else {
+                            // TODO
+                            // query from torrent ? most likely block should be in the cache
+                            LOGERR << "Cache. Extra blocks. Could not find block #" << tmp_str;
+                        }
+                    }
+                    p += blk_size;
+                    iter++;
+                }
+                extra_hashes.erase(extra_hashes.begin(), extra_it);
             }
 
-wait:
-            common::checkStopSignal();
-            std::this_thread::sleep_until(tp);
+            if (settings::system::blocks_cache_force) {
+                tp = std::chrono::high_resolution_clock::now() - std::chrono::seconds(31);
+            }
         }
     }
     CACHE_END()
-    m_run = false;
-    LOGINFO << "Cache. Stoped";
 }
 
-bool blocks_cache::save_block(unsigned int number, const std::string& dump)
-{
-    return save_block(number, "", std::string_view(dump.c_str(), dump.size()));
-}
-
-bool blocks_cache::save_block(unsigned int number, const std::string& hash, const std::string_view& dump)
+bool blocks_cache::save_block(blk_number number, const std::string& hash, const std::string_view& dump, const std::string_view& ext_data)
 {
     CACHE_BGN
     {
+        std::string num = std::to_string(number);
         leveldb::WriteOptions opt;
-        leveldb::Status status = m_db->Put(opt, std::to_string(number), leveldb::Slice(dump.data(), dump.size()));
+        leveldb::Status status = m_db->Put(opt, num, leveldb::Slice(dump.data(), dump.size()));
         if (status.ok()) {
             LOGINFO << "Cache. Block #" << number << " (" << hash << ") has been saved. " << dump.size() << " bytes";
             if (!hash.empty()) {
                 status = m_db->Put(opt, leveldb::Slice(hash.data(), hash.size()), std::to_string(number));
                 if (!status.ok()) {
-                    LOGERR << "Cache. Could not save hash for block " << number;
+                    LOGERR << "Cache. Could not save Hash for Block #" << number;
                 }
             }
+            save_extra_data(num, ext_data);
         } else {
-            LOGERR << "Cache. Could not save block " << number;
+            LOGERR << "Cache. Could not save Block #" << number;
             return false;
         }
         return true;
@@ -619,7 +743,7 @@ bool blocks_cache::save_block(unsigned int number, const std::string& hash, cons
     CACHE_END(return false)
 }
 
-bool blocks_cache::update_number(unsigned int number)
+bool blocks_cache::update_number(blk_number number)
 {
     CACHE_BGN
     {
@@ -634,38 +758,57 @@ bool blocks_cache::update_number(unsigned int number)
     CACHE_END(return false)
 }
 
-bool blocks_cache::get_block_by_num(unsigned int number, std::string& result)
+bool blocks_cache::get_block_by_num(blk_number number, std::string& result)
 {
     CACHE_BGN
     {
-        leveldb::ReadOptions opt;
-        leveldb::Status status = m_db->Get(opt, std::to_string(number), &result);
-        return status.ok();
+        return get_block_by_num(std::to_string(number), result);
     }
     CACHE_END(return false)
 }
 
-bool blocks_cache::get_block_by_num(std::string& number, std::string& result)
+bool blocks_cache::get_block_by_num(const std::string& number, std::string& result)
 {
     CACHE_BGN
     {
-        leveldb::ReadOptions opt;
-        leveldb::Status status = m_db->Get(opt, number, &result);
-        return status.ok();
+        leveldb::ReadOptions read_opt;
+        std::string ext_data;
+        leveldb::Status status = m_db->Get(read_opt, string_utils::str_concat(number, "@data"), &ext_data);
+        if (status.ok() && (ext_data[0] & blk_signed) > 0) {
+            return m_db->Get(read_opt, number, &result).ok();
+        }
+        return false;
     }
     CACHE_END(return false)
 }
 
-bool blocks_cache::get_block_by_hash(std::string& hash, std::string& num, std::string& result)
+bool blocks_cache::get_block_by_hash(const std::string& hash, std::string& num, std::string& result)
 {
     CACHE_BGN
     {
-        leveldb::ReadOptions opt;
-        leveldb::Status status = m_db->Get(opt, hash, &num);
-        if (status.ok() && !num.empty()) {
+        if (get_block_num_by_hash(hash, num) && !num.empty()) {
             return get_block_by_num(num, result);
         }
         return false;
+    }
+    CACHE_END(return false)
+}
+
+bool blocks_cache::get_block_num_by_hash(const std::string& hash, std::string& result)
+{
+    CACHE_BGN
+    {
+        return m_db->Get(leveldb::ReadOptions(), hash, &result).ok();
+    }
+    CACHE_END(return false)
+}
+
+bool blocks_cache::get_extra_block_for(blk_number number, std::string& result)
+{
+    CACHE_BGN
+    {
+        std::string key = string_utils::str_concat(std::to_string(number), "@extra");
+        return m_db->Get(leveldb::ReadOptions(), key, &result).ok();
     }
     CACHE_END(return false)
 }
@@ -732,6 +875,45 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi,
     CACHE_END(return false)
 }
 
+bool blocks_cache::core_addr_verification(const torrent_node_lib::SignBlockInfo& bi)
+{
+    CACHE_BGN
+    {
+        bool succ = false;
+        std::vector<std::string> cores = settings::system::cores;
+        std::vector<std::string>::iterator it;
+
+        std::string from;
+        for (size_t i = 0; i < bi.txs.size(); ++i) {
+            if (i > 6) {
+                break;
+            }
+            succ = false;
+            from = bi.txs[i].address.calcHexString();
+            std::transform(from.begin(), from.end(), from.begin(), ::tolower);
+            for (it = cores.begin(); it != cores.end(); it++) {
+                if (it->compare(from) == 0){
+                    cores.erase(it);
+                    succ = true;
+                    break;
+                }
+            }
+            if (!succ) {
+                LOGERR << "Cache. Extra block hash " << string_utils::bin2hex(bi.header.hash) << " tx[" << i << "] " << from << " is not core address";
+                break;
+            }
+        }
+        if (succ) {
+            if (settings::system::cores.size() > cores.size()) {
+                return true;
+            }
+        }
+        LOGERR << "Cache. Extra block hash " << string_utils::bin2hex(bi.header.hash) << " did not pass the verification (" << settings::system::cores.size() - cores.size() << "/" << settings::system::cores.size() << ")";
+        return false;
+    }
+    CACHE_END(return false)
+}
+
 void blocks_cache::dump_bad_block(size_t num, const char* buf, size_t size)
 {
     CACHE_BGN
@@ -754,4 +936,32 @@ void blocks_cache::dump_bad_block(size_t num, const char* buf, size_t size)
         f.close();
     }
     CACHE_END()
+}
+
+bool blocks_cache::save_extra_data(const std::string& number, const std::string_view& dump)
+{
+    CACHE_BGN
+    {
+        std::string key = string_utils::str_concat(number, "@data");
+        if (!m_db->Put(leveldb::WriteOptions(), key, leveldb::Slice(dump.data(), dump.size())).ok()) {
+            LOGERR << "Cache. Could not save extra data for block number #" << number;
+            return false;
+        }
+        return true;
+    }
+    CACHE_END(return false)
+}
+
+bool blocks_cache::save_extra_block(const std::string& number, const std::string_view& dump)
+{
+    CACHE_BGN
+    {
+        std::string key = string_utils::str_concat(number, "@extra");
+        if (!m_db->Put(leveldb::WriteOptions(), key, leveldb::Slice(dump.data(), dump.size())).ok()) {
+            LOGERR << "Cache. Could not save extra block #" << number;
+            return false;
+        }
+        return true;
+    }
+    CACHE_END(return false)
 }

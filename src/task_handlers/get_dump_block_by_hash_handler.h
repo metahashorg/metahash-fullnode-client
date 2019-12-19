@@ -1,25 +1,16 @@
 #ifndef __GET_DUMP_BLOCK_BY_HASH_H__
 #define __GET_DUMP_BLOCK_BY_HASH_H__
 
-#include "network_handler.h"
+#include "get_dump_block_base.h"
 
-class get_dump_block_by_hash : public base_network_handler
+class get_dump_block_by_hash : public get_dump_block_base
 {
 public:
     get_dump_block_by_hash(session_context_ptr ctx);
     virtual ~get_dump_block_by_hash() override {}
 
-    virtual void execute() override;
-
 protected:
-    virtual bool prepare_params() override;
-
-private:
-    std::string m_hash;
-    mh_count_t m_fromByte;
-    mh_count_t m_toByte;
-    bool m_isHex;
-    bool m_from_cache;
+    virtual void set_block_id(const rapidjson::Value* params);
 };
 
 #endif // __GET_DUMP_BLOCK_BY_HASH_H__

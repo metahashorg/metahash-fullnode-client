@@ -1,6 +1,11 @@
 #include "get_blocks_handler.h"
 #include "settings/settings.h"
 
+#include "http_json_rpc_request.h"
+#include "cache/compress.h"
+#include "../sync/BlockInfo.h"
+#include "../sync/synchronize_blockchain.h"
+
 get_blocks_handler::get_blocks_handler(session_context_ptr ctx)
     : base_network_handler(settings::server::get_tor(), ctx) {
     m_duration.set_message(__func__);
@@ -36,7 +41,6 @@ bool get_blocks_handler::prepare_params()
 //        if (m_reader.get_value(m_reader.get_doc(), "pretty", pretty) && pretty) {
 //            m_writer.add("pretty", pretty);
 //        }
-
         return true;
     }
     END_TRY(return false)

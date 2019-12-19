@@ -31,6 +31,7 @@ void http_server::checkTimeout() {
         checkTimeoutTimer.expires_after(seconds(1));
         checkTimeoutTimer.async_wait(std::bind(&http_server::checkTimeout, this));
     } catch (const common::StopException&) {
+        LOGINFO << __PRETTY_FUNCTION__ << " Stop invoke";
         stop();
     }
 }

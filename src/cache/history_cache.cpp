@@ -17,11 +17,12 @@
 
 #define CACHE_END(ret) \
     catch (const common::StopException&) {\
+        LOGINFO << __PRETTY_FUNCTION__ << " Stop invoke";\
         ret;\
-    } catch (boost::exception& ex) {\
+    } catch (const boost::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);\
         ret;\
-    } catch (std::exception& ex) {\
+    } catch (const std::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what();\
         ret;\
     } catch (...) {\
@@ -156,13 +157,16 @@ void history_cache::routine()
         fetch_balance->set_path("fetch-balance");
 
         while (m_run) {
+            common::checkStopSignal();
+
+            if (std::chrono::high_resolution_clock::now() - tp < std::chrono::seconds(30)) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                continue;
+            }
 
             tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(30);
 
             for (auto& v: m_addrs) {
-
-                common::checkStopSignal();
-
                 json.clear();
                 string_utils::str_append(json, "{\"id\":1, \"version\":\"2.0\",\"method\":\"fetch-balance\", \"params\":{\"address\":\"", v.addr, "\"}}");
 
@@ -279,8 +283,6 @@ void history_cache::routine()
                     LOGERR << "History cache. Could not save history ("  << v.addr << ")";
                 }
             }
-            common::checkStopSignal();
-            std::this_thread::sleep_until(tp);
         }
     }
     CACHE_END()

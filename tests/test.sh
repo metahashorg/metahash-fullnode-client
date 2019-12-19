@@ -1,7 +1,7 @@
 #!/bin/bash
 
 errors=0
-addr=0.0.0.0:9997
+addr=0.0.0.0:9999
 wallet=0x00c441510301c3eb7f4903e1fe06beb7ac64b74062caba0c06
 to=0x00d590fb22a551fdb3038b24f7d62fcfa4337f9a1a1fdf7211
 
@@ -49,11 +49,20 @@ check_response $(curl -s -X POST --data '{"jsonrpc":"2.0", "id":1, "method":"cre
 echo -n "test get-block-by-hash..."
 check_response $(curl -s -X POST --data '{"jsonrpc":"2.0", "id":1, "method":"get-block-by-hash", "params":{"hash":"7e54007044d6ec1fe23d7f7e5f292de5f4129bb0a417ed04d55fbfe94799f7d4"}}' $addr)
 
+echo -n "test forP2P get-block-by-hash..."
+check_response $(curl -s -X POST --data '{"jsonrpc":"2.0", "id":1, "method":"get-block-by-hash", "params":{"hash":"7e54007044d6ec1fe23d7f7e5f292de5f4129bb0a417ed04d55fbfe94799f7d4", "type": "forP2P"}}' $addr)
+
 echo -n "test get-block-by-number..."
 check_response $(curl -s -X POST --data '{"jsonrpc":"2.0", "id":1, "method":"get-block-by-number", "params":{"number":2323}}' $addr)
 
+echo -n "test forP2P get-block-by-number... "
+check_response $(curl -s -X POST --data '{"jsonrpc":"2.0", "id":1, "method":"get-block-by-number", "params":{"number":2323, "type": "forP2P"}}' $addr)
+
 echo -n "test get-blocks..."
 check_response $(curl -s -X POST --data '{"jsonrpc":"2.0", "id":1, "method":"get-blocks", "params":{"countBlocks":2, "beginBlock":5}}' $addr)
+
+echo -n "test forP2P get-blocks..."
+check_response $(curl -s -X POST --data '{"jsonrpc":"2.0", "id":1, "method":"get-blocks", "params":{"countBlocks":2, "beginBlock":5, "type": "forP2P", "direction": "forward"}}' $addr)
 
 echo -n "test get-dump-block-by-number..."
 check_response $(curl -s -X POST --data '{"jsonrpc":"2.0", "id":1, "method":"get-dump-block-by-number", "params":{"number":2323}}' $addr)

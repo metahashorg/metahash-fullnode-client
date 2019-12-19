@@ -105,8 +105,8 @@ int main(int argc, char* argv[])
 
         std::vector<NsResult> ip;
         if (get_ip_addresses(settings::server::torName, ip)) {
-            LOGINFO << "Torrenrs:";
-            std::cout << "Torrenrs:" << std::endl;
+            LOGINFO << "Torrents:";
+            std::cout << "Torrents:" << std::endl;
             for (const auto& i: ip) {
                 std::cout << std::left << std::setfill(' ') << std::setw(25) << i.server << i.timeout << " ms" << std::endl;
                 LOGINFO << i.server << " " << i.timeout << " ms";
@@ -144,9 +144,9 @@ int main(int argc, char* argv[])
         }
                 
         const std::vector<std::string> serverIps = {settings::server::get_tor()};
-        std::unique_ptr<torrent_node_lib::P2P> p2p = std::make_unique<torrent_node_lib::P2P_Ips>(serverIps, 2);
         
         if (settings::system::useLocalDatabase) {
+            std::unique_ptr<torrent_node_lib::P2P> p2p = std::make_unique<torrent_node_lib::P2P_Ips>(serverIps, 2);
             syncSingleton() = std::make_unique<torrent_node_lib::Sync>(
                 settings::system::blocksFolder, 
                 "",

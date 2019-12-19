@@ -8,11 +8,12 @@
 
 #define POOL_END(ret) \
     catch (const common::StopException&) {\
+        LOGINFO << __PRETTY_FUNCTION__ << " Stop invoke";\
         ret;\
-    } catch (boost::exception& ex) {\
+    } catch (const boost::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " boost exception: " << boost::diagnostic_information(ex);\
         ret;\
-    } catch (std::exception& ex) {\
+    } catch (const std::exception& ex) {\
         LOGERR << __PRETTY_FUNCTION__ << " std exception: " << ex.what();\
         ret;\
     } catch (...) {\
@@ -150,11 +151,15 @@ void socket_pool::routine()
         LOGINFO << "Connection pool monitor. Started";
         asio::io_context ctx;
         tcp::socket sock(ctx);
-        std::chrono::system_clock::time_point tp;
-        std::chrono::system_clock::time_point now;
+        std::chrono::system_clock::time_point now, tp;
         while (enable())
         {
+            common::checkStopSignal();
             now = std::chrono::high_resolution_clock::now();
+            if (now - tp < std::chrono::seconds(30)) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                continue;
+            }
             tp = now + std::chrono::seconds(30);
             {
                 std::lock_guard<std::mutex> lock(m_lock);
@@ -184,8 +189,6 @@ void socket_pool::routine()
                 }
                 LOGINFO << "Connection pool monitor. Ready/Busy:  " << m_ready.size() << "/" << m_busy.size();
             }
-            common::checkStopSignal();
-            std::this_thread::sleep_until(tp);
         }
     }
     POOL_END()
@@ -217,7 +220,6 @@ void socket_pool::cleanup()
             if (it.socket == -1) {
                 continue;
             }
-            ec.clear();
             ec.clear();
             sock.assign(tcp::v4(), it.socket, ec);
             if (!ec) {

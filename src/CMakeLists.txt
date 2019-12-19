@@ -69,9 +69,11 @@ add_executable(${PROJECT_NAME}
     task_handlers/fetch_history_handler.cpp
     task_handlers/fetch_history_filter_handler.cpp
     task_handlers/get_tx_handler.cpp
+    task_handlers/get_dump_block_base.cpp
     task_handlers/get_dump_block_by_hash_handler.cpp
     task_handlers/get_dump_block_by_number_handler.cpp
     task_handlers/get_blocks_handler.cpp
+    task_handlers/get_block_base.cpp
     task_handlers/get_block_by_number_handler.cpp
     task_handlers/get_block_by_hash_handler.cpp
     task_handlers/get_last_txs_handler.cpp

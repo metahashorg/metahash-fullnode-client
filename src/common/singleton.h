@@ -25,7 +25,7 @@ protected:
 
 private:
     singleton(const singleton&) = delete;
-    singleton(const singleton&&) = delete;
+    singleton(singleton&&) = delete;
 
     singleton& operator=(const singleton&) = delete;
     singleton& operator=(singleton&) = delete;
