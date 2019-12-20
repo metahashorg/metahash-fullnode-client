@@ -848,12 +848,14 @@ bool blocks_cache::get_block_by_num(const std::string& number, std::string& resu
     CACHE_BGN
     {
         leveldb::ReadOptions read_opt;
-        std::string ext_data;
-        leveldb::Status status = m_db->Get(read_opt, string_utils::str_concat(number, "@data"), &ext_data);
-        if (status.ok() && (ext_data[0] & blk_signed) > 0) {
-            return m_db->Get(read_opt, number, &result).ok();
+        if (settings::system::blocks_cache_block_verification) {
+            std::string ext_data;
+            leveldb::Status status = m_db->Get(read_opt, string_utils::str_concat(number, "@data"), &ext_data);
+            if (!status.ok() || ext_data[0] != blk_signed) {
+                return false;
+            }
         }
-        return false;
+        return m_db->Get(read_opt, number, &result).ok();
     }
     CACHE_END(return false)
 }
