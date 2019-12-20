@@ -48,6 +48,9 @@ bool get_dump_block_base::prepare_params()
                  string_utils::bin2hex(dump, hexdump);
                  genBlockDumpJson(hexdump, false, m_writer.get_doc());
                  m_from_cache = true;
+            } else {
+                std::size_t number = static_cast<std::size_t>(std::atoi(get_block_id().c_str()));
+                CHK_PRM(number <= blocks_cache::extra_blocks_epoch, "The block does not exists or have not signed yet");
             }
         }
 

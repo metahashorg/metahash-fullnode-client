@@ -64,39 +64,33 @@ bool get_block_base::prepare_params()
                 torrent_node_lib::BlockInfo &bi = std::get<torrent_node_lib::BlockInfo>(some_block);
                 bi.header.blockNumber = std::holds_alternative<std::size_t>(m_block_id) ? std::get<std::size_t>(m_block_id) :
                                         static_cast<std::size_t>(std::atoi(std::get<std::string>(m_block_id).c_str()));
-                std::size_t aa = bi.header.blockNumber.value();
                 bi.header.countTxs = bi.txs.size();
                 if (!settings::system::allowStateBlocks && bi.header.isStateBlock()) {
                     genErrorResponse(-32603, "The block " + get_block_id() + " is a state block and has been ignored", m_writer.get_doc());
                     return false;
                 }
                 dump.clear();
-                std::vector<torrent_node_lib::TransactionInfo> signatures;
+                AnyTxInfo txs;
                 if (blocks_cache::get()->get_extra_block_for(bi.header.blockNumber.value(), dump)) {
                     auto extra_block = torrent_node_lib::Sync::parseBlockDump(dump, false);
                     if (std::holds_alternative<torrent_node_lib::SignBlockInfo>(extra_block)) {
                         torrent_node_lib::SignBlockInfo& sbi = std::get<torrent_node_lib::SignBlockInfo>(extra_block);
-                        for (const auto& v : sbi.txs) {
-                            signatures.push_back({});
-                            signatures.back().toAddress = v.address;
-                            signatures.back().fromAddress = v.address;
-                            signatures.back().isSignBlockTx = true;
-                            signatures.back().sign = v.sign;
-                            signatures.back().pubKey = v.pubkey;
-                            signatures.back().hash = string_utils::bin2hex(v.blockHash);
-                        }
+                        txs = std::move(sbi.txs);
                     }
                 }
                 switch (m_type) {
                 case 0:
                 case 4:
-                    blockHeaderToJson(bi.header, signatures, false, JsonVersion::V1, m_writer.get_doc());
+                    blockHeaderToJson(bi.header, txs, false, JsonVersion::V1, m_writer.get_doc());
                     break;
                 default:
-                    blockInfoToJson(bi, signatures, m_type, false, JsonVersion::V1, m_writer.get_doc());
+                    blockInfoToJson(bi, txs, m_type, false, JsonVersion::V1, m_writer.get_doc());
                     break;
                 }
                 m_from_cache = true;
+            } else {
+                std::size_t number = static_cast<std::size_t>(std::atoi(get_block_id().c_str()));
+                CHK_PRM(number <= blocks_cache::extra_blocks_epoch, "The block does not exists or have not signed yet");
             }
         }
         

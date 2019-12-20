@@ -15,12 +15,17 @@ namespace torrent_node_lib {
 }
 
 class blocks_cache: public singleton<blocks_cache>
-{
+{    
     friend class singleton<blocks_cache>;
 
     using blk_number = std::size_t;
     using ext_blk_data = char[8];
-    using blk_info = std::tuple<const blk_number, std::vector<unsigned char>>;
+    struct blk_info {
+        blk_info(blk_number _number, const std::vector<unsigned char>& _hash): number(_number), hash(_hash) {}
+        blk_number number;
+        std::vector<unsigned char> hash;
+        std::vector<std::vector<unsigned char>> extra;
+    };
 
     enum ext_data_value: char {
         blk_not_checked,
@@ -32,6 +37,8 @@ private:
     blocks_cache();
 
 public:
+    static const blk_number extra_blocks_epoch;
+
     bool init();
     bool start();
     void stop();

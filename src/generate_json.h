@@ -22,6 +22,8 @@ enum class JsonVersion {
     V1, V2
 };
 
+using AnyTxInfo = std::variant<std::vector<torrent_node_lib::TransactionInfo>, std::vector<torrent_node_lib::SignTransactionInfo>>;
+
 void genErrorResponse(int code, const std::string &error, rapidjson::Document &doc);
 
 std::string genTransactionNotFoundResponse(const RequestId &requestId, const std::string &transaction, size_t countBlocks, size_t knownBlock);
@@ -34,11 +36,11 @@ void addressesInfoToJson(const std::string &address, const std::vector<torrent_n
 
 void balanceInfoToJson(const std::string &address, const torrent_node_lib::BalanceInfo &balance, size_t currentBlock, bool isFormat, const JsonVersion &version, rapidjson::Document &doc, bool array);
 
-void blockHeaderToJson(const torrent_node_lib::BlockHeader &bh, const std::vector<torrent_node_lib::TransactionInfo> &signatures, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
+void blockHeaderToJson(const torrent_node_lib::BlockHeader &bh, const AnyTxInfo &signatures, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
 void blockHeadersToJson(const RequestId &requestId, const std::vector<torrent_node_lib::BlockHeader> &bh, const std::vector<std::vector<torrent_node_lib::TransactionInfo>> &signatures, uint64_t type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
-void blockInfoToJson(const torrent_node_lib::BlockInfo &bi, const std::vector<torrent_node_lib::TransactionInfo> &signatures, uint64_t type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
+void blockInfoToJson(const torrent_node_lib::BlockInfo &bi, const AnyTxInfo &signatures, uint64_t type, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
 void genCountBlockJson(size_t countBlocks, bool isFormat, const JsonVersion &version, rapidjson::Document &doc);
 
