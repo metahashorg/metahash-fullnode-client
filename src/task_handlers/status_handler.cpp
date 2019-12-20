@@ -61,6 +61,7 @@ void status_handler::execute()
             m_writer.add_result("blocks_cache_ver", settings::system::blocks_cache_ver);
             m_writer.add_result("blocks_cache_enable", blocks_cache::get()->runing());
             m_writer.add_result("blocks_cache_next_block", blocks_cache::get()->next_block());
+            m_writer.add_result("blocks_cache_last_signed_block", blocks_cache::get()->last_signed_block());
             m_writer.add_result("blocks_cache_force", settings::system::blocks_cache_force);
             m_writer.add_result("blocks_cache_init_count", settings::system::blocks_cache_init_count);
             m_writer.add_result("blocks_cache_recv_count", settings::system::blocks_cache_recv_count);

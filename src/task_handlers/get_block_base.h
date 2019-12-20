@@ -26,7 +26,6 @@ private:
     mh_count_t  m_type;
     mh_count_t  m_countTxs;
     mh_count_t  m_beginTx;
-    bool        m_from_cache;
 };
 
 #endif // __GET_BLOCK_BASE_H__

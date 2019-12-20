@@ -226,7 +226,7 @@ void lookup_best_ip()
             try {
                 common::checkStopSignal();
 
-                if (std::chrono::high_resolution_clock::now() - tp < std::chrono::seconds(60)) {
+                if (std::chrono::high_resolution_clock::now() < tp) {
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                     continue;
                 }

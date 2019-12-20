@@ -42,6 +42,7 @@ const blocks_cache::blk_number blocks_cache::extra_blocks_epoch = 1835000;
 blocks_cache::blocks_cache()
     : m_run(false)
     , m_nextblock(0)
+    , m_last_signed_block(0)
 {
 }
 
@@ -89,6 +90,11 @@ bool blocks_cache::init()
         if (status.ok()) {
             m_nextblock = static_cast<blk_number>(std::atoi(result.c_str()));
         }
+        result.clear();
+        status = m_db->Get(opt, "last_signed_block", &result);
+        if (status.ok()) {
+            m_last_signed_block = static_cast<blk_number>(std::atoi(result.c_str()));
+        }
         cache_init = true;
 
         LOGINFO << "Cache. Init successfully";
@@ -135,6 +141,11 @@ blocks_cache::blk_number blocks_cache::next_block() const
     return m_nextblock;
 }
 
+blocks_cache::blk_number blocks_cache::last_signed_block() const
+{
+    return m_last_signed_block;
+}
+
 void blocks_cache::worker_proc(blocks_cache *param)
 {
     CACHE_BGN
@@ -178,7 +189,7 @@ void blocks_cache::routine()
 
         while (m_run) {
             common::checkStopSignal();
-            if (std::chrono::high_resolution_clock::now() - tp < std::chrono::seconds(30)) {
+            if (std::chrono::high_resolution_clock::now() < tp) {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 continue;
             }
@@ -290,7 +301,7 @@ void blocks_cache::routine_2()
 
         http_json_rpc_request_ptr get_count = std::make_shared<http_json_rpc_request>(settings::server::get_tor());
         get_count->set_path("get-count-blocks");
-        get_count->set_body("{\"id\":1, \"version\":\"2.0\", \"method\":\"get-count-blocks\"}");
+        get_count->set_body("{\"id\":1, \"version\":\"2.0\", \"method\":\"get-count-blocks\", \"params\":{ \"type\": \"forP2P\"}}");
 
         blk_number tmp_blk_num = 0;
         if (m_nextblock == 0) {
@@ -326,6 +337,7 @@ void blocks_cache::routine_2()
                 break;
             }
         }
+
         LOGINFO << "Cache. Next block set to " << m_nextblock;
 
         // max summary size of blocks per request
@@ -412,6 +424,11 @@ void blocks_cache::routine_2()
                                 if (get_block_num_by_hash(string_utils::bin2hex(sign_block.header.prevHash), tmp_str)) {
                                     save_extra_data(tmp_str, std::string_view(ext_data, sizeof(ext_data)));
                                     save_extra_block(tmp_str, std::string_view(p, blk_size));
+                                    blk_number number = static_cast<blk_number>(std::atoi(tmp_str.c_str()));
+                                    if (ext_data[0] == blk_signed && number > m_last_signed_block) {
+                                        m_last_signed_block = number;
+                                        update_last_signed(m_last_signed_block);
+                                    }
                                 } else {
                                     // TODO
                                     // query from torrent ? most likely block should be in the cache
@@ -429,15 +446,17 @@ void blocks_cache::routine_2()
             }
         };
 
+        bool force_download = settings::system::blocks_cache_force;
+
         while (m_run) {
             common::checkStopSignal();            
 
-            if (std::chrono::high_resolution_clock::now() - tp < std::chrono::seconds(30)) {
+            if (!force_download && std::chrono::high_resolution_clock::now() < tp) {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 continue;
             }
 
-            tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(30);
+            tp = std::chrono::high_resolution_clock::now() + std::chrono::seconds(15);
 
             hashes.clear();
 
@@ -499,6 +518,12 @@ void blocks_cache::routine_2()
                     LOGERR << "Cache. Did not find field 'count_blocks' in get-count-blocks";
                     continue;
                 }
+
+                force_download = false;
+
+                if (count_blocks == m_last_signed_block) {
+                    continue;
+                }
                 hashes.emplace_back(blk_info(count_blocks, {}));
                 it = tmp->FindMember("next_extra_blocks");
                 if (it != tmp->MemberEnd() && it->value.IsArray()) {
@@ -510,6 +535,7 @@ void blocks_cache::routine_2()
                 continue;
             }
 
+            force_download = settings::system::blocks_cache_force;
             hashes.clear();
             blocks_size = 0;
 
@@ -556,7 +582,7 @@ void blocks_cache::routine_2()
             }
 
             if (hashes.empty() ||
-               (settings::system::blocks_cache_block_verification && hashes.size() < 2)) {
+               (settings::system::blocks_cache_block_verification && m_nextblock < extra_blocks_epoch && hashes.size() < 2)) {
                 continue;
             }
 
@@ -704,8 +730,10 @@ void blocks_cache::routine_2()
                                         string_utils::bin2hex(bi_prev.header.hash),
                                         std::string_view(p_prev, sz_prev),
                                         std::string_view(ext_data, sizeof(ext_data)))) {
-                            m_nextblock = static_cast<blk_number>(bi_prev.header.blockNumber.value()) + 1;
+                            m_last_signed_block = bi_prev.header.blockNumber.value();
+                            m_nextblock = m_last_signed_block + 1;
                             update_number(m_nextblock);
+                            update_last_signed(m_last_signed_block);
                         } else {
                             break;
                         }
@@ -717,8 +745,10 @@ void blocks_cache::routine_2()
                                        string_utils::bin2hex(bi.header.hash),
                                        std::string_view(p, blk_size),
                                        std::string_view(ext_data, sizeof(ext_data)))) {
-                            m_nextblock = static_cast<blk_number>(bi.header.blockNumber.value()) + 1;
+                            m_last_signed_block = bi.header.blockNumber.value();
+                            m_nextblock = m_last_signed_block + 1;
                             update_number(m_nextblock);
+                            update_last_signed(m_last_signed_block);
                         } else {
                             break;
                         }
@@ -747,10 +777,6 @@ void blocks_cache::routine_2()
 
             hashes.erase(iter, hashes.end());
             load_extra_blocks();
-
-            if (settings::system::blocks_cache_force) {
-                tp = std::chrono::high_resolution_clock::now() - std::chrono::seconds(60);
-            }
         }
     }
     CACHE_END()
@@ -786,6 +812,21 @@ bool blocks_cache::update_number(blk_number number)
         leveldb::Status status = m_db->Put(opt, "next_block", std::to_string(number));
         if (!status.ok()) {
             LOGERR << "Cache. Could not update next block number: " << number;
+            return false;
+        }
+        return true;
+    }
+    CACHE_END(return false)
+}
+
+bool blocks_cache::update_last_signed(blk_number number)
+{
+    CACHE_BGN
+    {
+        leveldb::WriteOptions opt;
+        leveldb::Status status = m_db->Put(opt, "last_signed_block", std::to_string(number));
+        if (!status.ok()) {
+            LOGERR << "Cache. Could not update last signed block number: " << number;
             return false;
         }
         return true;

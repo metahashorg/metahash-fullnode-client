@@ -13,7 +13,6 @@ get_dump_block_base::get_dump_block_base(session_context_ptr ctx)
     , m_fromByte(0)
     , m_toByte(std::numeric_limits<size_t>::max())
     , m_isHex(true)
-    , m_from_cache(false)
 {
 }
 
@@ -35,6 +34,15 @@ bool get_dump_block_base::prepare_params()
         m_reader.get_value(*params, "fromByte", m_fromByte);
         m_reader.get_value(*params, "toByte", m_toByte);
 
+        return true;
+    }
+    END_TRY(return false)
+}
+
+void get_dump_block_base::execute()
+{
+    BGN_TRY
+    {
         if (blocks_cache::get()->runing()) {
             std::string dump;
             std::string num;
@@ -47,27 +55,12 @@ bool get_dump_block_base::prepare_params()
                  std::string hexdump;
                  string_utils::bin2hex(dump, hexdump);
                  genBlockDumpJson(hexdump, false, m_writer.get_doc());
-                 m_from_cache = true;
+                 LOGINFO << "Get block #" << get_block_id() << " from cache";
             } else {
                 std::size_t number = static_cast<std::size_t>(std::atoi(get_block_id().c_str()));
                 CHK_PRM(number <= blocks_cache::extra_blocks_epoch, "The block does not exists or have not signed yet");
             }
-        }
-
-        return true;
-    }
-    END_TRY(return false)
-}
-
-void get_dump_block_base::execute()
-{
-    BGN_TRY
-    {
-        if (m_from_cache) {
-            LOGINFO << "Get block #" << get_block_id() << " from cache";
-            return;
-        }
-        if (settings::system::useLocalDatabase) {
+        } else if (settings::system::useLocalDatabase) {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();
 

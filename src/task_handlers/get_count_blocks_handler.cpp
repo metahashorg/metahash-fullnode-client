@@ -4,6 +4,7 @@
 #include "../generate_json.h"
 #include "../sync/BlockInfo.h"
 #include "../sync/BlockChainReadInterface.h"
+#include "cache/blocks_cache.h"
 
 get_count_blocks_handler::get_count_blocks_handler(session_context_ptr ctx)
     : base_network_handler(settings::server::get_tor(), ctx)
@@ -31,6 +32,8 @@ void get_count_blocks_handler::execute()
             const torrent_node_lib::Sync &sync = *syncSingleton();
             const size_t countBlocks = sync.getBlockchain().countBlocks();
             genCountBlockJson(countBlocks, false, JsonVersion::V1, m_writer.get_doc());
+        } else if (blocks_cache::get()->runing()) {
+            genCountBlockJson(blocks_cache::get()->last_signed_block(), false, JsonVersion::V1, m_writer.get_doc());
         } else {
             base_network_handler::execute();
         }

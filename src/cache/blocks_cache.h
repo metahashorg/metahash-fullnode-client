@@ -45,6 +45,7 @@ public:
 
     bool runing() const;
     blk_number next_block() const;
+    blk_number last_signed_block() const;
 
     bool get_block_by_num(blk_number number, std::string& result);
     bool get_block_by_num(const std::string& number, std::string& result);
@@ -62,6 +63,7 @@ protected:
     bool save_extra_data(const std::string& number, const std::string_view& dump);
 
     bool update_number(blk_number number);
+    bool update_last_signed(blk_number number);
 
     bool core_addr_verification(const torrent_node_lib::BlockInfo& bi, const std::string& prev_hash);
     bool core_addr_verification(const torrent_node_lib::SignBlockInfo& bi);
@@ -74,6 +76,7 @@ private:
 private:
     bool                                            m_run;
     blk_number                                      m_nextblock;
+    blk_number                                      m_last_signed_block;
     std::unique_ptr<std::thread>                    m_worker;
     std::unique_ptr<leveldb::DB>                    m_db;
     std::unique_ptr<leveldb::Cache>                 m_dbcache;

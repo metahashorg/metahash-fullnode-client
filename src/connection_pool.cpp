@@ -156,7 +156,7 @@ void socket_pool::routine()
         {
             common::checkStopSignal();
             now = std::chrono::high_resolution_clock::now();
-            if (now - tp < std::chrono::seconds(30)) {
+            if (now < tp) {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 continue;
             }

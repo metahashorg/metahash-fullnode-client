@@ -13,7 +13,6 @@ get_block_base::get_block_base(session_context_ptr ctx)
     , m_type(0)
     , m_countTxs(0)
     , m_beginTx(0)
-    , m_from_cache(false)
 {
 }
 
@@ -49,7 +48,16 @@ bool get_block_base::prepare_params()
                 }
             }
         }
+        
+        return true;
+    }
+    END_TRY(return false)
+}
 
+void get_block_base::execute()
+{
+    BGN_TRY
+    {
         if (blocks_cache::get()->runing()) {
             std::string dump;
             std::string num;
@@ -67,7 +75,7 @@ bool get_block_base::prepare_params()
                 bi.header.countTxs = bi.txs.size();
                 if (!settings::system::allowStateBlocks && bi.header.isStateBlock()) {
                     genErrorResponse(-32603, "The block " + get_block_id() + " is a state block and has been ignored", m_writer.get_doc());
-                    return false;
+                    return;
                 }
                 dump.clear();
                 AnyTxInfo txs;
@@ -87,27 +95,12 @@ bool get_block_base::prepare_params()
                     blockInfoToJson(bi, txs, m_type, false, JsonVersion::V1, m_writer.get_doc());
                     break;
                 }
-                m_from_cache = true;
+                LOGINFO << "Get block #" << get_block_id() << " from cache";
             } else {
                 std::size_t number = static_cast<std::size_t>(std::atoi(get_block_id().c_str()));
                 CHK_PRM(number <= blocks_cache::extra_blocks_epoch, "The block does not exists or have not signed yet");
             }
-        }
-        
-        return true;
-    }
-    END_TRY(return false)
-}
-
-void get_block_base::execute()
-{
-    BGN_TRY
-    {
-        if (m_from_cache) {
-            LOGINFO << "Get block #" << get_block_id() << " from cache";
-            return;
-        }
-        if (settings::system::useLocalDatabase) {
+        } else if (settings::system::useLocalDatabase) {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");
             const torrent_node_lib::Sync &sync = *syncSingleton();
 
