@@ -37,7 +37,7 @@
         ret;\
     }
 
-const blocks_cache::blk_number blocks_cache::extra_blocks_epoch = 1835000;
+//const blocks_cache::blk_number blocks_cache::extra_blocks_epoch = 1835000;
 
 blocks_cache::blocks_cache()
     : m_run(false)
@@ -306,9 +306,12 @@ void blocks_cache::routine_2()
         blk_number tmp_blk_num = 0;
         if (m_nextblock == 0) {
             m_nextblock = 1;
-            get_count->execute();
-            response = get_count->get_response();
             for (;;) {
+                if (settings::system::blocks_cache_init_count == 0) {
+                    break;
+                }
+                get_count->execute();
+                response = get_count->get_response();
                 if (!response) {
                     LOGERR << "Cache. Could not get response from get-count-blocks";
                     break;
@@ -331,9 +334,7 @@ void blocks_cache::routine_2()
                     LOGERR << "Cache. Did not find field 'count_blocks' in get-count-blocks";
                     break;
                 }
-                if (count_blocks > settings::system::blocks_cache_init_count) {
-                    m_nextblock = count_blocks - settings::system::blocks_cache_init_count;
-                }
+                m_nextblock = count_blocks > settings::system::blocks_cache_init_count ? count_blocks - settings::system::blocks_cache_init_count : count_blocks;
                 break;
             }
         }
@@ -417,7 +418,7 @@ void blocks_cache::routine_2()
                                 LOGERR << "Cache. Extra blocks. Extra Block in " << it->number << " is not Sign Block";
                             } else {
                                 torrent_node_lib::SignBlockInfo& sign_block = std::get<torrent_node_lib::SignBlockInfo>(some_block);
-                                if (core_addr_verification(sign_block)) {
+                                if (core_addr_verification(sign_block) > 0) {
                                     ext_data[0] = blk_signed;
                                 }
                                 tmp_str.clear();
@@ -581,8 +582,7 @@ void blocks_cache::routine_2()
                 }
             }
 
-            if (hashes.empty() ||
-               (settings::system::blocks_cache_block_verification && m_nextblock < extra_blocks_epoch && hashes.size() < 2)) {
+            if (hashes.empty()/* || (settings::system::blocks_cache_block_verification && m_nextblock < extra_blocks_epoch && hashes.size() < 2)*/) {
                 continue;
             }
 
@@ -655,7 +655,7 @@ void blocks_cache::routine_2()
                 p += sizeof(blk_size);
                 memset(ext_data, 0, sizeof(ext_data));
                 tmp_blk_num = iter->number;
-                if (settings::system::blocks_cache_block_verification && tmp_blk_num > 1 && tmp_blk_num <= extra_blocks_epoch) {
+                if (settings::system::blocks_cache_block_verification && tmp_blk_num > 1/* && tmp_blk_num <= extra_blocks_epoch*/) {
                     // getting previous block
                     if (bi_prev.header.hash.empty()) {
                         // try get from cache
@@ -719,47 +719,45 @@ void blocks_cache::routine_2()
                     }
 
                     // checking current block core addresses
-                    if (!core_addr_verification(bi, string_utils::bin2hex(bi_prev.header.hash))) {
+                    int verify = core_addr_verification(bi, string_utils::bin2hex(bi_prev.header.hash));
+                    if (verify == -1) {
                         dump_bad_block(bi.header.blockNumber.value(), p, blk_size);
                         break;
                     }
 
-                    if (p_prev && sz_prev > 0) {
-                        ext_data[0] = blk_signed;
-                        if (save_block(static_cast<blk_number>(bi_prev.header.blockNumber.value()),
-                                        string_utils::bin2hex(bi_prev.header.hash),
-                                        std::string_view(p_prev, sz_prev),
-                                        std::string_view(ext_data, sizeof(ext_data)))) {
+                    // save block without sign
+                    if (!save_block(static_cast<blk_number>(bi.header.blockNumber.value()),
+                                    string_utils::bin2hex(bi.header.hash),
+                                    std::string_view(p, blk_size),
+                                    std::string_view(ext_data, sizeof(ext_data)))) {
+                        break;
+                    }
+
+                    m_nextblock = tmp_blk_num + 1;
+                    update_number(m_nextblock);
+
+                    if (verify > 0) {
+                        if (p_prev && sz_prev > 0) {
+                            ext_data[0] = blk_signed;
+                            save_extra_data(std::to_string(bi_prev.header.blockNumber.value()), std::string_view(ext_data, sizeof(ext_data)));
                             m_last_signed_block = bi_prev.header.blockNumber.value();
-                            m_nextblock = m_last_signed_block + 1;
-                            update_number(m_nextblock);
                             update_last_signed(m_last_signed_block);
-                        } else {
-                            break;
                         }
+                    } else if (verify == 0) {
+                        LOGWARN << "Block #" << tmp_blk_num << " has 0 signatures";
+                        ext_data[0] = tmp_blk_num < 1222913 ? blk_signed : blk_not_signed;
+                        save_extra_data(std::to_string(tmp_blk_num), std::string_view(ext_data, sizeof(ext_data)));
+                        m_last_signed_block = tmp_blk_num;
+                        update_last_signed(m_last_signed_block);
+                    } else {
+                        LOGWARN << "Block #" << tmp_blk_num << " does not match any conditions";
                     }
 
-                    if (tmp_blk_num == extra_blocks_epoch) {
-                        ext_data[0] = blk_not_signed;
-                        if (save_block(static_cast<blk_number>(bi.header.blockNumber.value()),
-                                       string_utils::bin2hex(bi.header.hash),
-                                       std::string_view(p, blk_size),
-                                       std::string_view(ext_data, sizeof(ext_data)))) {
-                            m_last_signed_block = bi.header.blockNumber.value();
-                            m_nextblock = m_last_signed_block + 1;
-                            update_number(m_nextblock);
-                            update_last_signed(m_last_signed_block);
-                        } else {
-                            break;
-                        }
-                    }
-
-                    // save block to next iterration
                     std::swap(bi, bi_prev);
                     p_prev = p;
                     sz_prev = blk_size;
                 } else {
-                    ext_data[0] = settings::system::blocks_cache_block_verification ? blk_not_signed : blk_not_checked;
+                    ext_data[0] = tmp_blk_num == 1 ? blk_signed : blk_not_checked;
                     if (save_block(tmp_blk_num,
                                    string_utils::bin2hex(iter->hash),
                                    std::string_view(p, blk_size),
@@ -767,7 +765,6 @@ void blocks_cache::routine_2()
                         m_nextblock = tmp_blk_num + 1;
                         update_number(m_nextblock);
                     } else {
-
                         break;
                     }
                 }
@@ -793,7 +790,7 @@ bool blocks_cache::save_block(blk_number number, const std::string& hash, const 
             if (!hash.empty()) {
                 status = m_db->Put(opt, leveldb::Slice(hash.data(), hash.size()), num);
                 if (status.ok() && save_extra_data(num, ext_data)) {
-                    LOGINFO << "Cache. Block #" << number << " (" << hash << ") has been saved. " << dump.size() << " bytes";
+                    //LOGINFO << "Cache. Block #" << number << " (" << hash << ") has been saved. " << dump.size() << " bytes";
                     return true;
                 }
             }
@@ -891,12 +888,12 @@ bool blocks_cache::get_extra_block_for(blk_number number, std::string& result)
     CACHE_END(return false)
 }
 
-bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi, const std::string& prev_hash)
+int blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi, const std::string& prev_hash)
 {
     CACHE_BGN
     {
         if (bi.header.isStateBlock() || bi.header.isForgingBlock()) {
-            return true;
+            return 1;
         }
         bool succ = false;
         std::vector<std::string> cores = settings::system::cores;
@@ -939,21 +936,16 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi,
             }
         }
         if (succ) {
-            if (settings::system::cores.size() == cores.size()) {
-                return true;
-            }
-            if (settings::system::cores.size() - cores.size() > 3) {
-                return true;
-            }
+            return static_cast<int>(settings::system::cores.size() - cores.size());
         }
         LOGERR << "Cache. Block #" << bi.header.blockNumber.value() << " " << string_utils::bin2hex(bi.header.hash)
                << " did not pass verification (" << settings::system::cores.size() - cores.size() << "/" << settings::system::cores.size() << ")";
-        return false;
+        return -1;
     }
-    CACHE_END(return false)
+    CACHE_END(return -1)
 }
 
-bool blocks_cache::core_addr_verification(const torrent_node_lib::SignBlockInfo& bi)
+int blocks_cache::core_addr_verification(const torrent_node_lib::SignBlockInfo& bi)
 {
     CACHE_BGN
     {
@@ -982,14 +974,12 @@ bool blocks_cache::core_addr_verification(const torrent_node_lib::SignBlockInfo&
             }
         }
         if (succ) {
-            if (settings::system::cores.size() > cores.size()) {
-                return true;
-            }
+            return static_cast<int>(settings::system::cores.size() - cores.size());
         }
         LOGERR << "Cache. Extra block hash " << string_utils::bin2hex(bi.header.hash) << " did not pass the verification (" << settings::system::cores.size() - cores.size() << "/" << settings::system::cores.size() << ")";
-        return false;
+        return -1;
     }
-    CACHE_END(return false)
+    CACHE_END(return -1)
 }
 
 void blocks_cache::dump_bad_block(size_t num, const char* buf, size_t size)

@@ -37,7 +37,7 @@ private:
     blocks_cache();
 
 public:
-    static const blk_number extra_blocks_epoch;
+//    static const blk_number extra_blocks_epoch;
 
     bool init();
     bool start();
@@ -65,8 +65,8 @@ protected:
     bool update_number(blk_number number);
     bool update_last_signed(blk_number number);
 
-    bool core_addr_verification(const torrent_node_lib::BlockInfo& bi, const std::string& prev_hash);
-    bool core_addr_verification(const torrent_node_lib::SignBlockInfo& bi);
+    int core_addr_verification(const torrent_node_lib::BlockInfo& bi, const std::string& prev_hash);
+    int core_addr_verification(const torrent_node_lib::SignBlockInfo& bi);
 
     void dump_bad_block(size_t num, const char* buf, size_t size);
 
