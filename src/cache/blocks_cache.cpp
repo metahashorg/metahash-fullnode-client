@@ -16,6 +16,7 @@
 #include "convertStrings.h"
 #include "task_handlers/get_count_blocks_handler.h"
 #include "task_handlers/get_dump_block_by_number_handler.h"
+#include "blocks_exceptions.h"
 
 #define CACHE_BGN try
 
@@ -286,9 +287,8 @@ void blocks_cache::routine_2()
         std::vector<blocks_cache::blk_info>::iterator iter;
         const char
                 *buf = nullptr,
-                *p = nullptr,
-                *p_prev = nullptr;
-        uint64_t blk_size, sz_prev = 0;
+                *p = nullptr;
+        uint64_t blk_size = 0;
         size_t resp_size = 0;
 
         const json_response_type* response;
@@ -568,16 +568,12 @@ void blocks_cache::routine_2()
                     break;
                 }
 
-//                std::string_view hhh = reader.stringify(arr_it);
-//                std::cout << hhh << std::endl;
-
                 hashes.emplace_back(tmp_blk_num, common::fromHex({it->value.GetString(), it->value.GetStringLength()}));
 
                 it = arr_it->FindMember("prev_extra_blocks");
                 if (it != arr_it->MemberEnd() && it->value.IsArray() && it->value.Size() > 0) {
                     for (hash_it = it->value.GetArray().begin(); hash_it != it->value.GetArray().end(); hash_it++) {
                         hashes.back().extra.emplace_back(common::fromHex({hash_it->GetString(), hash_it->GetStringLength()}));
-//                        extra_hashes.emplace_back(common::fromHex({hash_it->GetString(), hash_it->GetStringLength()}));
                     }
                 }
             }
@@ -593,7 +589,6 @@ void blocks_cache::routine_2()
                     json.append(",");
                 }
                 json.append("\"");
-//                tmp_str = string_utils::bin2hex(std::get<1>(*i));
                 json.append(string_utils::bin2hex(i->hash));
                 json.append("\"");
             }
@@ -642,8 +637,6 @@ void blocks_cache::routine_2()
 
             // reset previous block
             bi_prev.header.hash.clear();
-            p_prev = nullptr;
-            sz_prev = 0;
 
             while (p < buf + resp_size && iter != hashes.end()) {
                 memcpy(&blk_size, p, sizeof(blk_size));
@@ -662,6 +655,7 @@ void blocks_cache::routine_2()
                         tmp_str.clear();
                         if (get_block_by_num(tmp_blk_num - 1, tmp_str)) {
                             bi_prev = std::get<torrent_node_lib::BlockInfo>(torrent_node_lib::Sync::parseBlockDump(tmp_str, false));
+                            bi_prev.header.blockNumber = tmp_blk_num - 1;
                         } else {
                             // if block does not exist in cache then take it from torrent
                             json.clear();
@@ -737,25 +731,24 @@ void blocks_cache::routine_2()
                     update_number(m_nextblock);
 
                     if (verify > 0) {
-                        if (p_prev && sz_prev > 0) {
+                        if (bi_prev.header.blockNumber.has_value() && bi_prev.header.blockNumber.value() > 0) {
                             ext_data[0] = blk_signed;
                             save_extra_data(std::to_string(bi_prev.header.blockNumber.value()), std::string_view(ext_data, sizeof(ext_data)));
                             m_last_signed_block = bi_prev.header.blockNumber.value();
                             update_last_signed(m_last_signed_block);
                         }
                     } else if (verify == 0) {
-                        LOGWARN << "Block #" << tmp_blk_num << " has 0 signatures";
-                        ext_data[0] = tmp_blk_num < 1222913 ? blk_signed : blk_not_signed;
+                        ext_data[0] = auto_signed_block(tmp_blk_num) ? blk_signed : blk_not_signed;
                         save_extra_data(std::to_string(tmp_blk_num), std::string_view(ext_data, sizeof(ext_data)));
-                        m_last_signed_block = tmp_blk_num;
-                        update_last_signed(m_last_signed_block);
+                        if (ext_data[0] == blk_signed) {
+                            m_last_signed_block = tmp_blk_num;
+                            update_last_signed(m_last_signed_block);
+                        }
                     } else {
                         LOGWARN << "Block #" << tmp_blk_num << " does not match any conditions";
                     }
 
                     std::swap(bi, bi_prev);
-                    p_prev = p;
-                    sz_prev = blk_size;
                 } else {
                     ext_data[0] = tmp_blk_num == 1 ? blk_signed : blk_not_checked;
                     if (save_block(tmp_blk_num,
@@ -790,7 +783,7 @@ bool blocks_cache::save_block(blk_number number, const std::string& hash, const 
             if (!hash.empty()) {
                 status = m_db->Put(opt, leveldb::Slice(hash.data(), hash.size()), num);
                 if (status.ok() && save_extra_data(num, ext_data)) {
-                    //LOGINFO << "Cache. Block #" << number << " (" << hash << ") has been saved. " << dump.size() << " bytes";
+                    LOGINFO << "Cache. Block #" << number << " (" << hash << ") has been saved. " << dump.size() << " bytes";
                     return true;
                 }
             }
@@ -831,7 +824,7 @@ bool blocks_cache::update_last_signed(blk_number number)
     CACHE_END(return false)
 }
 
-bool blocks_cache::get_block_by_num(blk_number number, std::string& result)
+bool blocks_cache::get_block_by_num(blk_number number, std::string& result) const
 {
     CACHE_BGN
     {
@@ -840,7 +833,7 @@ bool blocks_cache::get_block_by_num(blk_number number, std::string& result)
     CACHE_END(return false)
 }
 
-bool blocks_cache::get_block_by_num(const std::string& number, std::string& result)
+bool blocks_cache::get_block_by_num(const std::string& number, std::string& result) const
 {
     CACHE_BGN
     {
@@ -848,7 +841,7 @@ bool blocks_cache::get_block_by_num(const std::string& number, std::string& resu
         if (settings::system::blocks_cache_block_verification) {
             std::string ext_data;
             leveldb::Status status = m_db->Get(read_opt, string_utils::str_concat(number, "@data"), &ext_data);
-            if (!status.ok() || ext_data[0] != blk_signed) {
+            if (status.ok() && ext_data[0] != blk_signed) {
                 return false;
             }
         }
@@ -857,7 +850,7 @@ bool blocks_cache::get_block_by_num(const std::string& number, std::string& resu
     CACHE_END(return false)
 }
 
-bool blocks_cache::get_block_by_hash(const std::string& hash, std::string& num, std::string& result)
+bool blocks_cache::get_block_by_hash(const std::string& hash, std::string& num, std::string& result) const
 {
     CACHE_BGN
     {
@@ -869,7 +862,7 @@ bool blocks_cache::get_block_by_hash(const std::string& hash, std::string& num, 
     CACHE_END(return false)
 }
 
-bool blocks_cache::get_block_num_by_hash(const std::string& hash, std::string& result)
+bool blocks_cache::get_block_num_by_hash(const std::string& hash, std::string& result) const
 {
     CACHE_BGN
     {
@@ -878,7 +871,7 @@ bool blocks_cache::get_block_num_by_hash(const std::string& hash, std::string& r
     CACHE_END(return false)
 }
 
-bool blocks_cache::get_extra_block_for(blk_number number, std::string& result)
+bool blocks_cache::get_extra_block_for(blk_number number, std::string& result) const
 {
     CACHE_BGN
     {
@@ -1032,4 +1025,17 @@ bool blocks_cache::save_extra_block(const std::string& number, const std::string
         return true;
     }
     CACHE_END(return false)
+}
+
+bool blocks_cache::auto_signed_block(blk_number number) const
+{
+    for (const auto& v : auto_signed_blocks) {
+        if (v.first == number) {
+            return true;
+        }
+        if (v.first < v.second && v.first < number && number <= v.second) {
+            return true;
+        }
+    }
+    return false;
 }

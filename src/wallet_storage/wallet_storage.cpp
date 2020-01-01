@@ -10,18 +10,21 @@ namespace storage
 
     bool keys::peek(const std::string& address, crypt_keys& result)
     {
-        std::lock_guard<std::mutex> guard(_locker);
         auto it = _storage.find(address);
         if (it == _storage.end())
         {
-            crypt_keys tmp;
-            if (!read_from_file(address + ".raw.prv", tmp.prv_key))
-                return false;
-            if (!read_from_file(address + ".raw.pub", tmp.pub_key))
-                return false;
-            _storage[address] = tmp;
-            result = tmp;
-            return true;
+            std::lock_guard<std::mutex> guard(_locker);
+            it = _storage.find(address);
+            if (it == _storage.end()) {
+                crypt_keys tmp;
+                if (!read_from_file(address + ".raw.prv", tmp.prv_key))
+                    return false;
+                if (!read_from_file(address + ".raw.pub", tmp.pub_key))
+                    return false;
+                _storage[address] = tmp;
+                result = tmp;
+                return true;
+            }
         }
         result = it->second;
         return true;

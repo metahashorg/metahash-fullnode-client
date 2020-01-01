@@ -14,4 +14,4 @@ message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src)
-#add_subdirectory(tests)
+add_subdirectory(tests/cache_blocks)

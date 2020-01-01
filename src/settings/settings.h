@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <atomic>
-#include <mutex>
+#include <shared_mutex>
 
 namespace boost {
 namespace program_options {
@@ -14,18 +14,18 @@ class variables_map;
 #define ATOMIC_PROP(type, name) \
   public: \
     static void set_##name(const type& value) {\
-        std::lock_guard<std::mutex> lock(_locker_##name);\
+        std::unique_lock lock(_locker_##name);\
         _##name = value; }\
     static type get_##name() {\
-        std::lock_guard<std::mutex> lock(_locker_##name);\
+        std::shared_lock lock(_locker_##name);\
         return _##name; }\
   private: \
     static type _##name; \
-    static std::mutex _locker_##name;
+    static std::shared_mutex _locker_##name;
 
 #define ATOMIC_PROP_IMPL(type, name) \
     type server::_##name;\
-    std::mutex server::_locker_##name;
+    std::shared_mutex server::_locker_##name;
 
 namespace settings
 {

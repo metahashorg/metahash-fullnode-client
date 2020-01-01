@@ -47,11 +47,11 @@ public:
     blk_number next_block() const;
     blk_number last_signed_block() const;
 
-    bool get_block_by_num(blk_number number, std::string& result);
-    bool get_block_by_num(const std::string& number, std::string& result);
-    bool get_block_by_hash(const std::string& hash, std::string& num, std::string& result);
-    bool get_block_num_by_hash(const std::string& hash, std::string& result);
-    bool get_extra_block_for(blk_number number, std::string& result);
+    bool get_block_by_num(blk_number number, std::string& result) const;
+    bool get_block_by_num(const std::string& number, std::string& result) const;
+    bool get_block_by_hash(const std::string& hash, std::string& num, std::string& result) const;
+    bool get_block_num_by_hash(const std::string& hash, std::string& result) const;
+    bool get_extra_block_for(blk_number number, std::string& result) const;
 protected:
     static void worker_proc(blocks_cache* param);
 
@@ -69,6 +69,8 @@ protected:
     int core_addr_verification(const torrent_node_lib::SignBlockInfo& bi);
 
     void dump_bad_block(size_t num, const char* buf, size_t size);
+
+    bool auto_signed_block(blk_number number) const;
 
 private:
     blk_number get_count_blocks();
