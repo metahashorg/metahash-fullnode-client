@@ -99,7 +99,7 @@ void get_block_base::execute()
             } else {
 //                std::size_t number = static_cast<std::size_t>(std::atoi(get_block_id().c_str()));
 //                CHK_PRM(number <= blocks_cache::extra_blocks_epoch, "The block does not exists or have not signed yet");
-                CHK_PRM(false, "The block does not exists or have not signed yet");
+                CHK_PRM(false, "The block does not exists or has not signed yet");
             }
         } else if (settings::system::useLocalDatabase) {
             CHK_PRM(syncSingleton() != nullptr, "Sync not set");

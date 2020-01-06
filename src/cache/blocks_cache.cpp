@@ -426,9 +426,8 @@ void blocks_cache::routine_2()
                                     save_extra_data(tmp_str, std::string_view(ext_data, sizeof(ext_data)));
                                     save_extra_block(tmp_str, std::string_view(p, blk_size));
                                     blk_number number = static_cast<blk_number>(std::atoi(tmp_str.c_str()));
-                                    if (ext_data[0] == blk_signed && number > m_last_signed_block) {
-                                        m_last_signed_block = number;
-                                        update_last_signed(m_last_signed_block);
+                                    if (ext_data[0] == blk_signed) {
+                                        update_last_signed(number);
                                     }
                                 } else {
                                     // TODO
@@ -731,19 +730,29 @@ void blocks_cache::routine_2()
                     update_number(m_nextblock);
 
                     if (verify > 0) {
-                        if (bi_prev.header.blockNumber.has_value() && bi_prev.header.blockNumber.value() > 0) {
-                            ext_data[0] = blk_signed;
-                            save_extra_data(std::to_string(bi_prev.header.blockNumber.value()), std::string_view(ext_data, sizeof(ext_data)));
-                            m_last_signed_block = bi_prev.header.blockNumber.value();
-                            update_last_signed(m_last_signed_block);
+                        for (;;) {
+                            if (verify == std::numeric_limits<int>::max()) {
+                                ext_data[0] = blk_signed;
+                                save_extra_data(std::to_string(tmp_blk_num), std::string_view(ext_data, sizeof(ext_data)));
+                                update_last_signed(tmp_blk_num);
+                                tmp_str.clear();
+                                if (!get_extra_data(tmp_blk_num-1, tmp_str)){
+                                    break;
+                                }
+                                if (tmp_str[0] != blk_not_signed && tmp_str[0] != blk_not_checked) {
+                                    break;
+                                }
+                            }
+                            if (bi_prev.header.blockNumber.has_value() && bi_prev.header.blockNumber.value() > 0) {
+                                ext_data[0] = blk_signed;
+                                save_extra_data(std::to_string(bi_prev.header.blockNumber.value()), std::string_view(ext_data, sizeof(ext_data)));
+                                update_last_signed(bi_prev.header.blockNumber.value());
+                            }
+                            break;
                         }
                     } else if (verify == 0) {
-                        ext_data[0] = auto_signed_block(tmp_blk_num) ? blk_signed : blk_not_signed;
+                        ext_data[0] = blk_awaiting_signature;
                         save_extra_data(std::to_string(tmp_blk_num), std::string_view(ext_data, sizeof(ext_data)));
-                        if (ext_data[0] == blk_signed) {
-                            m_last_signed_block = tmp_blk_num;
-                            update_last_signed(m_last_signed_block);
-                        }
                     } else {
                         LOGWARN << "Block #" << tmp_blk_num << " does not match any conditions";
                     }
@@ -813,11 +822,14 @@ bool blocks_cache::update_last_signed(blk_number number)
 {
     CACHE_BGN
     {
-        leveldb::WriteOptions opt;
-        leveldb::Status status = m_db->Put(opt, "last_signed_block", std::to_string(number));
-        if (!status.ok()) {
-            LOGERR << "Cache. Could not update last signed block number: " << number;
-            return false;
+        if (m_last_signed_block < number) {
+            leveldb::WriteOptions opt;
+            leveldb::Status status = m_db->Put(opt, "last_signed_block", std::to_string(number));
+            if (!status.ok()) {
+                LOGERR << "Cache. Could not update last signed block number: " << number;
+                return false;
+            }
+            m_last_signed_block = number;
         }
         return true;
     }
@@ -885,8 +897,8 @@ int blocks_cache::core_addr_verification(const torrent_node_lib::BlockInfo& bi, 
 {
     CACHE_BGN
     {
-        if (bi.header.isStateBlock() || bi.header.isForgingBlock()) {
-            return 1;
+        if (bi.header.isStateBlock() || bi.header.isForgingBlock() || auto_signed_block(bi.header.blockNumber.value())) {
+            return std::numeric_limits<int>::max();
         }
         bool succ = false;
         std::vector<std::string> cores = settings::system::cores;
@@ -1012,6 +1024,16 @@ bool blocks_cache::save_extra_data(const std::string& number, const std::string_
     }
     CACHE_END(return false)
 }
+
+ bool blocks_cache::get_extra_data(blk_number number, std::string& result) const
+ {
+     CACHE_BGN
+     {
+         std::string key = string_utils::str_concat(std::to_string(number), "@data");
+         return m_db->Get(leveldb::ReadOptions(), key, &result).ok();
+     }
+     CACHE_END(return false)
+ }
 
 bool blocks_cache::save_extra_block(const std::string& number, const std::string_view& dump)
 {

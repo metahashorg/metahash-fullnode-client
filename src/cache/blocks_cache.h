@@ -30,6 +30,7 @@ class blocks_cache: public singleton<blocks_cache>
     enum ext_data_value: char {
         blk_not_checked,
         blk_not_signed,
+        blk_awaiting_signature,
         blk_signed
     };
 
@@ -52,6 +53,7 @@ public:
     bool get_block_by_hash(const std::string& hash, std::string& num, std::string& result) const;
     bool get_block_num_by_hash(const std::string& hash, std::string& result) const;
     bool get_extra_block_for(blk_number number, std::string& result) const;
+    bool get_extra_data(blk_number number, std::string& result) const;
 protected:
     static void worker_proc(blocks_cache* param);
 
