@@ -8,6 +8,7 @@
 #include "leveldb/cache.h"
 #include "leveldb/filter_policy.h"
 #include "singleton.h"
+#include "settings/settings.h"
 
 namespace torrent_node_lib {
     struct BlockInfo;
@@ -48,9 +49,9 @@ public:
     blk_number next_block() const;
     blk_number last_signed_block() const;
 
-    bool get_block_by_num(blk_number number, std::string& result) const;
-    bool get_block_by_num(const std::string& number, std::string& result) const;
-    bool get_block_by_hash(const std::string& hash, std::string& num, std::string& result) const;
+    bool get_block_by_num(blk_number number, std::string& result, bool verify = settings::system::blocks_cache_block_verification) const;
+    bool get_block_by_num(const std::string& number, std::string& result, bool verify = settings::system::blocks_cache_block_verification) const;
+    bool get_block_by_hash(const std::string& hash, std::string& num, std::string& result, bool verify = settings::system::blocks_cache_block_verification) const;
     bool get_block_num_by_hash(const std::string& hash, std::string& result) const;
     bool get_extra_block_for(blk_number number, std::string& result) const;
     bool get_extra_data(blk_number number, std::string& result) const;
@@ -75,7 +76,7 @@ protected:
     bool auto_signed_block(blk_number number) const;
 
 private:
-    blk_number get_count_blocks();
+    bool get_block(blk_number num, torrent_node_lib::BlockInfo& result, ext_blk_data& exdata) const;
 
 private:
     bool                                            m_run;
