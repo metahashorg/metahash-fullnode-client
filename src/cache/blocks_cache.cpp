@@ -410,6 +410,7 @@ void blocks_cache::routine_2()
                             }
                             p += sizeof(blk_size);
                             memset(ext_data, 0, sizeof(ext_data));
+                            ext_data[0] = blk_not_signed;
 
                             auto some_block = torrent_node_lib::Sync::parseBlockDump(std::string(p, blk_size), false);
 
@@ -428,6 +429,7 @@ void blocks_cache::routine_2()
                                     if (ext_data[0] == blk_signed) {
                                         update_last_signed(number);
                                     }
+                                    LOGINFO << "Cache. Extra blocks. Block #" << number << " change sign status: " << static_cast<int>(ext_data[0]);
                                 } else {
                                     // TODO
                                     // query from torrent ? most likely block should be in the cache
