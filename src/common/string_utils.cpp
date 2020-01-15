@@ -11,12 +11,6 @@ size_t get_size(char* val) {
     return strlen(val);
 }
 
-void check_size(size_t&) noexcept {
-}
-
-void str_append_unsafe(std::string&) noexcept {
-}
-
 namespace {
     static const char hex[] = {
     "000102030405060708090a0b0c0d0e0f"
